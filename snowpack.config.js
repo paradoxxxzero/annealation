@@ -3,10 +3,17 @@ module.exports = {
     public: { url: '/', static: true },
     src: { url: '/dist' },
   },
-  plugins: [],
+  plugins: [
+    [
+      'snowpack-plugin-raw-file-loader',
+      {
+        exts: ['.glsl'],
+      },
+    ],
+  ],
   routes: [],
   optimize: {
-    // "bundle": true,
+    bundle: true,
   },
   packageOptions: {},
   devOptions: {},

@@ -1077,6 +1077,11 @@ slice-ansi@^4.0.0:
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
 
+snowpack-plugin-raw-file-loader@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/snowpack-plugin-raw-file-loader/-/snowpack-plugin-raw-file-loader-1.0.9.tgz#072d4c203fd8bc9bece74ef1db7256a1e5b1fc15"
+  integrity sha512-GY7MuommuHfUo7ZfPu/yeyZ7oY7vybTcIc/1JBkg3IwLDNKckprIuhPp8XAvO3gZdCTucDIw6iL2dVEId3GhJw==
+
 snowpack@^3.0.1:
   version "3.0.11"
   resolved "https://registry.yarnpkg.com/snowpack/-/snowpack-3.0.11.tgz#95f69f95367116e3a9bb5112d090d6328f2d3a28"

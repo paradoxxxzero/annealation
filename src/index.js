@@ -1,5 +1,7 @@
 import {
   AmbientLight,
+  BufferAttribute,
+  BufferGeometry,
   Color,
   FogExp2,
   Group,
@@ -8,8 +10,10 @@ import {
   MeshBasicMaterial,
   PerspectiveCamera,
   PointLight,
+  Points,
   ReinhardToneMapping,
   Scene,
+  ShaderMaterial,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -19,6 +23,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import fragmentShader from './fragmentShader.glsl'
+import vertexShader from './vertexShader.glsl'
 
 const renderer = new WebGLRenderer({ antialias: true })
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -62,7 +68,7 @@ composer.addPass(renderScene)
 const bloomPass = new UnrealBloomPass(
   new Vector2(window.innerWidth, window.innerHeight),
   1.5,
-  0,
+  0.8,
   0
 )
 
@@ -93,7 +99,7 @@ const initPositionRange = 1000
 const initSpeedRange = 30
 const S = 1
 const L = 0.5
-let orbs = new Array(1000).fill().map(() => ({
+let orbs = new Array(5000).fill().map(() => ({
   color: new Color().setHSL(Math.random(), S, L),
   // weight 10^31 kg
   weight: Math.random() * 10,
@@ -110,25 +116,6 @@ let orbs = new Array(1000).fill().map(() => ({
   ),
   acceleration: new Vector3(),
 }))
-// orbs.push({
-//   color: new Color(0.25, 0.25, 0.25),
-//   weight: 50,
-//   position: new Vector3(),
-//   speed: new Vector3(),
-//   acceleration: new Vector3(),
-// })
-
-const spheres = new Group()
-scene.add(spheres)
-
-function createSphere({ color, position, weight }) {
-  const geometry = new IcosahedronGeometry(1, 2)
-  const material = new MeshBasicMaterial({ color })
-  const sphere = new Mesh(geometry, material)
-  sphere.position.copy(position)
-  sphere.scale.setScalar(5 * Math.pow(weight, 1 / 3))
-  spheres.add(sphere)
-}
 
 // const target = {}
 function collide([orb, otherOrb]) {
@@ -151,10 +138,35 @@ function collide([orb, otherOrb]) {
     acceleration: new Vector3(),
   }
 }
+const geometry = new BufferGeometry()
 
 function init() {
-  orbs.forEach(createSphere)
+  const positions = new Float32Array(orbs.length * 3)
+  const scales = new Float32Array(orbs.length)
+  const colors = new Float32Array(orbs.length * 3)
+  geometry.setDrawRange(0, orbs.length)
+  orbs.forEach(({ position, weight, color }, i) => {
+    positions[i * 3] = position.x
+    positions[i * 3 + 1] = position.y
+    positions[i * 3 + 2] = position.z
+    scales[i] = 50 * Math.cbrt(weight)
+    colors[i * 3] = color.r
+    colors[i * 3 + 1] = color.g
+    colors[i * 3 + 2] = color.b
+  })
 
+  geometry.setAttribute('position', new BufferAttribute(positions, 3))
+  geometry.setAttribute('scale', new BufferAttribute(scales, 1))
+  geometry.setAttribute('color', new BufferAttribute(colors, 3))
+
+  const material = new ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    vertexColors: true,
+  })
+
+  const particles = new Points(geometry, material)
+  scene.add(particles)
   requestAnimationFrame(animate)
 }
 
@@ -196,12 +208,8 @@ function simulate() {
     const newOrbs = collisions.map(collide)
     const deletedOrbs = collisions.flat()
 
-    deletedOrbs
-      .map(orb => spheres.children[orbs.indexOf(orb)])
-      .forEach(sphere => spheres.remove(sphere))
-    newOrbs.forEach(createSphere)
-
     orbs = [...orbs.filter(orb => !deletedOrbs.includes(orb)), ...newOrbs]
+    geometry.setDrawRange(0, orbs.length)
   }
 
   const escaped = []
@@ -215,20 +223,20 @@ function simulate() {
   })
 
   if (escaped.length) {
-    escaped
-      .map(orb => spheres.children[orbs.indexOf(orb)])
-      .forEach(sphere => spheres.remove(sphere))
     orbs = orbs.filter(orb => !escaped.includes(orb))
+    geometry.setDrawRange(0, orbs.length)
   }
 }
 
 function update() {
-  spheres.children.forEach((sphere, i) => {
-    const orb = orbs[i]
-
-    // !i && console.log(sphere.position, orb.speed)
-    sphere.position.copy(orb.position)
+  orbs.forEach(({ position, weight, color }, i) => {
+    geometry.attributes.position.setXYZ(i, position.x, position.y, position.z)
+    geometry.attributes.scale.setX(i, 50 * Math.cbrt(weight))
+    geometry.attributes.color.setXYZ(i, color.r, color.g, color.b)
   })
+  geometry.attributes.position.needsUpdate = true
+  geometry.attributes.scale.needsUpdate = true
+  geometry.attributes.color.needsUpdate = true
 }
 
 init()
