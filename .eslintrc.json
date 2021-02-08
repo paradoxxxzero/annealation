@@ -1,0 +1,19 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "plugins": ["prettier", "import"],
+  "rules": {
+    "prettier/prettier": "error",
+    "import/no-anonymous-default-export": "off"
+  },
+  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "globals": {
+    "globalThis": false
+  }
+}
