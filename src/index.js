@@ -4,12 +4,7 @@ import {
   BufferGeometry,
   Color,
   FogExp2,
-  Group,
-  IcosahedronGeometry,
-  Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
-  PointLight,
   Points,
   ReinhardToneMapping,
   Scene,
@@ -26,6 +21,30 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 
+const params = {
+  // Effects
+  bloom: true,
+  bloomStrength: 1.5,
+  bloomRadius: 0.75,
+  bloomThreshold: 0,
+  bloomExposure: 0.75,
+  afterImage: false,
+  afterImageDamp: 0.75,
+  // Random init
+  initParticleSize: 1000,
+  initPositionRange: 1000,
+  initSpeedRange: 15,
+  initWeightRange: 10,
+  saturation: 1,
+  luminance: 0.5,
+  // Simulation params
+  gravitationalConstant: 6.67, // * 1e-11
+  simulationSpeed: 0.5, // * 1e19 s
+  collisionBase: 100,
+  collisionScale: 100,
+  escapeDistance: 10000,
+}
+
 const renderer = new WebGLRenderer({ antialias: true })
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -35,7 +54,6 @@ document.body.appendChild(renderer.domElement)
 
 const origin = new Vector3()
 const scene = new Scene()
-// scene.fog = new FogExp2(0x000000, 0.0002)
 
 const camera = new PerspectiveCamera(
   45,
@@ -50,29 +68,28 @@ const controls = new OrbitControls(camera, renderer.domElement)
 controls.minDistance = 1
 controls.maxDistance = 10000
 
-const ambientLight = new AmbientLight(0x404040)
-scene.add(ambientLight)
-
-const pointLight = new PointLight(0xffffff)
-scene.add(pointLight)
-
 const composer = new EffectComposer(renderer)
 
 const renderScene = new RenderPass(scene, camera)
 composer.addPass(renderScene)
 
-// const afterimagePass = new AfterimagePass()
-// afterimagePass.uniforms.damp.value = 0.6
-// composer.addPass(afterimagePass)
+const afterimagePass = new AfterimagePass()
+afterimagePass.uniforms.damp.value = params.afterImageDamp
+if (params.afterImage) {
+  composer.addPass(afterimagePass)
+}
 
 const bloomPass = new UnrealBloomPass(
   new Vector2(window.innerWidth, window.innerHeight),
-  1,
-  0.8,
-  0
+  params.bloomStrength,
+  params.bloomRadius,
+  params.bloomThreshold
 )
+renderer.toneMappingExposure = params.bloomExposure
 
-composer.addPass(bloomPass)
+if (params.bloom) {
+  composer.addPass(bloomPass)
+}
 
 window.addEventListener('resize', onWindowResize)
 
@@ -94,25 +111,21 @@ function render() {
   update(simulate())
   composer.render()
 }
-const initPositionRange = 1000
-const initSpeedRange = 15
-const initWeightRange = 10
-const S = 1
-const L = 0.5
-let orbs = new Array(1000).fill().map(() => ({
-  color: new Color().setHSL(Math.random(), S, L),
+
+let orbs = new Array(params.initParticleSize).fill().map(() => ({
+  color: new Color().setHSL(Math.random(), params.saturation, params.luminance),
   // weight 10^31 kg
-  weight: Math.random() * initWeightRange,
+  weight: Math.random() * params.initWeightRange,
   // distance 10^16 m
   position: new Vector3(
-    initPositionRange / 2 - Math.random() * initPositionRange,
-    initPositionRange / 2 - Math.random() * initPositionRange,
-    initPositionRange / 2 - Math.random() * initPositionRange
+    params.initPositionRange / 2 - Math.random() * params.initPositionRange,
+    params.initPositionRange / 2 - Math.random() * params.initPositionRange,
+    params.initPositionRange / 2 - Math.random() * params.initPositionRange
   ),
   speed: new Vector3(
-    initSpeedRange / 2 - Math.random() * initSpeedRange,
-    initSpeedRange / 2 - Math.random() * initSpeedRange,
-    initSpeedRange / 2 - Math.random() * initSpeedRange
+    params.initSpeedRange / 2 - Math.random() * params.initSpeedRange,
+    params.initSpeedRange / 2 - Math.random() * params.initSpeedRange,
+    params.initSpeedRange / 2 - Math.random() * params.initSpeedRange
   ),
   acceleration: new Vector3(),
 }))
@@ -127,7 +140,7 @@ let orbs = new Array(1000).fill().map(() => ({
 //   },
 //   {
 //     color: new Color(0, 1, 0),
-//     weight: 50,
+//     weight: 500,
 //     position: new Vector3(0, 100, 100),
 //     speed: new Vector3(),
 //     acceleration: new Vector3(),
@@ -191,14 +204,17 @@ function init() {
 }
 
 const u = new Vector3()
-const G = 6.67 // * 1e-11
-const dt = 0.5 // * 1e19 s
 
 function simulate() {
   var i,
     n,
     j,
     updated = false
+  const dt = params.simulationSpeed
+  const G = params.gravitationalConstant
+  const cb = params.collisionBase
+  const cs = params.collisionScale
+
   const collisions = []
   for (i = 0, n = orbs.length; i < n; i++) {
     const orb = orbs[i]
@@ -214,7 +230,9 @@ function simulate() {
       u.subVectors(otherOrb.position, orb.position)
       const distance2 = u.lengthSq()
 
-      if (distance2 < 100 + Math.cbrt(orb.weight * otherOrb.weight) * 100) {
+      if (
+        distance2 < Math.max(cb, cs * Math.cbrt(orb.weight * otherOrb.weight))
+      ) {
         if (!collisions.map(([, otherOrb]) => otherOrb).includes(orb)) {
           collisions.push([orb, otherOrb])
         }
@@ -243,7 +261,7 @@ function simulate() {
     const orb = orbs[i]
     orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
 
-    if (orb.position.distanceTo(origin) > 10000) {
+    if (orb.position.distanceTo(origin) > params.escapeDistance) {
       escaped.push(orb)
     }
   }
