@@ -67,7 +67,7 @@ composer.addPass(renderScene)
 
 const bloomPass = new UnrealBloomPass(
   new Vector2(window.innerWidth, window.innerHeight),
-  1.5,
+  1,
   0.8,
   0
 )
@@ -91,18 +91,18 @@ function animate() {
 
 function render() {
   // Array(10).fill().forEach(simulate)
-  simulate()
-  update()
+  update(simulate())
   composer.render()
 }
 const initPositionRange = 1000
-const initSpeedRange = 30
+const initSpeedRange = 15
+const initWeightRange = 10
 const S = 1
 const L = 0.5
-let orbs = new Array(5000).fill().map(() => ({
+let orbs = new Array(1000).fill().map(() => ({
   color: new Color().setHSL(Math.random(), S, L),
   // weight 10^31 kg
-  weight: Math.random() * 10,
+  weight: Math.random() * initWeightRange,
   // distance 10^16 m
   position: new Vector3(
     initPositionRange / 2 - Math.random() * initPositionRange,
@@ -117,24 +117,44 @@ let orbs = new Array(5000).fill().map(() => ({
   acceleration: new Vector3(),
 }))
 
+// let orbs = [
+//   {
+//     color: new Color(1, 0, 0),
+//     weight: 10,
+//     position: new Vector3(100, 100, 0),
+//     speed: new Vector3(),
+//     acceleration: new Vector3(),
+//   },
+//   {
+//     color: new Color(0, 1, 0),
+//     weight: 50,
+//     position: new Vector3(0, 100, 100),
+//     speed: new Vector3(),
+//     acceleration: new Vector3(),
+//   },
+//   {
+//     color: new Color(0, 0, 1),
+//     weight: 25,
+//     position: new Vector3(100, 0, 100),
+//     speed: new Vector3(),
+//     acceleration: new Vector3(),
+//   },
+// ]
 // const target = {}
 function collide([orb, otherOrb]) {
   return {
-    color:
-      //   new Color().setHSL(
-      //   (orb.color.getHSL(target).h * orb.weight +
-      //     otherOrb.color.getHSL(target).h * otherOrb.weight) /
-      //     (orb.weight + otherOrb.weight),
-      //   S,
-      //   L
-      // ),
-      orb.color.lerp(
-        otherOrb.color,
-        otherOrb.weight / (orb.weight + otherOrb.weight)
-      ),
+    color: orb.color.lerp(
+      otherOrb.color,
+      otherOrb.weight / (orb.weight + otherOrb.weight)
+    ),
     weight: orb.weight + otherOrb.weight,
     position: orb.weight > otherOrb.weight ? orb.position : otherOrb.position,
-    speed: new Vector3().addVectors(orb.speed, otherOrb.speed),
+    speed: new Vector3().addVectors(
+      orb.speed.multiplyScalar(orb.weight / (orb.weight + otherOrb.weight)),
+      otherOrb.speed.multiplyScalar(
+        otherOrb.weight / (orb.weight + otherOrb.weight)
+      )
+    ),
     acceleration: new Vector3(),
   }
 }
@@ -175,68 +195,85 @@ const G = 6.67 // * 1e-11
 const dt = 0.5 // * 1e19 s
 
 function simulate() {
+  var i,
+    n,
+    j,
+    updated = false
   const collisions = []
-  orbs.forEach(orb => {
-    orb.position.addScaledVector(orb.speed, 0.5 * dt)
-  })
-  orbs.forEach((orb, i) => {
+  for (i = 0, n = orbs.length; i < n; i++) {
+    const orb = orbs[i]
+    orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
+    orb.position.addScaledVector(orb.speed, dt)
+  }
+  for (i = 0, n = orbs.length; i < n; i++) {
+    const orb = orbs[i]
     orb.acceleration.set(0, 0, 0)
-    // ;[...orbs, blackHole].forEach((otherOrb, j) => {
-    orbs.forEach((otherOrb, j) => {
-      if (j >= i) {
-        return
-      }
+    for (j = 0; j < i; j++) {
+      const otherOrb = orbs[j]
 
       u.subVectors(otherOrb.position, orb.position)
-      const distance = Math.sqrt(100.0 + u.lengthSq())
+      const distance2 = u.lengthSq()
 
-      if (distance < 12) {
+      if (distance2 < 100 + Math.cbrt(orb.weight * otherOrb.weight) * 100) {
         if (!collisions.map(([, otherOrb]) => otherOrb).includes(orb)) {
           collisions.push([orb, otherOrb])
         }
-        return
+        break
       }
-      // 1e-11 * (1e31)^2 / (1e16)^2 -> 62 - 32 - 11 -> -19 -> dt 1e19 s
-      const attraction =
-        (G * (orb.weight * otherOrb.weight)) / (distance * distance * distance)
-      u.multiplyScalar(attraction)
-      orb.acceleration.add(u)
-      otherOrb.acceleration.sub(u)
-    })
-  })
+      u.normalize().multiplyScalar(
+        // 1e-11 * (1e31)^2 / (1e16)^2 -> 62 - 32 - 11 -> -19 -> dt 1e19 s
+        G / distance2
+      )
+      orb.acceleration.addScaledVector(u, otherOrb.weight)
+      otherOrb.acceleration.addScaledVector(u, -orb.weight)
+    }
+  }
+
   if (collisions.length) {
     const newOrbs = collisions.map(collide)
     const deletedOrbs = collisions.flat()
 
     orbs = [...orbs.filter(orb => !deletedOrbs.includes(orb)), ...newOrbs]
+    updated = true
     geometry.setDrawRange(0, orbs.length)
   }
 
   const escaped = []
-  orbs.forEach(orb => {
-    orb.speed.addScaledVector(orb.acceleration, dt)
-    orb.position.addScaledVector(orb.speed, 0.5 * dt)
+  for (i = 0, n = orbs.length; i < n; i++) {
+    const orb = orbs[i]
+    orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
 
-    if (orb.position.distanceTo(origin) > 5000) {
+    if (orb.position.distanceTo(origin) > 10000) {
       escaped.push(orb)
     }
-  })
+  }
 
   if (escaped.length) {
     orbs = orbs.filter(orb => !escaped.includes(orb))
+    updated = true
     geometry.setDrawRange(0, orbs.length)
   }
+  return updated
 }
 
-function update() {
-  orbs.forEach(({ position, weight, color }, i) => {
-    geometry.attributes.position.setXYZ(i, position.x, position.y, position.z)
-    geometry.attributes.scale.setX(i, 50 * Math.cbrt(weight))
-    geometry.attributes.color.setXYZ(i, color.r, color.g, color.b)
-  })
+function update(updated) {
+  for (var i = 0, n = orbs.length; i < n; i++) {
+    const orb = orbs[i]
+    geometry.attributes.position.setXYZ(
+      i,
+      orb.position.x,
+      orb.position.y,
+      orb.position.z
+    )
+
+    if (updated) {
+      geometry.attributes.scale.setX(i, 50 * Math.cbrt(orb.weight))
+      geometry.attributes.color.setXYZ(i, orb.color.r, orb.color.g, orb.color.b)
+    }
+  }
   geometry.attributes.position.needsUpdate = true
-  geometry.attributes.scale.needsUpdate = true
-  geometry.attributes.color.needsUpdate = true
+  geometry.attributes.scale.needsUpdate = updated
+  geometry.attributes.color.needsUpdate = updated
 }
 
 init()
