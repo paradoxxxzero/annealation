@@ -16,6 +16,8 @@ module.exports = {
     bundle: true,
   },
   packageOptions: {},
-  devOptions: {},
+  devOptions: {
+    port: 9009,
+  },
   buildOptions: {},
 }

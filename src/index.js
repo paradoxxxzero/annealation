@@ -2,7 +2,6 @@ import { GUI } from 'dat.gui'
 import {
   BufferAttribute,
   BufferGeometry,
-  Color,
   NoToneMapping,
   PerspectiveCamera,
   Points,
@@ -18,12 +17,16 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
+import * as configurations from './configurations'
 import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 
 const params = {
   // Effects
+  fxaa: true,
   bloom: true,
   bloomStrength: 1.5,
   bloomRadius: 0.75,
@@ -31,22 +34,26 @@ const params = {
   bloomExposure: 0.75,
   afterImage: false,
   afterImageDamp: 0.75,
-  // Random init
-  initParticleSize: 1000,
-  initPositionRange: 1000,
-  initSpeedRange: 15,
-  initWeightRange: 10,
+  // Configuration
+  configuration: 'randomCube',
+  number: 1000,
+  range: 1000,
+  speed: 15,
+  mass: 10, // 1e31 kg
+  scale: 50,
   saturation: 1,
   luminance: 0.5,
   // Simulation params
   gravitationalConstant: 6.67, // * 1e-11
   simulationSpeed: 0.5, // * 1e19 s
+  collisions: true,
   collisionBase: 100,
   collisionScale: 100,
   escapeDistance: 10000,
+  blackHoleMassThreshold: 10000,
 }
 
-const renderer = new WebGLRenderer({ antialias: true })
+const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.toneMapping = ReinhardToneMapping
@@ -62,6 +69,7 @@ const camera = new PerspectiveCamera(
   20000
 )
 camera.position.set(0, 0, 2000)
+camera.up.set(1, 0, 0)
 camera.lookAt(0, 0, 0)
 
 const controls = new OrbitControls(camera, renderer.domElement)
@@ -70,14 +78,23 @@ controls.maxDistance = 10000
 
 const composer = new EffectComposer(renderer)
 
-const renderScene = new RenderPass(scene, camera)
-composer.addPass(renderScene)
+const renderPass = new RenderPass(scene, camera)
+composer.addPass(renderPass)
+
+const fxaaPass = new ShaderPass(FXAAShader)
+const pixelRatio = renderer.getPixelRatio()
+
+fxaaPass.material.uniforms.resolution.value.x =
+  1 / (window.innerWidth * pixelRatio)
+fxaaPass.material.uniforms.resolution.value.y =
+  1 / (window.innerHeight * pixelRatio)
+fxaaPass.enabled = params.fxaa
+composer.addPass(fxaaPass)
 
 const afterImagePass = new AfterimagePass()
 afterImagePass.uniforms.damp.value = params.afterImageDamp
-if (params.afterImage) {
-  composer.addPass(afterImagePass)
-}
+afterImagePass.enabled = params.afterImage
+composer.addPass(afterImagePass)
 
 const bloomPass = new UnrealBloomPass(
   new Vector2(window.innerWidth, window.innerHeight),
@@ -87,9 +104,8 @@ const bloomPass = new UnrealBloomPass(
 )
 renderer.toneMappingExposure = params.bloomExposure
 
-if (params.bloom) {
-  composer.addPass(bloomPass)
-}
+bloomPass.enabled = params.bloom
+composer.addPass(bloomPass)
 
 window.addEventListener('resize', onWindowResize)
 
@@ -99,6 +115,13 @@ function onWindowResize() {
 
   renderer.setSize(window.innerWidth, window.innerHeight)
   composer.setSize(window.innerWidth, window.innerHeight)
+
+  const pixelRatio = renderer.getPixelRatio()
+
+  fxaaPass.material.uniforms.resolution.value.x =
+    1 / (window.innerWidth * pixelRatio)
+  fxaaPass.material.uniforms.resolution.value.y =
+    1 / (window.innerHeight * pixelRatio)
 }
 
 function animate() {
@@ -112,88 +135,40 @@ function render() {
   composer.render()
 }
 
-// let orbs = [
-//   {
-//     color: new Color(1, 0, 0),
-//     weight: 10,
-//     position: new Vector3(100, 100, 0),
-//     speed: new Vector3(),
-//     acceleration: new Vector3(),
-//   },
-//   {
-//     color: new Color(0, 1, 0),
-//     weight: 500,
-//     position: new Vector3(0, 100, 100),
-//     speed: new Vector3(),
-//     acceleration: new Vector3(),
-//   },
-//   {
-//     color: new Color(0, 0, 1),
-//     weight: 25,
-//     position: new Vector3(100, 0, 100),
-//     speed: new Vector3(),
-//     acceleration: new Vector3(),
-//   },
-// ]
-// const target = {}
 function collide([orb, otherOrb]) {
   return {
     color: orb.color.lerp(
       otherOrb.color,
-      otherOrb.weight / (orb.weight + otherOrb.weight)
+      otherOrb.mass / (orb.mass + otherOrb.mass)
     ),
-    weight: orb.weight + otherOrb.weight,
-    position: orb.weight > otherOrb.weight ? orb.position : otherOrb.position,
+    mass: orb.mass + otherOrb.mass,
+    position: orb.mass > otherOrb.mass ? orb.position : otherOrb.position,
     speed: new Vector3().addVectors(
-      orb.speed.multiplyScalar(orb.weight / (orb.weight + otherOrb.weight)),
-      otherOrb.speed.multiplyScalar(
-        otherOrb.weight / (orb.weight + otherOrb.weight)
-      )
+      orb.speed.multiplyScalar(orb.mass / (orb.mass + otherOrb.mass)),
+      otherOrb.speed.multiplyScalar(otherOrb.mass / (orb.mass + otherOrb.mass))
     ),
     acceleration: new Vector3(),
   }
 }
 let geometry, orbs
 
-function initOrbs() {
-  orbs = new Array(params.initParticleSize).fill().map(() => ({
-    color: new Color().setHSL(
-      Math.random(),
-      params.saturation,
-      params.luminance
-    ),
-    // weight 10^31 kg
-    weight: Math.random() * params.initWeightRange,
-    // distance 10^16 m
-    position: new Vector3(
-      params.initPositionRange / 2 - Math.random() * params.initPositionRange,
-      params.initPositionRange / 2 - Math.random() * params.initPositionRange,
-      params.initPositionRange / 2 - Math.random() * params.initPositionRange
-    ),
-    speed: new Vector3(
-      params.initSpeedRange / 2 - Math.random() * params.initSpeedRange,
-      params.initSpeedRange / 2 - Math.random() * params.initSpeedRange,
-      params.initSpeedRange / 2 - Math.random() * params.initSpeedRange
-    ),
-    acceleration: new Vector3(),
-  }))
-}
-
 function init() {
-  initOrbs()
+  orbs = configurations[params.configuration](params)
   geometry = new BufferGeometry()
   const positions = new Float32Array(orbs.length * 3)
   const scales = new Float32Array(orbs.length)
   const colors = new Float32Array(orbs.length * 3)
   geometry.setDrawRange(0, orbs.length)
-  orbs.forEach(({ position, weight, color }, i) => {
+  orbs.forEach(({ position, mass, color }, i) => {
+    const blackHole = mass > params.blackHoleMassThreshold
     positions[i * 3] = position.x
     positions[i * 3 + 1] = position.y
     positions[i * 3 + 2] = position.z
-    scales[i] = 50 * Math.cbrt(weight)
-    colors[i * 3] = color.r
-    colors[i * 3 + 1] = color.g
-    colors[i * 3 + 2] = color.b
+    scales[i] =
+      params.scale * (blackHole ? Math.pow(mass, 0.1) : Math.cbrt(mass))
+    colors[i * 3] = blackHole ? 0 : color.r
+    colors[i * 3 + 1] = blackHole ? 0 : color.g
+    colors[i * 3 + 2] = blackHole ? 0 : color.b
   })
 
   geometry.setAttribute('position', new BufferAttribute(positions, 3))
@@ -217,12 +192,16 @@ function simulate() {
     n,
     j,
     updated = false
-  const dt = params.simulationSpeed
-  const G = params.gravitationalConstant
-  const cb = params.collisionBase
-  const cs = params.collisionScale
 
-  const collisions = []
+  const {
+    simulationSpeed: dt,
+    gravitationalConstant: G,
+    collisions,
+    collisionBase,
+    collisionScale,
+  } = params
+
+  const collided = []
   for (i = 0, n = orbs.length; i < n; i++) {
     const orb = orbs[i]
     orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
@@ -235,28 +214,35 @@ function simulate() {
       const otherOrb = orbs[j]
 
       u.subVectors(otherOrb.position, orb.position)
-      const distance2 = u.lengthSq()
-
-      if (
-        distance2 < Math.max(cb, cs * Math.cbrt(orb.weight * otherOrb.weight))
-      ) {
-        if (!collisions.map(([, otherOrb]) => otherOrb).includes(orb)) {
-          collisions.push([orb, otherOrb])
+      let distance2 = u.lengthSq()
+      if (collisions) {
+        if (
+          distance2 <
+          Math.max(
+            collisionBase,
+            collisionScale * Math.cbrt(orb.mass * otherOrb.mass)
+          )
+        ) {
+          if (!collided.map(([, otherOrb]) => otherOrb).includes(orb)) {
+            collided.push([orb, otherOrb])
+          }
+          break
         }
-        break
+      } else {
+        distance2 += collisionBase
       }
       u.normalize().multiplyScalar(
         // 1e-11 * (1e31)^2 / (1e16)^2 -> 62 - 32 - 11 -> -19 -> dt 1e19 s
         G / distance2
       )
-      orb.acceleration.addScaledVector(u, otherOrb.weight)
-      otherOrb.acceleration.addScaledVector(u, -orb.weight)
+      orb.acceleration.addScaledVector(u, otherOrb.mass)
+      otherOrb.acceleration.addScaledVector(u, -orb.mass)
     }
   }
 
-  if (collisions.length) {
-    const newOrbs = collisions.map(collide)
-    const deletedOrbs = collisions.flat()
+  if (collided.length) {
+    const newOrbs = collided.map(collide)
+    const deletedOrbs = collided.flat()
 
     orbs = [...orbs.filter(orb => !deletedOrbs.includes(orb)), ...newOrbs]
     updated = true
@@ -282,6 +268,7 @@ function simulate() {
 }
 
 function update(updated) {
+  const { scale, blackHoleMassThreshold } = params
   for (var i = 0, n = orbs.length; i < n; i++) {
     const orb = orbs[i]
     geometry.attributes.position.setXYZ(
@@ -292,8 +279,18 @@ function update(updated) {
     )
 
     if (updated) {
-      geometry.attributes.scale.setX(i, 50 * Math.cbrt(orb.weight))
-      geometry.attributes.color.setXYZ(i, orb.color.r, orb.color.g, orb.color.b)
+      const blackHole = orb.mass > blackHoleMassThreshold
+
+      geometry.attributes.scale.setX(
+        i,
+        scale * (blackHole ? Math.pow(orb.mass, 0.1) : Math.cbrt(orb.mass))
+      )
+      geometry.attributes.color.setXYZ(
+        i,
+        blackHole ? 0 : orb.color.r,
+        blackHole ? 0 : orb.color.g,
+        blackHole ? 0 : orb.color.b
+      )
     }
   }
   geometry.attributes.position.needsUpdate = true
@@ -306,15 +303,10 @@ const gui = new GUI({
   preset: decodeURIComponent(location.hash.replace(/^#/, '')) || 'Tesseract',
 })
 const fx = gui.addFolder('Render fx')
+fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
 fx.add(params, 'bloom').onChange(on => {
-  if (on && !composer.passes.includes(bloomPass)) {
-    renderer.toneMapping = ReinhardToneMapping
-    composer.addPass(bloomPass)
-  }
-  if (!on && composer.passes.includes(bloomPass)) {
-    renderer.toneMapping = NoToneMapping
-    composer.removePass(bloomPass)
-  }
+  bloomPass.enabled = on
+  renderer.toneMapping = on ? ReinhardToneMapping : NoToneMapping
 })
 fx.add(params, 'bloomStrength', 0, 3).onChange(v => (bloomPass.strength = v))
 fx.add(params, 'bloomRadius', 0, 1).onChange(v => (bloomPass.radius = v))
@@ -322,29 +314,20 @@ fx.add(params, 'bloomThreshold', 0, 1).onChange(v => (bloomPass.threshold = v))
 fx.add(params, 'bloomExposure', 0.001, 128).onChange(
   v => (renderer.toneMappingExposure = v)
 )
-fx.add(params, 'afterImage').onChange(on => {
-  if (on && !composer.passes.includes(afterImagePass)) {
-    if (composer.passes.includes(bloomPass)) {
-      composer.insertPass(afterImagePass, composer.passes.indexOf(bloomPass))
-    } else {
-      composer.addPass(afterImagePass)
-    }
-  }
-  if (!on && composer.passes.includes(afterImagePass)) {
-    composer.removePass(afterImagePass)
-  }
-})
+fx.add(params, 'afterImage').onChange(on => (afterImagePass.enabled = on))
 fx.add(params, 'afterImageDamp', 0, 1).onChange(
   v => (afterImagePass.uniforms.damp.value = v)
 )
-const initParams = gui.addFolder('Initialization')
-initParams.add(params, 'initParticleSize', 0, 5000, 1)
-initParams.add(params, 'initPositionRange', 0, 5000, 1)
-initParams.add(params, 'initSpeedRange', 0, 100)
-initParams.add(params, 'initWeightRange', 0, 100)
-initParams.add(params, 'saturation', 0, 1)
-initParams.add(params, 'luminance', 0, 1)
-initParams.add(
+const config = gui.addFolder('Configuration')
+config.add(params, 'configuration', Object.keys(configurations))
+config.add(params, 'number', 0, 5000, 1)
+config.add(params, 'range', 0, 5000, 1)
+config.add(params, 'speed', 0, 1000)
+config.add(params, 'mass', 0, 100000)
+config.add(params, 'scale', 0, 1000)
+config.add(params, 'saturation', 0, 1)
+config.add(params, 'luminance', 0, 1)
+config.add(
   {
     restart: () => {
       scene.clear()
@@ -354,13 +337,15 @@ initParams.add(
   'restart'
 )
 
-initParams.open()
+config.open()
 const simulation = gui.addFolder('Simulation')
 simulation.add(params, 'gravitationalConstant', 0.0, 25.0, 0.1)
 simulation.add(params, 'simulationSpeed', 0.0, 10.0, 0.01)
+simulation.add(params, 'collisions')
 simulation.add(params, 'collisionBase', 0, 1000, 1)
 simulation.add(params, 'collisionScale', 0, 1000, 1)
 simulation.add(params, 'escapeDistance', 0, 100000, 1)
+simulation.add(params, 'blackHoleMassThreshold', 0, 1000000, 1)
 simulation.open()
 
 gui.remember(params)
