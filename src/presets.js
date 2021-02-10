@@ -3,6 +3,7 @@ export default {
   remembered: {
     RandomCube: {
       0: {
+        fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
         bloomRadius: 0.75,
@@ -15,6 +16,8 @@ export default {
         range: 1000,
         speed: 15,
         mass: 10,
+        blackHoleMass: 0,
+        scale: 50,
         saturation: 1,
         luminance: 0.5,
         gravitationalConstant: 6.7,
@@ -23,6 +26,7 @@ export default {
         collisionBase: 100,
         collisionScale: 100,
         escapeDistance: 10000,
+        blackHoleMassThreshold: 10000,
       },
     },
     Galaxy: {
@@ -34,11 +38,13 @@ export default {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: 'proceduralDisc',
-        number: 1000,
+        configuration: 'randomDisc',
+        number: 1500,
         range: 1000,
         speed: 15,
-        mass: 100000,
+        mass: 10,
+        blackHoleMass: 100000,
+        scale: 30,
         saturation: 1,
         luminance: 0.5,
         gravitationalConstant: 6.7,

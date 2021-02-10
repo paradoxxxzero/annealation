@@ -40,6 +40,7 @@ const params = {
   range: 1000,
   speed: 15,
   mass: 10, // 1e31 kg
+  blackHoleMass: 10000, // 1e31 kg
   scale: 50,
   saturation: 1,
   luminance: 0.5,
@@ -69,7 +70,7 @@ const camera = new PerspectiveCamera(
   20000
 )
 camera.position.set(0, 0, 2000)
-camera.up.set(1, 0, 0)
+// camera.up.set(1, 0, 0)
 camera.lookAt(0, 0, 0)
 
 const controls = new OrbitControls(camera, renderer.domElement)
@@ -160,7 +161,7 @@ function init() {
   const colors = new Float32Array(orbs.length * 3)
   geometry.setDrawRange(0, orbs.length)
   orbs.forEach(({ position, mass, color }, i) => {
-    const blackHole = mass > params.blackHoleMassThreshold
+    const blackHole = mass >= params.blackHoleMassThreshold
     positions[i * 3] = position.x
     positions[i * 3 + 1] = position.y
     positions[i * 3 + 2] = position.z
@@ -279,7 +280,7 @@ function update(updated) {
     )
 
     if (updated) {
-      const blackHole = orb.mass > blackHoleMassThreshold
+      const blackHole = orb.mass >= blackHoleMassThreshold
 
       geometry.attributes.scale.setX(
         i,
@@ -296,6 +297,11 @@ function update(updated) {
   geometry.attributes.position.needsUpdate = true
   geometry.attributes.scale.needsUpdate = updated
   geometry.attributes.color.needsUpdate = updated
+}
+
+function restart() {
+  scene.clear()
+  init()
 }
 
 const gui = new GUI({
@@ -323,16 +329,14 @@ config.add(params, 'configuration', Object.keys(configurations))
 config.add(params, 'number', 0, 5000, 1)
 config.add(params, 'range', 0, 5000, 1)
 config.add(params, 'speed', 0, 1000)
-config.add(params, 'mass', 0, 100000)
+config.add(params, 'mass', 0, 1000)
+config.add(params, 'blackHoleMass', 0, 1000000, 1000)
 config.add(params, 'scale', 0, 1000)
 config.add(params, 'saturation', 0, 1)
 config.add(params, 'luminance', 0, 1)
 config.add(
   {
-    restart: () => {
-      scene.clear()
-      init()
-    },
+    restart,
   },
   'restart'
 )
@@ -352,11 +356,13 @@ gui.remember(params)
 gui.revert()
 gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
   location.hash = `#${encodeURIComponent(value)}`
+  restart()
 })
 window.addEventListener('hashchange', () => {
   gui.preset =
-    decodeURIComponent(location.hash.replace(/^#/, '')) || 'Tesseract'
+    decodeURIComponent(location.hash.replace(/^#/, '')) || 'RandomCube'
   gui.revert()
+  restart()
 })
 
 init()

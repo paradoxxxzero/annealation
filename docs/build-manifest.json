@@ -1,0 +1,300 @@
+{
+  "inputs": {
+    "index.css": {
+      "bytes": 42,
+      "imports": []
+    },
+    "_snowpack/pkg/dat.gui.js": {
+      "bytes": 86125,
+      "imports": []
+    },
+    "_snowpack/pkg/common/three.module-899d7702.js": {
+      "bytes": 1009359,
+      "imports": []
+    },
+    "_snowpack/pkg/three.js": {
+      "bytes": 287,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/common/Pass-a8ca9318.js": {
+      "bytes": 1789,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/postprocessing/AfterimagePass.js": {
+      "bytes": 3234,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/controls/OrbitControls.js": {
+      "bytes": 25115,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/common/CopyShader-c0a4c94f.js": {
+      "bytes": 597,
+      "imports": []
+    },
+    "_snowpack/pkg/common/ShaderPass-28c729ad.js": {
+      "bytes": 1561,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/postprocessing/EffectComposer.js": {
+      "bytes": 8816,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/CopyShader-c0a4c94f.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/ShaderPass-28c729ad.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/postprocessing/RenderPass.js": {
+      "bytes": 1901,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/postprocessing/UnrealBloomPass.js": {
+      "bytes": 13838,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/CopyShader-c0a4c94f.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "_snowpack/pkg/three/examples/jsm/shaders/FXAAShader.js": {
+      "bytes": 52398,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/configurations.js": {
+      "bytes": 3275,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/three.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/fragmentShader.js": {
+      "bytes": 628,
+      "imports": []
+    },
+    "dist/vertexShader.js": {
+      "bytes": 283,
+      "imports": []
+    },
+    "dist/presets.js": {
+      "bytes": 1679,
+      "imports": []
+    },
+    "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
+      "bytes": 177,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/common/ShaderPass-28c729ad.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/three.module-899d7702.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/common/Pass-a8ca9318.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/index.js": {
+      "bytes": 10661,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/dat.gui.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/postprocessing/AfterimagePass.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/controls/OrbitControls.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/postprocessing/EffectComposer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/postprocessing/RenderPass.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/shaders/FXAAShader.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/configurations.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/fragmentShader.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/vertexShader.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/presets.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js",
+          "kind": "import-statement"
+        }
+      ]
+    }
+  },
+  "outputs": {
+    "../~~bundle~~/index.css": {
+      "imports": [],
+      "inputs": {
+        "index.css": {
+          "bytesInOutput": 42
+        }
+      },
+      "bytes": 58
+    },
+    "../~~bundle~~/dist/index.js": {
+      "imports": [],
+      "exports": [],
+      "inputs": {
+        "_snowpack/pkg/dat.gui.js": {
+          "bytesInOutput": 86069
+        },
+        "_snowpack/pkg/common/three.module-899d7702.js": {
+          "bytesInOutput": 921611
+        },
+        "_snowpack/pkg/three.js": {
+          "bytesInOutput": 0
+        },
+        "_snowpack/pkg/common/Pass-a8ca9318.js": {
+          "bytesInOutput": 965
+        },
+        "_snowpack/pkg/three/examples/jsm/postprocessing/AfterimagePass.js": {
+          "bytesInOutput": 2706
+        },
+        "_snowpack/pkg/three/examples/jsm/controls/OrbitControls.js": {
+          "bytesInOutput": 21711
+        },
+        "_snowpack/pkg/common/CopyShader-c0a4c94f.js": {
+          "bytesInOutput": 525
+        },
+        "_snowpack/pkg/common/ShaderPass-28c729ad.js": {
+          "bytesInOutput": 1249
+        },
+        "_snowpack/pkg/three/examples/jsm/postprocessing/EffectComposer.js": {
+          "bytesInOutput": 7429
+        },
+        "_snowpack/pkg/three/examples/jsm/postprocessing/RenderPass.js": {
+          "bytesInOutput": 1605
+        },
+        "_snowpack/pkg/three/examples/jsm/postprocessing/UnrealBloomPass.js": {
+          "bytesInOutput": 12365
+        },
+        "_snowpack/pkg/three/examples/jsm/shaders/FXAAShader.js": {
+          "bytesInOutput": 54260
+        },
+        "dist/configurations.js": {
+          "bytesInOutput": 1972
+        },
+        "dist/fragmentShader.js": {
+          "bytesInOutput": 644
+        },
+        "dist/vertexShader.js": {
+          "bytesInOutput": 297
+        },
+        "dist/presets.js": {
+          "bytesInOutput": 1665
+        },
+        "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
+          "bytesInOutput": 0
+        },
+        "dist/index.js": {
+          "bytesInOutput": 9116
+        }
+      },
+      "bytes": 1125194
+    }
+  }
+}

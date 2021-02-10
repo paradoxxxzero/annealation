@@ -19,5 +19,5 @@ module.exports = {
   devOptions: {
     port: 9009,
   },
-  buildOptions: {},
+  buildOptions: { out: 'docs' },
 }
