@@ -28,7 +28,7 @@ const getPreset = () =>
   decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
 const preset = getPreset()
 
-const params = presets.remembered[preset][0]
+const params = { ...presets.remembered[preset][0] }
 
 const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -335,13 +335,17 @@ gui.remember(params)
 gui.revert()
 gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
   location.hash = `#${encodeURIComponent(value)}`
-  restart()
 })
 window.addEventListener('hashchange', () => {
   gui.preset = getPreset()
-  gui.revert()
   restart()
 })
 
 init()
 requestAnimationFrame(animate)
+window.__ = {
+  gui,
+  orbs,
+  geometry,
+  scene,
+}

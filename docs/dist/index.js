@@ -29056,7 +29056,7 @@ var presets_default = {
         blackHoleMassThreshold: 1e4
       }
     },
-    RamdomSphere: {
+    RandomSphere: {
       0: {
         fxaa: true,
         bloom: true,
@@ -29164,7 +29164,7 @@ var presets_default = {
 // dist/index.js
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
-var params = presets_default.remembered[preset][0];
+var params = {...presets_default.remembered[preset][0]};
 var renderer = new WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29374,12 +29374,16 @@ gui.remember(params);
 gui.revert();
 gui.__preset_select.addEventListener("change", ({target: {value}}) => {
   location.hash = `#${encodeURIComponent(value)}`;
-  restart();
 });
 window.addEventListener("hashchange", () => {
   gui.preset = getPreset();
-  gui.revert();
   restart();
 });
 init();
 requestAnimationFrame(animate);
+window.__ = {
+  gui,
+  orbs,
+  geometry,
+  scene
+};

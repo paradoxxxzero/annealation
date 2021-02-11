@@ -57,7 +57,7 @@ export default {
         blackHoleMassThreshold: 10000,
       },
     },
-    RamdomSphere: {
+    RandomSphere: {
       0: {
         fxaa: true,
         bloom: true,
