@@ -2226,16 +2226,16 @@ function recallSavedValue(gui2, controller) {
     controllerMap[controller.property] = controller;
     if (root.load && root.load.remembered) {
       var presetMap = root.load.remembered;
-      var preset = void 0;
+      var preset2 = void 0;
       if (presetMap[gui2.preset]) {
-        preset = presetMap[gui2.preset];
+        preset2 = presetMap[gui2.preset];
       } else if (presetMap[DEFAULT_DEFAULT_PRESET_NAME]) {
-        preset = presetMap[DEFAULT_DEFAULT_PRESET_NAME];
+        preset2 = presetMap[DEFAULT_DEFAULT_PRESET_NAME];
       } else {
         return;
       }
-      if (preset[matchedIndex] && preset[matchedIndex][controller.property] !== void 0) {
-        var value = preset[matchedIndex][controller.property];
+      if (preset2[matchedIndex] && preset2[matchedIndex][controller.property] !== void 0) {
+        var value = preset2[matchedIndex][controller.property];
         controller.initialValue = value;
         controller.setValue(value);
       }
@@ -28789,8 +28789,11 @@ var FXAAShader = {
 // dist/configurations.js
 var configurations_exports = {};
 __export(configurations_exports, {
+  collidingDisc: () => collidingDisc,
   randomCube: () => randomCube,
-  randomDisc: () => randomDisc
+  randomDisc: () => randomDisc,
+  randomSphere: () => randomSphere,
+  solarSystem: () => solarSystem
 });
 var randomCube = ({
   number,
@@ -28820,10 +28823,46 @@ var randomCube = ({
     };
   });
 };
+var randomSphere = ({
+  number,
+  range,
+  mass,
+  blackHoleMass,
+  saturation,
+  luminance,
+  gravitationalConstant
+}) => {
+  const spherical = new Spherical();
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color2(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3()
+      };
+    }
+    spherical.radius = range * Math.cbrt(Math.random());
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.acos(2 * Math.random() - 1);
+    const position = new Vector3().setFromSpherical(spherical);
+    const x = 1 - 2 * Math.random();
+    const y = 1 - 2 * Math.random();
+    const z = -(x * position.x + y * position.y) / position.z;
+    const speed = new Vector3(x, y, z).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    return {
+      color: new Color2().setHSL(Math.random(), saturation, luminance),
+      mass: Math.random() * mass,
+      position,
+      speed,
+      acceleration: new Vector3()
+    };
+  });
+};
 var randomDisc = ({
   number,
   range,
-  speed,
   mass,
   blackHoleMass,
   saturation,
@@ -28852,6 +28891,103 @@ var randomDisc = ({
       acceleration: new Vector3()
     };
   });
+};
+var solarSystem = ({gravitationalConstant}) => {
+  const spherical = new Spherical();
+  spherical.theta = Math.PI / 2;
+  const sun = {
+    color: new Color2(1, 1, 0),
+    mass: 1989e3,
+    position: new Vector3(),
+    speed: new Vector3(),
+    acceleration: new Vector3()
+  };
+  const planete = (mass, radius, color) => {
+    spherical.radius = radius;
+    spherical.phi = Math.random() * 2 * Math.PI;
+    return {
+      color,
+      mass,
+      position: new Vector3().setFromSpherical(spherical),
+      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * sun.mass / spherical.radius)),
+      acceleration: new Vector3()
+    };
+  };
+  const mercury = planete(0.3285, 57.909, new Color2(0.8, 0.8, 0.8));
+  const venus = planete(4.867, 108.16, new Color2(0.8, 0.8, 0));
+  const earth = planete(5.972, 149.6, new Color2(0.15, 0.25, 1));
+  const mars = planete(0.639, 227.99, new Color2(1, 0.5, 0.25));
+  const jupiter = planete(1898, 778.36, new Color2(1, 0.65, 0.46));
+  const saturn = planete(568.3, 1433.5, new Color2(0.55, 0.54, 0.4));
+  const uranus = planete(86.81, 2872.4, new Color2(0, 1, 1));
+  const neptune = planete(102.4, 4498.4, new Color2(0, 0, 1));
+  const satellite = (mass, radius, color, planete2) => {
+    spherical.radius = radius;
+    spherical.phi = Math.random() * 2 * Math.PI;
+    return {
+      color,
+      mass,
+      position: new Vector3().setFromSpherical(spherical).add(planete2.position),
+      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * planete2.mass / spherical.radius)),
+      acceleration: new Vector3()
+    };
+  };
+  const moon = satellite(0.07342, 0.3844, new Color2(1, 1, 1), earth);
+  return [
+    sun,
+    mercury,
+    venus,
+    earth,
+    moon,
+    mars,
+    jupiter,
+    saturn,
+    uranus,
+    neptune
+  ];
+};
+var collidingDisc = ({
+  number,
+  range,
+  mass,
+  blackHoleMass,
+  saturation,
+  luminance,
+  gravitationalConstant
+}) => {
+  const spherical = new Spherical();
+  const orbs2 = new Array(number).fill().map((_, i) => {
+    if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
+      return {
+        color: new Color2(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3()
+      };
+    }
+    spherical.radius = range * Math.sqrt(Math.random());
+    spherical.theta = Math.PI / 2 - Math.random() * 0.2;
+    spherical.phi = Math.random() * 2 * Math.PI;
+    return {
+      color: new Color2().setHSL(Math.random(), saturation, luminance),
+      mass: Math.random() * mass,
+      position: new Vector3().setFromSpherical(spherical),
+      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius)),
+      acceleration: new Vector3()
+    };
+  });
+  const firstShift = new Vector3(1e3, 800, 400);
+  const secondShift = new Vector3(-400, -800, -1e3);
+  const firstDisc = orbs2.slice(0, ~~(number / 2));
+  const secondDisc = orbs2.slice(~~(number / 2));
+  firstDisc.forEach((orb) => {
+    orb.position.add(firstShift);
+  });
+  secondDisc.forEach((orb) => {
+    orb.position.add(secondShift);
+  });
+  return orbs2;
 };
 
 // dist/fragmentShader.js
@@ -28883,7 +29019,7 @@ var presets_default = {
         scale: 50,
         saturation: 1,
         luminance: 0.5,
-        gravitationalConstant: 6.7,
+        gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         collisions: true,
         collisionBase: 100,
@@ -28894,6 +29030,7 @@ var presets_default = {
     },
     Galaxy: {
       0: {
+        fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
         bloomRadius: 0.75,
@@ -28910,12 +29047,97 @@ var presets_default = {
         scale: 30,
         saturation: 1,
         luminance: 0.5,
-        gravitationalConstant: 6.7,
+        gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         collisions: false,
         collisionBase: 100,
         collisionScale: 100,
-        escapeDistance: 1e4
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    RamdomSphere: {
+      0: {
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "randomSphere",
+        number: 1500,
+        range: 500,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 30,
+        saturation: 1,
+        luminance: 0.5,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.1,
+        collisions: false,
+        collisionBase: 50,
+        collisionScale: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 5e5
+      }
+    },
+    ProtoSolarSystem: {
+      0: {
+        fxaa: true,
+        bloom: false,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 1,
+        configuration: "solarSystem",
+        number: 1e3,
+        range: 1e3,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 3,
+        saturation: 1,
+        luminance: 0.5,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.01,
+        collisions: false,
+        collisionBase: 100,
+        collisionScale: 100,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 2e6
+      }
+    },
+    CollidingGalaxies: {
+      0: {
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "collidingDisc",
+        number: 1500,
+        range: 1e3,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 30,
+        saturation: 1,
+        luminance: 0.5,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.5,
+        collisions: true,
+        collisionBase: 302,
+        collisionScale: 1,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 5e5
       }
     }
   },
@@ -28940,32 +29162,9 @@ var presets_default = {
 };
 
 // dist/index.js
-var params = {
-  fxaa: true,
-  bloom: true,
-  bloomStrength: 1.5,
-  bloomRadius: 0.75,
-  bloomThreshold: 0,
-  bloomExposure: 0.75,
-  afterImage: false,
-  afterImageDamp: 0.75,
-  configuration: "randomCube",
-  number: 1e3,
-  range: 1e3,
-  speed: 15,
-  mass: 10,
-  blackHoleMass: 1e4,
-  scale: 50,
-  saturation: 1,
-  luminance: 0.5,
-  gravitationalConstant: 6.67,
-  simulationSpeed: 0.5,
-  collisions: true,
-  collisionBase: 100,
-  collisionScale: 100,
-  escapeDistance: 1e4,
-  blackHoleMassThreshold: 1e4
-};
+var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
+var preset = getPreset();
+var params = presets_default.remembered[preset][0];
 var renderer = new WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -28978,7 +29177,7 @@ camera.position.set(0, 0, 2e3);
 camera.lookAt(0, 0, 0);
 var controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 1;
-controls.maxDistance = 1e4;
+controls.maxDistance = 2e4;
 var composer = new EffectComposer(renderer);
 var renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
@@ -29134,7 +29333,7 @@ function restart() {
 }
 var gui = new GUI$1({
   load: presets_default,
-  preset: decodeURIComponent(location.hash.replace(/^#/, "")) || "Tesseract"
+  preset
 });
 var fx = gui.addFolder("Render fx");
 fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);
@@ -29151,9 +29350,9 @@ fx.add(params, "afterImageDamp", 0, 1).onChange((v) => afterImagePass.uniforms.d
 var config = gui.addFolder("Configuration");
 config.add(params, "configuration", Object.keys(configurations_exports));
 config.add(params, "number", 0, 5e3, 1);
-config.add(params, "range", 0, 5e3, 1);
-config.add(params, "speed", 0, 1e3);
-config.add(params, "mass", 0, 1e3);
+config.add(params, "range", 0, 5e3, 1).name("range (1e15m)");
+config.add(params, "speed", 0, 1e3).name("speed (1e2m.s)");
+config.add(params, "mass", 0, 1e3).name("mass (1e30kg)");
 config.add(params, "blackHoleMass", 0, 1e6, 1e3);
 config.add(params, "scale", 0, 1e3);
 config.add(params, "saturation", 0, 1);
@@ -29163,13 +29362,13 @@ config.add({
 }, "restart");
 config.open();
 var simulation = gui.addFolder("Simulation");
-simulation.add(params, "gravitationalConstant", 0, 25, 0.1);
-simulation.add(params, "simulationSpeed", 0, 10, 0.01);
+simulation.add(params, "gravitationalConstant", 0, 25, 0.01);
+simulation.add(params, "simulationSpeed", 0, 100, 1e-3).name("speed (1e13s)");
 simulation.add(params, "collisions");
 simulation.add(params, "collisionBase", 0, 1e3, 1);
 simulation.add(params, "collisionScale", 0, 1e3, 1);
 simulation.add(params, "escapeDistance", 0, 1e5, 1);
-simulation.add(params, "blackHoleMassThreshold", 0, 1e6, 1);
+simulation.add(params, "blackHoleMassThreshold", 0, 2e6, 1);
 simulation.open();
 gui.remember(params);
 gui.revert();
@@ -29178,7 +29377,7 @@ gui.__preset_select.addEventListener("change", ({target: {value}}) => {
   restart();
 });
 window.addEventListener("hashchange", () => {
-  gui.preset = decodeURIComponent(location.hash.replace(/^#/, "")) || "RandomCube";
+  gui.preset = getPreset();
   gui.revert();
   restart();
 });

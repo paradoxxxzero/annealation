@@ -24,35 +24,11 @@ import vertexShader from './vertexShader.glsl'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 
-const params = {
-  // Effects
-  fxaa: true,
-  bloom: true,
-  bloomStrength: 1.5,
-  bloomRadius: 0.75,
-  bloomThreshold: 0,
-  bloomExposure: 0.75,
-  afterImage: false,
-  afterImageDamp: 0.75,
-  // Configuration
-  configuration: 'randomCube',
-  number: 1000,
-  range: 1000,
-  speed: 15,
-  mass: 10, // 1e31 kg
-  blackHoleMass: 10000, // 1e31 kg
-  scale: 50,
-  saturation: 1,
-  luminance: 0.5,
-  // Simulation params
-  gravitationalConstant: 6.67, // * 1e-11
-  simulationSpeed: 0.5, // * 1e19 s
-  collisions: true,
-  collisionBase: 100,
-  collisionScale: 100,
-  escapeDistance: 10000,
-  blackHoleMassThreshold: 10000,
-}
+const getPreset = () =>
+  decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
+const preset = getPreset()
+
+const params = presets.remembered[preset][0]
 
 const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -70,12 +46,11 @@ const camera = new PerspectiveCamera(
   20000
 )
 camera.position.set(0, 0, 2000)
-// camera.up.set(1, 0, 0)
 camera.lookAt(0, 0, 0)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.minDistance = 1
-controls.maxDistance = 10000
+controls.maxDistance = 20000
 
 const composer = new EffectComposer(renderer)
 
@@ -232,10 +207,9 @@ function simulate() {
       } else {
         distance2 += collisionBase
       }
-      u.normalize().multiplyScalar(
-        // 1e-11 * (1e31)^2 / (1e16)^2 -> 62 - 32 - 11 -> -19 -> dt 1e19 s
-        G / distance2
-      )
+
+      // a = G * M / d²
+      u.normalize().multiplyScalar(G / distance2)
       orb.acceleration.addScaledVector(u, otherOrb.mass)
       otherOrb.acceleration.addScaledVector(u, -orb.mass)
     }
@@ -306,8 +280,9 @@ function restart() {
 
 const gui = new GUI({
   load: presets,
-  preset: decodeURIComponent(location.hash.replace(/^#/, '')) || 'Tesseract',
+  preset,
 })
+
 const fx = gui.addFolder('Render fx')
 fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
 fx.add(params, 'bloom').onChange(on => {
@@ -327,9 +302,9 @@ fx.add(params, 'afterImageDamp', 0, 1).onChange(
 const config = gui.addFolder('Configuration')
 config.add(params, 'configuration', Object.keys(configurations))
 config.add(params, 'number', 0, 5000, 1)
-config.add(params, 'range', 0, 5000, 1)
-config.add(params, 'speed', 0, 1000)
-config.add(params, 'mass', 0, 1000)
+config.add(params, 'range', 0, 5000, 1).name('range (1e15m)')
+config.add(params, 'speed', 0, 1000).name('speed (1e2m.s)')
+config.add(params, 'mass', 0, 1000).name('mass (1e30kg)')
 config.add(params, 'blackHoleMass', 0, 1000000, 1000)
 config.add(params, 'scale', 0, 1000)
 config.add(params, 'saturation', 0, 1)
@@ -343,13 +318,17 @@ config.add(
 
 config.open()
 const simulation = gui.addFolder('Simulation')
-simulation.add(params, 'gravitationalConstant', 0.0, 25.0, 0.1)
-simulation.add(params, 'simulationSpeed', 0.0, 10.0, 0.01)
+simulation.add(params, 'gravitationalConstant', 0.0, 25.0, 0.01)
+// // (a = 1e-11 * 1e30 / 1e(15 * 2) = 1e-11 m.s-2)
+// // dp = a * dt² -> dt = sqrt(dp / a) = sqrt(1e15 / 1e-11) = 1e13s
+simulation
+  .add(params, 'simulationSpeed', 0.0, 100.0, 0.001)
+  .name('speed (1e13s)')
 simulation.add(params, 'collisions')
 simulation.add(params, 'collisionBase', 0, 1000, 1)
 simulation.add(params, 'collisionScale', 0, 1000, 1)
 simulation.add(params, 'escapeDistance', 0, 100000, 1)
-simulation.add(params, 'blackHoleMassThreshold', 0, 1000000, 1)
+simulation.add(params, 'blackHoleMassThreshold', 0, 2000000, 1)
 simulation.open()
 
 gui.remember(params)
@@ -359,8 +338,7 @@ gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
   restart()
 })
 window.addEventListener('hashchange', () => {
-  gui.preset =
-    decodeURIComponent(location.hash.replace(/^#/, '')) || 'RandomCube'
+  gui.preset = getPreset()
   gui.revert()
   restart()
 })
