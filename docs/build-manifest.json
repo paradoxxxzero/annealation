@@ -130,7 +130,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 7370,
+      "bytes": 11597,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -147,7 +147,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 3820,
+      "bytes": 6757,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -168,7 +168,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 10247,
+      "bytes": 10432,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -243,7 +243,7 @@
           "bytesInOutput": 86075
         },
         "_snowpack/pkg/common/three.module-95d8b943.js": {
-          "bytesInOutput": 921611
+          "bytesInOutput": 921692
         },
         "_snowpack/pkg/three.js": {
           "bytesInOutput": 0
@@ -276,7 +276,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 6907
+          "bytesInOutput": 10808
         },
         "dist/fragmentShader.js": {
           "bytesInOutput": 644
@@ -285,16 +285,16 @@
           "bytesInOutput": 297
         },
         "dist/presets.js": {
-          "bytesInOutput": 3770
+          "bytesInOutput": 6672
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
         },
         "dist/index.js": {
-          "bytesInOutput": 8783
+          "bytesInOutput": 8964
         }
       },
-      "bytes": 1131907
+      "bytes": 1138972
     }
   }
 }

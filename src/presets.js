@@ -1,7 +1,7 @@
 export default {
   preset: 'Cube',
   remembered: {
-    RandomCube: {
+    Cube: {
       0: {
         autoRotate: true,
         fxaa: true,

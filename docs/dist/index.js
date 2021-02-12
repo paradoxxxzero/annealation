@@ -4856,34 +4856,34 @@ var Box3 = class {
   intersectsBox(box) {
     return box.max.x < this.min.x || box.min.x > this.max.x || box.max.y < this.min.y || box.min.y > this.max.y || box.max.z < this.min.z || box.min.z > this.max.z ? false : true;
   }
-  intersectsSphere(sphere) {
-    this.clampPoint(sphere.center, _vector$1);
-    return _vector$1.distanceToSquared(sphere.center) <= sphere.radius * sphere.radius;
+  intersectsSphere(sphere2) {
+    this.clampPoint(sphere2.center, _vector$1);
+    return _vector$1.distanceToSquared(sphere2.center) <= sphere2.radius * sphere2.radius;
   }
-  intersectsPlane(plane) {
+  intersectsPlane(plane2) {
     let min, max;
-    if (plane.normal.x > 0) {
-      min = plane.normal.x * this.min.x;
-      max = plane.normal.x * this.max.x;
+    if (plane2.normal.x > 0) {
+      min = plane2.normal.x * this.min.x;
+      max = plane2.normal.x * this.max.x;
     } else {
-      min = plane.normal.x * this.max.x;
-      max = plane.normal.x * this.min.x;
+      min = plane2.normal.x * this.max.x;
+      max = plane2.normal.x * this.min.x;
     }
-    if (plane.normal.y > 0) {
-      min += plane.normal.y * this.min.y;
-      max += plane.normal.y * this.max.y;
+    if (plane2.normal.y > 0) {
+      min += plane2.normal.y * this.min.y;
+      max += plane2.normal.y * this.max.y;
     } else {
-      min += plane.normal.y * this.max.y;
-      max += plane.normal.y * this.min.y;
+      min += plane2.normal.y * this.max.y;
+      max += plane2.normal.y * this.min.y;
     }
-    if (plane.normal.z > 0) {
-      min += plane.normal.z * this.min.z;
-      max += plane.normal.z * this.max.z;
+    if (plane2.normal.z > 0) {
+      min += plane2.normal.z * this.min.z;
+      max += plane2.normal.z * this.max.z;
     } else {
-      min += plane.normal.z * this.max.z;
-      max += plane.normal.z * this.min.z;
+      min += plane2.normal.z * this.max.z;
+      max += plane2.normal.z * this.min.z;
     }
-    return min <= -plane.constant && max >= -plane.constant;
+    return min <= -plane2.constant && max >= -plane2.constant;
   }
   intersectsTriangle(triangle) {
     if (this.isEmpty()) {
@@ -5054,9 +5054,9 @@ var Sphere = class {
   clone() {
     return new this.constructor().copy(this);
   }
-  copy(sphere) {
-    this.center.copy(sphere.center);
-    this.radius = sphere.radius;
+  copy(sphere2) {
+    this.center.copy(sphere2.center);
+    this.radius = sphere2.radius;
     return this;
   }
   isEmpty() {
@@ -5073,15 +5073,15 @@ var Sphere = class {
   distanceToPoint(point) {
     return point.distanceTo(this.center) - this.radius;
   }
-  intersectsSphere(sphere) {
-    const radiusSum = this.radius + sphere.radius;
-    return sphere.center.distanceToSquared(this.center) <= radiusSum * radiusSum;
+  intersectsSphere(sphere2) {
+    const radiusSum = this.radius + sphere2.radius;
+    return sphere2.center.distanceToSquared(this.center) <= radiusSum * radiusSum;
   }
   intersectsBox(box) {
     return box.intersectsSphere(this);
   }
-  intersectsPlane(plane) {
-    return Math.abs(plane.distanceToPoint(this.center)) <= this.radius;
+  intersectsPlane(plane2) {
+    return Math.abs(plane2.distanceToPoint(this.center)) <= this.radius;
   }
   clampPoint(point, target) {
     const deltaLengthSq = this.center.distanceToSquared(point);
@@ -5118,8 +5118,8 @@ var Sphere = class {
     this.center.add(offset);
     return this;
   }
-  equals(sphere) {
-    return sphere.center.equals(this.center) && sphere.radius === this.radius;
+  equals(sphere2) {
+    return sphere2.center.equals(this.center) && sphere2.radius === this.radius;
   }
 };
 var _vector$2 = /* @__PURE__ */ new Vector3();
@@ -5245,11 +5245,11 @@ var Ray = class {
     }
     return sqrDist;
   }
-  intersectSphere(sphere, target) {
-    _vector$2.subVectors(sphere.center, this.origin);
+  intersectSphere(sphere2, target) {
+    _vector$2.subVectors(sphere2.center, this.origin);
     const tca = _vector$2.dot(this.direction);
     const d2 = _vector$2.dot(_vector$2) - tca * tca;
-    const radius2 = sphere.radius * sphere.radius;
+    const radius2 = sphere2.radius * sphere2.radius;
     if (d2 > radius2)
       return null;
     const thc = Math.sqrt(radius2 - d2);
@@ -5261,33 +5261,33 @@ var Ray = class {
       return this.at(t1, target);
     return this.at(t0, target);
   }
-  intersectsSphere(sphere) {
-    return this.distanceSqToPoint(sphere.center) <= sphere.radius * sphere.radius;
+  intersectsSphere(sphere2) {
+    return this.distanceSqToPoint(sphere2.center) <= sphere2.radius * sphere2.radius;
   }
-  distanceToPlane(plane) {
-    const denominator = plane.normal.dot(this.direction);
+  distanceToPlane(plane2) {
+    const denominator = plane2.normal.dot(this.direction);
     if (denominator === 0) {
-      if (plane.distanceToPoint(this.origin) === 0) {
+      if (plane2.distanceToPoint(this.origin) === 0) {
         return 0;
       }
       return null;
     }
-    const t = -(this.origin.dot(plane.normal) + plane.constant) / denominator;
+    const t = -(this.origin.dot(plane2.normal) + plane2.constant) / denominator;
     return t >= 0 ? t : null;
   }
-  intersectPlane(plane, target) {
-    const t = this.distanceToPlane(plane);
+  intersectPlane(plane2, target) {
+    const t = this.distanceToPlane(plane2);
     if (t === null) {
       return null;
     }
     return this.at(t, target);
   }
-  intersectsPlane(plane) {
-    const distToPoint = plane.distanceToPoint(this.origin);
+  intersectsPlane(plane2) {
+    const distToPoint = plane2.distanceToPoint(this.origin);
     if (distToPoint === 0) {
       return true;
     }
-    const denominator = plane.normal.dot(this.direction);
+    const denominator = plane2.normal.dot(this.direction);
     if (denominator * distToPoint < 0) {
       return true;
     }
@@ -6701,9 +6701,9 @@ var Plane = class {
   clone() {
     return new this.constructor().copy(this);
   }
-  copy(plane) {
-    this.normal.copy(plane.normal);
-    this.constant = plane.constant;
+  copy(plane2) {
+    this.normal.copy(plane2.normal);
+    this.constant = plane2.constant;
     return this;
   }
   normalize() {
@@ -6720,8 +6720,8 @@ var Plane = class {
   distanceToPoint(point) {
     return this.normal.dot(point) + this.constant;
   }
-  distanceToSphere(sphere) {
-    return this.distanceToPoint(sphere.center) - sphere.radius;
+  distanceToSphere(sphere2) {
+    return this.distanceToPoint(sphere2.center) - sphere2.radius;
   }
   projectPoint(point, target) {
     if (target === void 0) {
@@ -6757,8 +6757,8 @@ var Plane = class {
   intersectsBox(box) {
     return box.intersectsPlane(this);
   }
-  intersectsSphere(sphere) {
-    return sphere.intersectsPlane(this);
+  intersectsSphere(sphere2) {
+    return sphere2.intersectsPlane(this);
   }
   coplanarPoint(target) {
     if (target === void 0) {
@@ -6778,8 +6778,8 @@ var Plane = class {
     this.constant -= offset.dot(this.normal);
     return this;
   }
-  equals(plane) {
-    return plane.normal.equals(this.normal) && plane.constant === this.constant;
+  equals(plane2) {
+    return plane2.normal.equals(this.normal) && plane2.constant === this.constant;
   }
 };
 var _v0$1 = /* @__PURE__ */ new Vector3();
@@ -9592,10 +9592,10 @@ var Frustum = class {
     _sphere$1.applyMatrix4(sprite.matrixWorld);
     return this.intersectsSphere(_sphere$1);
   }
-  intersectsSphere(sphere) {
+  intersectsSphere(sphere2) {
     const planes = this.planes;
-    const center = sphere.center;
-    const negRadius = -sphere.radius;
+    const center = sphere2.center;
+    const negRadius = -sphere2.radius;
     for (let i = 0; i < 6; i++) {
       const distance = planes[i].distanceToPoint(center);
       if (distance < negRadius) {
@@ -9607,11 +9607,11 @@ var Frustum = class {
   intersectsBox(box) {
     const planes = this.planes;
     for (let i = 0; i < 6; i++) {
-      const plane = planes[i];
-      _vector$5.x = plane.normal.x > 0 ? box.max.x : box.min.x;
-      _vector$5.y = plane.normal.y > 0 ? box.max.y : box.min.y;
-      _vector$5.z = plane.normal.z > 0 ? box.max.z : box.min.z;
-      if (plane.distanceToPoint(_vector$5) < 0) {
+      const plane2 = planes[i];
+      _vector$5.x = plane2.normal.x > 0 ? box.max.x : box.min.x;
+      _vector$5.y = plane2.normal.y > 0 ? box.max.y : box.min.y;
+      _vector$5.z = plane2.normal.z > 0 ? box.max.z : box.min.z;
+      if (plane2.distanceToPoint(_vector$5) < 0) {
         return false;
       }
     }
@@ -10989,7 +10989,7 @@ function WebGLCapabilities(gl, extensions, parameters) {
 function WebGLClipping(properties) {
   const scope = this;
   let globalState = null, numGlobalPlanes = 0, localClippingEnabled = false, renderingShadows = false;
-  const plane = new Plane(), viewNormalMatrix = new Matrix3(), uniform = {value: null, needsUpdate: false};
+  const plane2 = new Plane(), viewNormalMatrix = new Matrix3(), uniform = {value: null, needsUpdate: false};
   this.uniform = uniform;
   this.numPlanes = 0;
   this.numIntersection = 0;
@@ -11050,9 +11050,9 @@ function WebGLClipping(properties) {
           dstArray = new Float32Array(flatSize);
         }
         for (let i = 0, i4 = dstOffset; i !== nPlanes; ++i, i4 += 4) {
-          plane.copy(planes[i]).applyMatrix4(viewMatrix, viewNormalMatrix);
-          plane.normal.toArray(dstArray, i4);
-          dstArray[i4 + 3] = plane.constant;
+          plane2.copy(planes[i]).applyMatrix4(viewMatrix, viewNormalMatrix);
+          plane2.normal.toArray(dstArray, i4);
+          dstArray[i4 + 3] = plane2.constant;
         }
       }
       uniform.value = dstArray;
@@ -25318,9 +25318,9 @@ Object.assign(Box3.prototype, {
     console.warn("THREE.Box3: .isIntersectionBox() has been renamed to .intersectsBox().");
     return this.intersectsBox(box);
   },
-  isIntersectionSphere: function(sphere) {
+  isIntersectionSphere: function(sphere2) {
     console.warn("THREE.Box3: .isIntersectionSphere() has been renamed to .intersectsSphere().");
-    return this.intersectsSphere(sphere);
+    return this.intersectsSphere(sphere2);
   },
   size: function(optionalTarget) {
     console.warn("THREE.Box3: .size() has been renamed to .getSize().");
@@ -25464,13 +25464,13 @@ Object.assign(Ray.prototype, {
     console.warn("THREE.Ray: .isIntersectionBox() has been renamed to .intersectsBox().");
     return this.intersectsBox(box);
   },
-  isIntersectionPlane: function(plane) {
+  isIntersectionPlane: function(plane2) {
     console.warn("THREE.Ray: .isIntersectionPlane() has been renamed to .intersectsPlane().");
-    return this.intersectsPlane(plane);
+    return this.intersectsPlane(plane2);
   },
-  isIntersectionSphere: function(sphere) {
+  isIntersectionSphere: function(sphere2) {
     console.warn("THREE.Ray: .isIntersectionSphere() has been renamed to .intersectsSphere().");
-    return this.intersectsSphere(sphere);
+    return this.intersectsSphere(sphere2);
   }
 });
 Object.assign(Triangle.prototype, {
@@ -28790,12 +28790,16 @@ var FXAAShader = {
 var configurations_exports = {};
 __export(configurations_exports, {
   collidingDisc: () => collidingDisc,
-  randomCube: () => randomCube,
-  randomDisc: () => randomDisc,
-  randomSphere: () => randomSphere,
-  solarSystem: () => solarSystem
+  cube: () => cube,
+  disc: () => disc,
+  eightCubes: () => eightCubes,
+  fountain: () => fountain,
+  harmonicSphere: () => harmonicSphere,
+  plane: () => plane,
+  solarSystem: () => solarSystem,
+  sphere: () => sphere
 });
-var randomCube = ({
+var cube = ({
   number,
   range,
   speed,
@@ -28823,7 +28827,7 @@ var randomCube = ({
     };
   });
 };
-var randomSphere = ({
+var sphere = ({
   number,
   range,
   mass,
@@ -28860,7 +28864,42 @@ var randomSphere = ({
     };
   });
 };
-var randomDisc = ({
+var harmonicSphere = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance,
+  gravitationalConstant
+}) => {
+  const spherical = new Spherical();
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color2(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3()
+      };
+    }
+    spherical.radius = range * Math.cbrt(Math.random());
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.acos(2 * Math.random() - 1);
+    const position = new Vector3().setFromSpherical(spherical);
+    const speedVector = new Vector3(speed * Math.cos(spherical.theta), 0, -speed * Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    return {
+      color: new Color2().setHSL(Math.random(), saturation, luminance),
+      mass: Math.random() * mass,
+      position,
+      speed: speedVector,
+      acceleration: new Vector3()
+    };
+  });
+};
+var disc = ({
   number,
   range,
   mass,
@@ -28885,9 +28924,6 @@ var randomDisc = ({
     spherical.phi = Math.PI / 2 - Math.random() * 0.2;
     const position = new Vector3().setFromSpherical(spherical);
     const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
-    const tilt = new Euler(Math.PI / 4, 0, 0);
-    position.applyEuler(tilt);
-    speed.applyEuler(tilt);
     return {
       color: new Color2().setHSL(Math.random(), saturation, luminance),
       mass: Math.random() * mass,
@@ -28987,8 +29023,8 @@ var collidingDisc = ({
       acceleration: new Vector3()
     };
   });
-  const firstShift = new Vector3(1e3, 200, -1e3);
-  const secondShift = new Vector3(-3e3, -1500, -5e3);
+  const firstShift = new Vector3(750, 750, -1e3);
+  const secondShift = new Vector3(-750, -750, 1e3);
   const firstDisc = orbs2.slice(0, ~~(number / 2));
   const secondDisc = orbs2.slice(~~(number / 2));
   firstDisc.forEach((orb) => {
@@ -28999,6 +29035,102 @@ var collidingDisc = ({
   });
   return orbs2;
 };
+var fountain = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance
+}) => {
+  const spherical = new Spherical();
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color2(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3()
+      };
+    }
+    spherical.radius = range / 10 + Math.random() * range;
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.PI - Math.random() * Math.PI / 12;
+    const position = new Vector3().setFromSpherical(spherical);
+    return {
+      color: new Color2().setHSL(Math.random(), saturation, luminance),
+      mass: Math.random() * mass,
+      position,
+      speed: new Vector3(0, speed * Math.random(), 0),
+      acceleration: new Vector3()
+    };
+  });
+};
+var eightCubes = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance
+}) => {
+  const N = 8;
+  const orbs2 = new Array(number).fill().map(() => ({
+    color: new Color2().setHSL(Math.random(), saturation, luminance),
+    mass: Math.random() * mass,
+    position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
+    speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed),
+    acceleration: new Vector3()
+  }));
+  const cubes = new Array(N).fill().map((_, i) => orbs2.slice(~~(i * number / N), ~~((i + 1) * number / N)));
+  const shifts = new Array(N).fill().map((_, i) => new Vector3(...i.toString(2).padStart(3, "0").split("").map((s) => s === "0" ? -1 : 1)).multiplyScalar(500));
+  cubes.forEach((cube2, i) => {
+    cube2.forEach((orb) => {
+      orb.position.add(shifts[i]);
+    });
+  });
+  if (blackHoleMass) {
+    orbs2.push({
+      color: new Color2(1, 1, 1),
+      mass: blackHoleMass,
+      position: new Vector3(),
+      speed: new Vector3(),
+      acceleration: new Vector3()
+    });
+  }
+  return orbs2;
+};
+var plane = ({
+  number,
+  range,
+  mass,
+  blackHoleMass,
+  saturation,
+  luminance
+}) => {
+  const tilt = new Euler(-Math.PI / 16, Math.PI / 4, 0, "YXZ");
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color2(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3()
+      };
+    }
+    return {
+      color: new Color2().setHSL(Math.random(), saturation, luminance),
+      mass: Math.random() * mass,
+      position: new Vector3(range / 2 - Math.random() * range, range * 0.75, range / 2 - Math.random() * range).applyEuler(tilt),
+      speed: new Vector3(),
+      acceleration: new Vector3()
+    };
+  });
+};
 
 // dist/fragmentShader.js
 var fragmentShader_default = "varying vec3 vColor;\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(vColor.rgb) == 0.) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(vColor, 1.0 );\n  }\n}";
@@ -29008,10 +29140,11 @@ var vertexShader_default = "attribute float scale;\nvarying vec3 vColor;\n\nvoid
 
 // dist/presets.js
 var presets_default = {
-  preset: "RandomCube",
+  preset: "Cube",
   remembered: {
-    RandomCube: {
+    Cube: {
       0: {
+        autoRotate: true,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -29020,7 +29153,7 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "randomCube",
+        configuration: "cube",
         number: 1e3,
         range: 1e3,
         speed: 15,
@@ -29040,6 +29173,7 @@ var presets_default = {
     },
     Galaxy: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -29048,7 +29182,7 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "randomDisc",
+        configuration: "disc",
         number: 1e3,
         range: 1e3,
         speed: 15,
@@ -29066,8 +29200,9 @@ var presets_default = {
         blackHoleMassThreshold: 1e4
       }
     },
-    RandomSphere: {
+    Sphere: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -29076,9 +29211,38 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "randomSphere",
+        configuration: "Sphere",
         number: 1e3,
-        range: 500,
+        range: 750,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 30,
+        saturation: 1,
+        luminance: 0.5,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.1,
+        collisions: false,
+        collisionBase: 50,
+        collisionScale: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 5e5
+      }
+    },
+    HarmonicSphere: {
+      0: {
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "harmonicSphere",
+        number: 1e3,
+        range: 750,
         speed: 15,
         mass: 10,
         blackHoleMass: 5e5,
@@ -29096,6 +29260,7 @@ var presets_default = {
     },
     ProtoSolarSystem: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: false,
         bloomStrength: 1.5,
@@ -29124,6 +29289,36 @@ var presets_default = {
     },
     CollidingGalaxies: {
       0: {
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 2,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "collidingDisc",
+        number: 1250,
+        range: 750,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 30,
+        saturation: 1,
+        luminance: 0.25,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        collisions: true,
+        collisionBase: 200,
+        collisionScale: 1,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 5e5
+      }
+    },
+    Fountain: {
+      0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -29132,18 +29327,76 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "collidingDisc",
+        configuration: "fountain",
         number: 1e3,
         range: 1e3,
-        speed: 15,
-        mass: 10,
-        blackHoleMass: 5e5,
-        scale: 30,
+        speed: 5,
+        mass: 20,
+        blackHoleMass: 1e5,
+        scale: 15,
         saturation: 1,
-        luminance: 0.25,
+        luminance: 0.5,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.05,
+        collisions: false,
+        collisionBase: 100,
+        collisionScale: 100,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    EightCubes: {
+      0: {
+        autoRotate: true,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "eightCubes",
+        number: 1e3,
+        range: 250,
+        speed: 5,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 50,
+        saturation: 1,
+        luminance: 0.5,
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         collisions: true,
+        collisionBase: 10,
+        collisionScale: 5,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 2500
+      }
+    },
+    Plane: {
+      0: {
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 2,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "plane",
+        number: 1250,
+        range: 1250,
+        speed: 15,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 15,
+        saturation: 1,
+        luminance: 0.25,
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.1,
+        collisions: false,
         collisionBase: 200,
         collisionScale: 1,
         escapeDistance: 1e4,
@@ -29183,11 +29436,13 @@ document.body.appendChild(renderer.domElement);
 var origin = new Vector3();
 var scene = new Scene();
 var camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2e4);
-camera.position.set(0, 0, 2e3);
+camera.position.set(1500, 1500, 1500);
 camera.lookAt(0, 0, 0);
 var controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 1;
 controls.maxDistance = 2e4;
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
 var composer = new EffectComposer(renderer);
 var renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
@@ -29221,6 +29476,7 @@ function animate() {
 }
 function render() {
   update(simulate());
+  controls.update();
   composer.render();
 }
 function collide([orb, otherOrb]) {
@@ -29346,14 +29602,15 @@ var gui = new GUI$1({
   preset
 });
 var fx = gui.addFolder("Render fx");
+fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);
 fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);
 fx.add(params, "bloom").onChange((on) => {
   bloomPass.enabled = on;
   renderer.toneMapping = on ? ReinhardToneMapping : NoToneMapping;
 });
-fx.add(params, "bloomStrength", 0, 3).onChange((v) => bloomPass.strength = v);
-fx.add(params, "bloomRadius", 0, 1).onChange((v) => bloomPass.radius = v);
-fx.add(params, "bloomThreshold", 0, 1).onChange((v) => bloomPass.threshold = v);
+fx.add(params, "bloomStrength", 0, 3, 0.01).onChange((v) => bloomPass.strength = v);
+fx.add(params, "bloomRadius", 0, 1, 0.01).onChange((v) => bloomPass.radius = v);
+fx.add(params, "bloomThreshold", 0, 1, 0.01).onChange((v) => bloomPass.threshold = v);
 fx.add(params, "bloomExposure", 1e-3, 128).onChange((v) => renderer.toneMappingExposure = v);
 fx.add(params, "afterImage").onChange((on) => afterImagePass.enabled = on);
 fx.add(params, "afterImageDamp", 0, 1).onChange((v) => afterImagePass.uniforms.damp.value = v);
