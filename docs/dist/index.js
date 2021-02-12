@@ -2442,7 +2442,7 @@ function updateDisplays(controllerArray) {
 }
 var GUI$1 = GUI;
 
-// _snowpack/pkg/common/three.module-899d7702.js
+// _snowpack/pkg/common/three.module-95d8b943.js
 var REVISION = "125";
 var MOUSE = {LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2};
 var TOUCH = {ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3};
@@ -26344,7 +26344,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-// _snowpack/pkg/common/Pass-a8ca9318.js
+// _snowpack/pkg/common/Pass-e063fe0e.js
 function Pass() {
   this.enabled = true;
   this.needsSwap = true;
@@ -27139,7 +27139,7 @@ var CopyShader = {
   ].join("\n")
 };
 
-// _snowpack/pkg/common/ShaderPass-28c729ad.js
+// _snowpack/pkg/common/ShaderPass-5dbe750d.js
 var ShaderPass = function(shader, textureID) {
   Pass.call(this);
   this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
@@ -28881,13 +28881,18 @@ var randomDisc = ({
       };
     }
     spherical.radius = range * Math.sqrt(Math.random());
-    spherical.theta = Math.PI / 2 - Math.random() * 0.2;
-    spherical.phi = Math.random() * 2 * Math.PI;
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.PI / 2 - Math.random() * 0.2;
+    const position = new Vector3().setFromSpherical(spherical);
+    const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    const tilt = new Euler(Math.PI / 4, 0, 0);
+    position.applyEuler(tilt);
+    speed.applyEuler(tilt);
     return {
       color: new Color2().setHSL(Math.random(), saturation, luminance),
       mass: Math.random() * mass,
-      position: new Vector3().setFromSpherical(spherical),
-      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius)),
+      position,
+      speed,
       acceleration: new Vector3()
     };
   });
@@ -28967,18 +28972,23 @@ var collidingDisc = ({
       };
     }
     spherical.radius = range * Math.sqrt(Math.random());
-    spherical.theta = Math.PI / 2 - Math.random() * 0.2;
-    spherical.phi = Math.random() * 2 * Math.PI;
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.PI / 2 - Math.random() * 0.2;
+    const position = new Vector3().setFromSpherical(spherical);
+    const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    const tilt = i > number / 2 ? new Euler(-Math.PI / 8, 0, Math.PI / 6) : new Euler(Math.PI / 4, 0, 0);
+    position.applyEuler(tilt);
+    speed.applyEuler(tilt);
     return {
       color: new Color2().setHSL(Math.random(), saturation, luminance),
       mass: Math.random() * mass,
-      position: new Vector3().setFromSpherical(spherical),
-      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius)),
+      position,
+      speed,
       acceleration: new Vector3()
     };
   });
-  const firstShift = new Vector3(1e3, 800, 400);
-  const secondShift = new Vector3(-400, -800, -1e3);
+  const firstShift = new Vector3(1e3, 200, -1e3);
+  const secondShift = new Vector3(-3e3, -1500, -5e3);
   const firstDisc = orbs2.slice(0, ~~(number / 2));
   const secondDisc = orbs2.slice(~~(number / 2));
   firstDisc.forEach((orb) => {
@@ -29039,7 +29049,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "randomDisc",
-        number: 1500,
+        number: 1e3,
         range: 1e3,
         speed: 15,
         mass: 10,
@@ -29067,7 +29077,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "randomSphere",
-        number: 1500,
+        number: 1e3,
         range: 500,
         speed: 15,
         mass: 10,
@@ -29123,18 +29133,18 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "collidingDisc",
-        number: 1500,
+        number: 1e3,
         range: 1e3,
         speed: 15,
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
         saturation: 1,
-        luminance: 0.5,
+        luminance: 0.25,
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         collisions: true,
-        collisionBase: 302,
+        collisionBase: 200,
         collisionScale: 1,
         escapeDistance: 1e4,
         blackHoleMassThreshold: 5e5
