@@ -45,7 +45,7 @@ const camera = new PerspectiveCamera(
   1,
   20000
 )
-camera.position.set(0, 0, 2000)
+camera.position.set(1500, 1500, 1500)
 camera.lookAt(0, 0, 0)
 
 const controls = new OrbitControls(camera, renderer.domElement)
@@ -294,9 +294,13 @@ fx.add(params, 'bloom').onChange(on => {
   bloomPass.enabled = on
   renderer.toneMapping = on ? ReinhardToneMapping : NoToneMapping
 })
-fx.add(params, 'bloomStrength', 0, 3).onChange(v => (bloomPass.strength = v))
-fx.add(params, 'bloomRadius', 0, 1).onChange(v => (bloomPass.radius = v))
-fx.add(params, 'bloomThreshold', 0, 1).onChange(v => (bloomPass.threshold = v))
+fx.add(params, 'bloomStrength', 0, 3, 0.01).onChange(
+  v => (bloomPass.strength = v)
+)
+fx.add(params, 'bloomRadius', 0, 1, 0.01).onChange(v => (bloomPass.radius = v))
+fx.add(params, 'bloomThreshold', 0, 1, 0.01).onChange(
+  v => (bloomPass.threshold = v)
+)
 fx.add(params, 'bloomExposure', 0.001, 128).onChange(
   v => (renderer.toneMappingExposure = v)
 )

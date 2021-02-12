@@ -85,6 +85,54 @@ export const randomSphere = ({
   })
 }
 
+export const rotatingSphere = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance,
+  gravitationalConstant,
+}) => {
+  const spherical = new Spherical()
+
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3(),
+      }
+    }
+    spherical.radius = range * Math.cbrt(Math.random())
+    spherical.theta = Math.random() * 2 * Math.PI
+    spherical.phi = Math.acos(2 * Math.random() - 1.0)
+
+    const position = new Vector3().setFromSpherical(spherical)
+
+    const speedVector = new Vector3(
+      speed * Math.cos(spherical.theta),
+      0,
+      -speed * Math.sin(spherical.theta)
+    )
+      .normalize()
+      .multiplyScalar(
+        Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
+      )
+    return {
+      color: new Color().setHSL(Math.random(), saturation, luminance),
+      // mass 10^31 kg
+      mass: Math.random() * mass,
+      // distance 10^16 m
+      position,
+      speed: speedVector,
+      acceleration: new Vector3(),
+    }
+  })
+}
 export const randomDisc = ({
   number,
   range,
@@ -119,9 +167,6 @@ export const randomDisc = ({
       .multiplyScalar(
         Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
       )
-    const tilt = new Euler(Math.PI / 4, 0, 0)
-    position.applyEuler(tilt)
-    speed.applyEuler(tilt)
     return {
       color: new Color().setHSL(Math.random(), saturation, luminance),
       // mass 10^31 kg
@@ -251,8 +296,8 @@ export const collidingDisc = ({
       acceleration: new Vector3(),
     }
   })
-  const firstShift = new Vector3(1000, 200, -1000)
-  const secondShift = new Vector3(-3000, -1500, -5000)
+  const firstShift = new Vector3(750, 750, -1000)
+  const secondShift = new Vector3(-750, -750, 1000)
   const firstDisc = orbs.slice(0, ~~(number / 2))
   const secondDisc = orbs.slice(~~(number / 2))
   firstDisc.forEach(orb => {
