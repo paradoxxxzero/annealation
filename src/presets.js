@@ -3,6 +3,7 @@ export default {
   remembered: {
     RandomCube: {
       0: {
+        autoRotate: true,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -31,6 +32,7 @@ export default {
     },
     Galaxy: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -59,6 +61,7 @@ export default {
     },
     RandomSphere: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -87,6 +90,7 @@ export default {
     },
     ProtoSolarSystem: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: false,
         bloomStrength: 1.5,
@@ -115,6 +119,7 @@ export default {
     },
     CollidingGalaxies: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -143,6 +148,7 @@ export default {
     },
     Fountain: {
       0: {
+        autoRotate: false,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -171,6 +177,7 @@ export default {
     },
     EightCubes: {
       0: {
+        autoRotate: true,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,

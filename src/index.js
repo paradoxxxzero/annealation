@@ -52,6 +52,9 @@ const controls = new OrbitControls(camera, renderer.domElement)
 controls.minDistance = 1
 controls.maxDistance = 20000
 
+controls.enableDamping = true
+controls.dampingFactor = 0.05
+
 const composer = new EffectComposer(renderer)
 
 const renderPass = new RenderPass(scene, camera)
@@ -108,6 +111,7 @@ function animate() {
 function render() {
   // Array(10).fill().forEach(simulate)
   update(simulate())
+  controls.update()
   composer.render()
 }
 
@@ -284,6 +288,7 @@ const gui = new GUI({
 })
 
 const fx = gui.addFolder('Render fx')
+fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
 fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
 fx.add(params, 'bloom').onChange(on => {
   bloomPass.enabled = on
