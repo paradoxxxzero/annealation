@@ -1,6 +1,6 @@
 import { Color, Spherical, Vector3, Euler } from 'three'
 
-export const randomCube = ({
+export const cube = ({
   number,
   range,
   speed,
@@ -39,7 +39,7 @@ export const randomCube = ({
   })
 }
 
-export const randomSphere = ({
+export const sphere = ({
   number,
   range,
   mass,
@@ -85,7 +85,7 @@ export const randomSphere = ({
   })
 }
 
-export const rotatingSphere = ({
+export const harmonicSphere = ({
   number,
   range,
   mass,
@@ -133,7 +133,7 @@ export const rotatingSphere = ({
     }
   })
 }
-export const randomDisc = ({
+export const disc = ({
   number,
   range,
   mass,
@@ -357,7 +357,7 @@ export const eightCubes = ({
   luminance,
 }) => {
   const N = 8
-  const orbs = new Array(number).fill().map((_, i) => ({
+  const orbs = new Array(number).fill().map(() => ({
     color: new Color().setHSL(Math.random(), saturation, luminance),
     // mass 10^31 kg
     mass: Math.random() * mass,
@@ -404,4 +404,40 @@ export const eightCubes = ({
   }
 
   return orbs
+}
+
+export const plane = ({
+  number,
+  range,
+  mass,
+  blackHoleMass,
+  saturation,
+  luminance,
+}) => {
+  const tilt = new Euler(-Math.PI / 16, Math.PI / 4, 0, 'YXZ')
+
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3(),
+      }
+    }
+    return {
+      color: new Color().setHSL(Math.random(), saturation, luminance),
+      // mass 10^31 kg
+      mass: Math.random() * mass,
+      // distance 10^16 m
+      position: new Vector3(
+        range / 2 - Math.random() * range,
+        range * 0.75,
+        range / 2 - Math.random() * range
+      ).applyEuler(tilt),
+      speed: new Vector3(),
+      acceleration: new Vector3(),
+    }
+  })
 }
