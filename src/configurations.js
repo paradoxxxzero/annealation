@@ -1,4 +1,5 @@
 import { Color, Spherical, Vector3, Euler } from 'three'
+import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
 
 export const cube = ({
   number,
@@ -440,4 +441,42 @@ export const plane = ({
       acceleration: new Vector3(),
     }
   })
+}
+
+export const teapot = ({
+  number,
+  range,
+  mass,
+  blackHoleMass,
+  saturation,
+  luminance,
+}) => {
+  const segments = ~~(Math.sqrt(number / 32) - 1)
+  const teapotGeometry = new TeapotGeometry(range, segments)
+  const positions = teapotGeometry.attributes.position
+  const orbs = new Array(positions.count).fill().map((_, i) => {
+    return {
+      color: new Color().setHSL(Math.random(), saturation, luminance),
+      // mass 10^31 kg
+      mass: Math.random() * mass,
+      // distance 10^16 m
+      position: new Vector3(
+        positions.getX(i),
+        positions.getY(i),
+        positions.getZ(i)
+      ),
+      speed: new Vector3(),
+      acceleration: new Vector3(),
+    }
+  })
+  if (blackHoleMass) {
+    orbs.push({
+      color: new Color(1, 1, 1),
+      mass: blackHoleMass,
+      position: new Vector3(),
+      speed: new Vector3(),
+      acceleration: new Vector3(),
+    })
+  }
+  return orbs
 }
