@@ -263,3 +263,100 @@ export const collidingDisc = ({
   })
   return orbs
 }
+
+export const fountain = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance,
+}) => {
+  const spherical = new Spherical()
+
+  return new Array(number).fill().map((_, i) => {
+    if (i === 0 && blackHoleMass) {
+      return {
+        color: new Color(1, 1, 1),
+        mass: blackHoleMass,
+        position: new Vector3(),
+        speed: new Vector3(),
+        acceleration: new Vector3(),
+      }
+    }
+    spherical.radius = range / 10 + Math.random() * range
+    spherical.theta = Math.random() * 2 * Math.PI
+    spherical.phi = Math.PI - (Math.random() * Math.PI) / 12
+    const position = new Vector3().setFromSpherical(spherical)
+
+    return {
+      color: new Color().setHSL(Math.random(), saturation, luminance),
+      // mass 10^31 kg
+      mass: Math.random() * mass,
+      // distance 10^16 m
+      position,
+      speed: new Vector3(0, speed * Math.random(), 0),
+      acceleration: new Vector3(),
+    }
+  })
+}
+
+export const eightCubes = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  saturation,
+  luminance,
+}) => {
+  const N = 8
+  const orbs = new Array(number).fill().map((_, i) => ({
+    color: new Color().setHSL(Math.random(), saturation, luminance),
+    // mass 10^31 kg
+    mass: Math.random() * mass,
+    // distance 10^16 m
+    position: new Vector3(
+      range / 2 - Math.random() * range,
+      range / 2 - Math.random() * range,
+      range / 2 - Math.random() * range
+    ),
+    speed: new Vector3(
+      speed / 2 - Math.random() * speed,
+      speed / 2 - Math.random() * speed,
+      speed / 2 - Math.random() * speed
+    ),
+    acceleration: new Vector3(),
+  }))
+  const cubes = new Array(N)
+    .fill()
+    .map((_, i) => orbs.slice(~~((i * number) / N), ~~(((i + 1) * number) / N)))
+  const shifts = new Array(N).fill().map((_, i) =>
+    new Vector3(
+      ...i
+        .toString(2)
+        .padStart(3, '0')
+        .split('')
+        .map(s => (s === '0' ? -1 : 1))
+    ).multiplyScalar(500)
+  )
+
+  cubes.forEach((cube, i) => {
+    cube.forEach(orb => {
+      orb.position.add(shifts[i])
+    })
+  })
+
+  if (blackHoleMass) {
+    orbs.push({
+      color: new Color(1, 1, 1),
+      mass: blackHoleMass,
+      position: new Vector3(),
+      speed: new Vector3(),
+      acceleration: new Vector3(),
+    })
+  }
+
+  return orbs
+}
