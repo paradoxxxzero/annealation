@@ -10,11 +10,16 @@ module.exports = {
         exts: ['.glsl'],
       },
     ],
+    [
+      'snowpack-plugin-wasm-pack',
+      {
+        projectPath: './wasm',
+        extraArgs: ['--no-typescript'],
+      },
+    ],
   ],
   routes: [],
-  optimize: {
-    bundle: true,
-  },
+  optimize: { bundle: true },
   packageOptions: {},
   devOptions: {
     port: 9009,

@@ -1,4 +1,6 @@
 varying vec3 vColor;
+varying float blackHole;
+
 const float maxR = 0.5;
 const float eventHorizon = 0.666;
 // const float horizonFade = 0.8;
@@ -7,7 +9,7 @@ void main() {
   float r = length(gl_PointCoord - vec2(0.5, 0.5));
   if (r > maxR) discard;
 
-  if (length(vColor.rgb) == 0.) {
+  if (blackHole > 0.5) {
     float p = r / maxR;
     float luminance = 0.;
     if(p > eventHorizon) {

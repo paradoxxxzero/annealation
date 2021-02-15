@@ -17,7 +17,6 @@ export const cube = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     return {
@@ -35,7 +34,6 @@ export const cube = ({
         speed / 2 - Math.random() * speed,
         speed / 2 - Math.random() * speed
       ),
-      acceleration: new Vector3(),
     }
   })
 }
@@ -58,7 +56,6 @@ export const sphere = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     spherical.radius = range * Math.cbrt(Math.random())
@@ -81,7 +78,6 @@ export const sphere = ({
       // distance 10^16 m
       position,
       speed,
-      acceleration: new Vector3(),
     }
   })
 }
@@ -105,7 +101,6 @@ export const harmonicSphere = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     spherical.radius = range * Math.cbrt(Math.random())
@@ -130,7 +125,6 @@ export const harmonicSphere = ({
       // distance 10^16 m
       position,
       speed: speedVector,
-      acceleration: new Vector3(),
     }
   })
 }
@@ -152,12 +146,11 @@ export const disc = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     spherical.radius = range * Math.sqrt(Math.random())
     spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.PI / 2 - Math.random() * 0.2 //Math.PI / 2 + (Math.PI / 16) * Math.sin(spherical.theta)
+    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
     const position = new Vector3().setFromSpherical(spherical)
     const speed = new Vector3(
       Math.cos(spherical.theta),
@@ -175,7 +168,6 @@ export const disc = ({
       // distance 10^16 m
       position,
       speed,
-      acceleration: new Vector3(),
     }
   })
 }
@@ -188,7 +180,6 @@ export const solarSystem = ({ gravitationalConstant }) => {
     mass: 1989000,
     position: new Vector3(),
     speed: new Vector3(),
-    acceleration: new Vector3(),
   }
 
   const planete = (mass, radius, color) => {
@@ -203,7 +194,6 @@ export const solarSystem = ({ gravitationalConstant }) => {
         .multiplyScalar(
           Math.sqrt((gravitationalConstant * sun.mass) / spherical.radius)
         ),
-      acceleration: new Vector3(),
     }
   }
 
@@ -228,7 +218,6 @@ export const solarSystem = ({ gravitationalConstant }) => {
         .multiplyScalar(
           Math.sqrt((gravitationalConstant * planete.mass) / spherical.radius)
         ),
-      acceleration: new Vector3(),
     }
   }
   const moon = satellite(0.07342, 0.3844, new Color(1, 1, 1), earth)
@@ -265,12 +254,11 @@ export const collidingDisc = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     spherical.radius = range * Math.sqrt(Math.random())
     spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.PI / 2 - Math.random() * 0.2 //Math.PI / 2 + (Math.PI / 16) * Math.sin(spherical.theta)
+    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
     const position = new Vector3().setFromSpherical(spherical)
     const speed = new Vector3(
       Math.cos(spherical.theta),
@@ -294,7 +282,6 @@ export const collidingDisc = ({
       // distance 10^16 m
       position,
       speed,
-      acceleration: new Vector3(),
     }
   })
   const firstShift = new Vector3(750, 750, -1000)
@@ -328,7 +315,6 @@ export const fountain = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     spherical.radius = range / 10 + Math.random() * range
@@ -343,7 +329,6 @@ export const fountain = ({
       // distance 10^16 m
       position,
       speed: new Vector3(0, speed * Math.random(), 0),
-      acceleration: new Vector3(),
     }
   })
 }
@@ -373,7 +358,6 @@ export const eightCubes = ({
       speed / 2 - Math.random() * speed,
       speed / 2 - Math.random() * speed
     ),
-    acceleration: new Vector3(),
   }))
   const cubes = new Array(N)
     .fill()
@@ -400,7 +384,6 @@ export const eightCubes = ({
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3(),
-      acceleration: new Vector3(),
     })
   }
 
@@ -424,7 +407,6 @@ export const plane = ({
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
-        acceleration: new Vector3(),
       }
     }
     return {
@@ -438,7 +420,6 @@ export const plane = ({
         range / 2 - Math.random() * range
       ).applyEuler(tilt),
       speed: new Vector3(),
-      acceleration: new Vector3(),
     }
   })
 }
@@ -466,7 +447,6 @@ export const teapot = ({
         positions.getZ(i)
       ),
       speed: new Vector3(),
-      acceleration: new Vector3(),
     }
   })
   if (blackHoleMass) {
@@ -475,7 +455,6 @@ export const teapot = ({
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3(),
-      acceleration: new Vector3(),
     })
   }
   return orbs

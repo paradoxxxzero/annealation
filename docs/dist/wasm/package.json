@@ -1,0 +1,13 @@
+{
+  "name": "wasm",
+  "collaborators": [
+    "Florian Mounier"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "index_bg.wasm",
+    "index.js"
+  ],
+  "module": "index.js",
+  "sideEffects": false
+}

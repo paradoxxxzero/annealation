@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "snowpack dev",
-    "build": "snowpack build && touch docs/.nojekyll",
+    "build": "snowpack build && sed -i \"s/\\\\\\.js\\\\\\$\\/,\\s\\\"/index.js\\$\\/, \\\"wasm\\/index/\" docs/dist/index.js && rm docs/dist/wasm/.gitignore && rm docs/dist/wasm/*.ts && touch docs/.nojekyll",
     "test": "echo \"This template does not include a test runner by default.\" && exit 1"
   },
   "devDependencies": {
@@ -11,10 +11,12 @@
     "eslint-plugin-prettier": "^3.3.1",
     "prettier": "^2.2.1",
     "snowpack": "^3.0.1",
-    "snowpack-plugin-raw-file-loader": "^1.0.9"
+    "snowpack-plugin-raw-file-loader": "^1.0.9",
+    "snowpack-plugin-wasm-pack": "^1.0.0"
   },
   "dependencies": {
     "dat.gui": "^0.7.7",
+    "stats.js": "^0.17.0",
     "three": "^0.125.2"
   }
 }
