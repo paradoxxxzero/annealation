@@ -24,7 +24,7 @@ pub struct Annealation {
     speeds: Vec<f32>,
     accelerations: Vec<f32>,
     masses: Vec<f32>,
-    colors: Vec<f32>,
+    temperatures: Vec<f32>,
     len: usize,
 }
 
@@ -36,14 +36,14 @@ impl Annealation {
         let speeds = vec![0f32; 3 * len];
         let accelerations = vec![0f32; 3 * len];
         let masses = vec![0f32; len];
-        let colors = vec![0f32; 3 * len];
+        let temperatures = vec![0f32; len];
 
         Annealation {
             positions,
             speeds,
             accelerations,
             masses,
-            colors,
+            temperatures,
             len,
         }
     }
@@ -57,8 +57,8 @@ impl Annealation {
     pub fn masses_ptr(&self) -> *const f32 {
         self.masses.as_ptr()
     }
-    pub fn colors_ptr(&self) -> *const f32 {
-        self.colors.as_ptr()
+    pub fn temperatures_ptr(&self) -> *const f32 {
+        self.temperatures.as_ptr()
     }
 
     pub fn frog_leap(&mut self, dt: f32) {
@@ -136,11 +136,10 @@ impl Annealation {
                     self.speeds[i * 3 + k] = mass_ratio
                         * (self.speeds[i * 3 + k] * self.masses[i]
                             + self.speeds[j * 3 + k] * self.masses[j]);
-                    self.colors[i * 3 + k] = mass_ratio
-                        * (self.colors[i * 3 + k] * self.masses[i]
-                            + self.colors[j * 3 + k] * self.masses[j]);
                 }
-
+                self.temperatures[i] = mass_ratio
+                    * (self.temperatures[i] * self.masses[i]
+                        + self.temperatures[j] * self.masses[j]);
                 self.masses[i] += self.masses[j];
             }
             let mut i = 0;
@@ -158,8 +157,8 @@ impl Annealation {
                     self.positions[i * 3 + k] = self.positions[(i + shift) * 3 + k];
                     self.speeds[i * 3 + k] = self.speeds[(i + shift) * 3 + k];
                     self.accelerations[i * 3 + k] = self.accelerations[(i + shift) * 3 + k];
-                    self.colors[i * 3 + k] = self.colors[(i + shift) * 3 + k];
                 }
+                self.temperatures[i] = self.temperatures[(i + shift)];
                 self.masses[i] = self.masses[i + shift];
                 i += 1;
             }

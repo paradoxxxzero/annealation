@@ -9,7 +9,6 @@ import {
   Scene,
   ShaderMaterial,
   Vector2,
-  Vector3,
   WebGLRenderer,
 } from 'three'
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass'
@@ -25,6 +24,14 @@ import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, { Annealation, wasm_memory } from 'wasm'
 import Stats from 'stats.js'
+
+const colorModes = {
+  Temperature: 0.5,
+  Rainbow: 1,
+  Grayscale: 0.25,
+  White: 0,
+  ColorCoded: 0.75,
+}
 
 const stats = new Stats()
 
@@ -65,6 +72,11 @@ const composer = new EffectComposer(renderer)
 const renderPass = new RenderPass(scene, camera)
 composer.addPass(renderPass)
 
+const afterImagePass = new AfterimagePass()
+afterImagePass.uniforms.damp.value = params.afterImageDamp
+afterImagePass.enabled = params.afterImage
+composer.addPass(afterImagePass)
+
 const fxaaPass = new ShaderPass(FXAAShader)
 const pixelRatio = renderer.getPixelRatio()
 
@@ -74,11 +86,6 @@ fxaaPass.material.uniforms.resolution.value.y =
   1 / (window.innerHeight * pixelRatio)
 fxaaPass.enabled = params.fxaa
 composer.addPass(fxaaPass)
-
-const afterImagePass = new AfterimagePass()
-afterImagePass.uniforms.damp.value = params.afterImageDamp
-afterImagePass.enabled = params.afterImage
-composer.addPass(afterImagePass)
 
 const bloomPass = new UnrealBloomPass(
   new Vector2(window.innerWidth, window.innerHeight),
@@ -135,7 +142,7 @@ function render() {
   annealation.frog_drop(dt)
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen)
-    particles.geometry.attributes.color.needsUpdate = true
+    particles.geometry.attributes.temperature.needsUpdate = true
     particles.geometry.attributes.mass.needsUpdate = true
   }
   particles.geometry.attributes.position.needsUpdate = true
@@ -175,15 +182,15 @@ function init() {
     3 * orbs.length
   )
   const masses = new Float32Array(buffer, annealation.masses_ptr(), orbs.length)
-  const colors = new Float32Array(
+  const temperatures = new Float32Array(
     buffer,
-    annealation.colors_ptr(),
+    annealation.temperatures_ptr(),
     orbs.length * 3
   )
 
   const geometry = new BufferGeometry()
   geometry.setDrawRange(0, orbs.length)
-  orbs.forEach(({ position, speed, mass, color }, i) => {
+  orbs.forEach(({ position, speed, mass, temperature }, i) => {
     positions[i * 3] = position.x
     positions[i * 3 + 1] = position.y
     positions[i * 3 + 2] = position.z
@@ -191,24 +198,20 @@ function init() {
     speeds[i * 3 + 1] = speed.y
     speeds[i * 3 + 2] = speed.z
     masses[i] = mass
-    // scales[i] =
-    //   params.scale * (blackHole ? Math.pow(mass, 0.1) : Math.cbrt(mass))
-    colors[i * 3] = color.r
-    colors[i * 3 + 1] = color.g
-    colors[i * 3 + 2] = color.b
+    temperatures[i] = temperature
   })
 
   geometry.setAttribute('position', new BufferAttribute(positions, 3))
   geometry.setAttribute('mass', new BufferAttribute(masses, 1))
-  geometry.setAttribute('color', new BufferAttribute(colors, 3))
+  geometry.setAttribute('temperature', new BufferAttribute(temperatures, 1))
 
   const material = new ShaderMaterial({
     vertexShader,
     fragmentShader,
-    vertexColors: true,
     uniforms: {
       scale: { value: params.scale },
       blackHoleMassThreshold: { value: params.blackHoleMassThreshold },
+      mode: { value: colorModes[params.colorMode] },
     },
   })
 
@@ -346,7 +349,7 @@ function initGUI() {
     bloomPass.enabled = on
     renderer.toneMapping = on ? ReinhardToneMapping : NoToneMapping
   })
-  fx.add(params, 'bloomStrength', 0, 3, 0.01).onChange(
+  fx.add(params, 'bloomStrength', 0, 10, 0.01).onChange(
     v => (bloomPass.strength = v)
   )
   fx.add(params, 'bloomRadius', 0, 1, 0.01).onChange(
@@ -362,6 +365,7 @@ function initGUI() {
   fx.add(params, 'afterImageDamp', 0, 1).onChange(
     v => (afterImagePass.uniforms.damp.value = v)
   )
+
   const config = gui.addFolder('Configuration')
   config.add(params, 'configuration', Object.keys(configurations))
   config.add(params, 'number', 0, 5000, 1)
@@ -372,8 +376,9 @@ function initGUI() {
   config
     .add(params, 'scale', 0, 1000)
     .onChange(v => (particles.material.uniforms.scale.value = v))
-  config.add(params, 'saturation', 0, 1)
-  config.add(params, 'luminance', 0, 1)
+  config
+    .add(params, 'colorMode', Object.keys(colorModes))
+    .onChange(v => (particles.material.uniforms.mode.value = colorModes[v]))
   config.add(
     {
       restart,

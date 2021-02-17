@@ -30359,27 +30359,32 @@ TeapotGeometry.prototype = Object.create(BufferGeometry.prototype);
 TeapotGeometry.prototype.constructor = TeapotGeometry;
 
 // dist/configurations.js
-var cube = ({
-  number,
-  range,
-  speed,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance
-}) => {
+var colorEncode = (r, g, b, l = 256) => ~~(Math.min(r, 0.99) * l) + ~~(Math.min(g, 0.99) * l) * l + ~~(Math.min(b, 0.99) * l) * l * l;
+var centeredGauss = (x) => {
+  return Math.exp(-Math.pow(x * 2, 2));
+};
+var massToTemperature = (mass) => mass < 5 ? (mass + 1.09611) * 1900 : (mass + 1.7) * 1700;
+var rngTemperatureMass = (maxMass) => {
+  const mass = maxMass * Math.pow(Math.random(), 15);
+  const theoricTemperature = massToTemperature(mass);
+  const variance = 0.75;
+  return {
+    mass,
+    temperature: theoricTemperature * (1 + variance * centeredGauss(1 - 2 * Math.random()))
+  };
+};
+var cube = ({number, range, speed, mass, blackHoleMass}) => {
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
       };
     }
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
       speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
     };
@@ -30390,15 +30395,13 @@ var sphere = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
@@ -30413,8 +30416,7 @@ var sphere = ({
     const z = -(x * position.x + y * position.y) / position.z;
     const speed = new Vector3(x, y, z).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position,
       speed
     };
@@ -30426,15 +30428,13 @@ var harmonicSphere = ({
   mass,
   speed,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
@@ -30446,8 +30446,7 @@ var harmonicSphere = ({
     const position = new Vector3().setFromSpherical(spherical);
     const speedVector = new Vector3(speed * Math.cos(spherical.theta), 0, -speed * Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position,
       speed: speedVector
     };
@@ -30458,15 +30457,13 @@ var disc = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
@@ -30478,8 +30475,7 @@ var disc = ({
     const position = new Vector3().setFromSpherical(spherical);
     const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position,
       speed
     };
@@ -30489,7 +30485,7 @@ var solarSystem = ({gravitationalConstant}) => {
   const spherical = new Spherical();
   spherical.theta = Math.PI / 2;
   const sun = {
-    color: new Color2(1, 1, 0),
+    temperature: colorEncode(1, 1, 0),
     mass: 1989e3,
     position: new Vector3(),
     speed: new Vector3()
@@ -30498,31 +30494,38 @@ var solarSystem = ({gravitationalConstant}) => {
     spherical.radius = radius;
     spherical.phi = Math.random() * 2 * Math.PI;
     return {
-      color,
+      temperature: colorEncode(...color),
       mass,
       position: new Vector3().setFromSpherical(spherical),
       speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * sun.mass / spherical.radius))
     };
   };
-  const mercury = planete(0.3285, 57.909, new Color2(0.8, 0.8, 0.8));
-  const venus = planete(4.867, 108.16, new Color2(0.8, 0.8, 0));
-  const earth = planete(5.972, 149.6, new Color2(0.15, 0.25, 1));
-  const mars = planete(0.639, 227.99, new Color2(1, 0.5, 0.25));
-  const jupiter = planete(1898, 778.36, new Color2(1, 0.65, 0.46));
-  const saturn = planete(568.3, 1433.5, new Color2(0.55, 0.54, 0.4));
-  const uranus = planete(86.81, 2872.4, new Color2(0, 1, 1));
-  const neptune = planete(102.4, 4498.4, new Color2(0, 0, 1));
+  const mercury = planete(0.3285, 57.909, [0.8, 0.8, 0.8]);
+  const venus = planete(4.867, 108.16, [0.8, 0.8, 0]);
+  const earth = planete(5.972, 149.6, [0.15, 0.25, 1]);
+  const mars = planete(0.639, 227.99, [1, 0.5, 0.25]);
+  const jupiter = planete(1898, 778.36, [1, 0.65, 0.46]);
+  const saturn = planete(568.3, 1433.5, [0.55, 0.54, 0.4]);
+  const uranus = planete(86.81, 2872.4, [0, 1, 1]);
+  const neptune = planete(102.4, 4498.4, [0, 0, 1]);
   const satellite = (mass, radius, color, planete2) => {
     spherical.radius = radius;
     spherical.phi = Math.random() * 2 * Math.PI;
     return {
-      color,
+      temperature: colorEncode(...color),
       mass,
       position: new Vector3().setFromSpherical(spherical).add(planete2.position),
-      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * planete2.mass / spherical.radius))
+      speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * planete2.mass / spherical.radius)).add(planete2.speed)
     };
   };
-  const moon = satellite(0.07342, 0.3844, new Color2(1, 1, 1), earth);
+  const moon = satellite(0.07342, 0.3844, [0.9, 0.9, 0.9], earth);
+  const io = satellite(0.089319, 0.4218, [0.9, 0.9, 0.9], jupiter);
+  const europa = satellite(0.048, 0.6711, [0.9, 0.9, 0.9], jupiter);
+  const ganymede = satellite(0.14819, 1.0704, [0.9, 0.9, 0.9], jupiter);
+  const callisto = satellite(0.10759, 1.8827, [0.9, 0.9, 0.9], jupiter);
+  const titan = satellite(0.13452, 1.22183, [0.9, 0.9, 0.9], saturn);
+  const rhea = satellite(2306e-6, 0.52704, [0.9, 0.9, 0.9], saturn);
+  const iapetus = satellite(1805e-6, 3.5613, [0.9, 0.9, 0.9], saturn);
   return [
     sun,
     mercury,
@@ -30531,7 +30534,14 @@ var solarSystem = ({gravitationalConstant}) => {
     moon,
     mars,
     jupiter,
+    io,
+    europa,
+    ganymede,
+    callisto,
     saturn,
+    titan,
+    rhea,
+    iapetus,
     uranus,
     neptune
   ];
@@ -30541,15 +30551,13 @@ var collidingDisc = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
   const orbs = new Array(number).fill().map((_, i) => {
     if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
@@ -30564,8 +30572,7 @@ var collidingDisc = ({
     position.applyEuler(tilt);
     speed.applyEuler(tilt);
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position,
       speed
     };
@@ -30582,20 +30589,12 @@ var collidingDisc = ({
   });
   return orbs;
 };
-var fountain = ({
-  number,
-  range,
-  mass,
-  speed,
-  blackHoleMass,
-  saturation,
-  luminance
-}) => {
+var fountain = ({number, range, mass, speed, blackHoleMass}) => {
   const spherical = new Spherical();
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
@@ -30606,26 +30605,16 @@ var fountain = ({
     spherical.phi = Math.PI - Math.random() * Math.PI / 12;
     const position = new Vector3().setFromSpherical(spherical);
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position,
       speed: new Vector3(0, speed * Math.random(), 0)
     };
   });
 };
-var eightCubes = ({
-  number,
-  range,
-  mass,
-  speed,
-  blackHoleMass,
-  saturation,
-  luminance
-}) => {
+var eightCubes = ({number, range, mass, speed, blackHoleMass}) => {
   const N = 8;
   const orbs = new Array(number).fill().map(() => ({
-    color: new Color2().setHSL(Math.random(), saturation, luminance),
-    mass: Math.random() * mass,
+    ...rngTemperatureMass(mass),
     position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
     speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
   }));
@@ -30638,7 +30627,7 @@ var eightCubes = ({
   });
   if (blackHoleMass) {
     orbs.push({
-      color: new Color2(1, 1, 1),
+      temperature: 0,
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3()
@@ -30646,54 +30635,38 @@ var eightCubes = ({
   }
   return orbs;
 };
-var plane = ({
-  number,
-  range,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance
-}) => {
+var plane = ({number, range, mass, blackHoleMass}) => {
   const tilt = new Euler(-Math.PI / 16, Math.PI / 4, 0, "YXZ");
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color2(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3()
       };
     }
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position: new Vector3(range / 2 - Math.random() * range, range * 0.75, range / 2 - Math.random() * range).applyEuler(tilt),
       speed: new Vector3()
     };
   });
 };
-var teapot = ({
-  number,
-  range,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance
-}) => {
+var teapot = ({number, range, mass, blackHoleMass}) => {
   const segments = ~~(Math.sqrt(number / 32) - 1);
   const teapotGeometry = new TeapotGeometry(range, segments);
   const positions = teapotGeometry.attributes.position;
   const orbs = new Array(positions.count).fill().map((_, i) => {
     return {
-      color: new Color2().setHSL(Math.random(), saturation, luminance),
-      mass: Math.random() * mass,
+      ...rngTemperatureMass(mass),
       position: new Vector3(positions.getX(i), positions.getY(i), positions.getZ(i)),
       speed: new Vector3()
     };
   });
   if (blackHoleMass) {
     orbs.push({
-      color: new Color2(1, 1, 1),
+      temperature: 0,
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3()
@@ -30703,10 +30676,10 @@ var teapot = ({
 };
 
 // dist/fragmentShader.js
-var fragmentShader_default = "varying vec3 vColor;\nvarying float blackHole;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (blackHole > 0.5) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(vColor, 1.0 );\n  }\n}";
+var fragmentShader_default = "varying float blackHole;\nvarying vec3 tColor;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(tColor) == 0.0) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(tColor, 1.0 );\n  }\n}";
 
 // dist/vertexShader.js
-var vertexShader_default = "attribute float mass;\nuniform float scale;\nuniform float blackHoleMassThreshold;\nvarying vec3 vColor;\nvarying float blackHole;\n\nvoid main() {\n  vColor = color;\n  blackHole = mass >= blackHoleMassThreshold ? 1.0 : 0.0;\n\n  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);\n\n  gl_PointSize = scale * pow(mass, blackHole > 0.5 ? 0.1 : 0.333333) * (300.0 / length(mvPosition.xyz));\n\n  gl_Position = projectionMatrix * mvPosition;\n}\n";
+var vertexShader_default = "attribute float mass;\nattribute float temperature;\n\nuniform float mode;\nuniform float scale;\nuniform float blackHoleMassThreshold;\nvarying float blackHole;\nvarying vec3 tColor;\n\nvoid main() {\n  float size;\n  if (mass >= blackHoleMassThreshold) {\n    size = 1. + pow(mass, 0.1);\n    tColor = vec3(0.);\n  } else {\n    size = 1. + pow(mass, 0.33333);\n    // \n    if(mode == 1.0) { // Rainbow\n      float k = mod(temperature / 30., 12.); \n      tColor.r = 0.5 * (1. - max(min(k - 3., 9. - k), -1.));\n      k = mod(8. + temperature / 30., 12.); \n      tColor.g = 0.5 * (1. - max(min(k - 3., 9. - k), -1.));\n      k = mod(4. + temperature / 30., 12.);\n      tColor.b = 0.5 * (1. - max(min(k - 3., 9. - k), -1.));\n    } else if (mode == 0.) { // White\n      tColor = vec3(1.);\n    } else if (mode == 0.75) { // ColorCoded\n      float l = 256.;\n      tColor.b = floor(temperature / (l * l)) / l;\n      tColor.g = floor(temperature / l - tColor.b * l * l) / l;\n      tColor.r = temperature / l - tColor.b * l * l  - tColor.g * l;\n    } else { // Temperature\n      if (temperature < 6600.) {\n        tColor.r = 1.0;\n        tColor.g = 0.7 * log(temperature + 950.) - 5.3;\n        if(temperature < 2000.) {\n          tColor.b = 0.;\n        } else {\n          tColor.b = 0.0000000103591 * temperature * temperature + 0.000131732 * temperature - 0.315826;\n        }\n      } else {\n        tColor.r = 0.3509 + 28274239.0 / (temperature * temperature);\n        tColor.g = 0.49 + 20734442.0 / (temperature * temperature);\n        tColor.b = 1.0;\n      }\n      if (mode == 0.25) {// Grayscale\n        tColor.r = tColor.g = tColor.b = (tColor.r + tColor.g + tColor.b) / 3.;\n      } \n    }\n  }\n\n  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);\n\n  gl_PointSize = scale * size * (300. / length(mvPosition.xyz));\n\n  gl_Position = projectionMatrix * mvPosition;\n}\n";
 
 // dist/presets.js
 var presets_default = {
@@ -30730,13 +30703,12 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 0,
         scale: 50,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         softening: 10,
         collisions: true,
-        collisionThreshold: 10,
+        collisionThreshold: 25,
         escapeDistance: 1e4,
         blackHoleMassThreshold: 1e4
       }
@@ -30759,8 +30731,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 1e5,
         scale: 30,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         softening: 10,
@@ -30788,8 +30759,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.1,
         softening: 50,
@@ -30817,8 +30787,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.1,
         softening: 50,
@@ -30846,11 +30815,10 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 0,
         scale: 3,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "ColorCoded",
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.01,
-        softening: 10,
+        simulationSpeed: 1e-3,
+        softening: 0,
         collisions: false,
         collisionThreshold: 10,
         escapeDistance: 1e4,
@@ -30875,8 +30843,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
-        saturation: 1,
-        luminance: 0.25,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.1,
         softening: 10,
@@ -30904,8 +30871,7 @@ var presets_default = {
         mass: 20,
         blackHoleMass: 1e5,
         scale: 15,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Rainbow",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.05,
         softening: 10,
@@ -30933,8 +30899,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 0,
         scale: 50,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         softening: 10,
@@ -30962,8 +30927,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 5e5,
         scale: 15,
-        saturation: 1,
-        luminance: 0.25,
+        colorMode: "White",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.1,
         softening: 10,
@@ -30991,8 +30955,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 0,
         scale: 30,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.25,
         softening: 10,
@@ -31020,8 +30983,7 @@ var presets_default = {
         mass: 10,
         blackHoleMass: 25e3,
         scale: 30,
-        saturation: 1,
-        luminance: 0.5,
+        colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.25,
         softening: 10,
@@ -31183,8 +31145,8 @@ var Annealation = class {
     var ret = wasm.annealation_masses_ptr(this.ptr);
     return ret;
   }
-  colors_ptr() {
-    var ret = wasm.annealation_colors_ptr(this.ptr);
+  temperatures_ptr() {
+    var ret = wasm.annealation_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap(dt) {
@@ -31356,6 +31318,13 @@ var stats_min = createCommonjsModule(function(module, exports) {
 var statsjs_default = stats_min;
 
 // dist/index.js
+var colorModes = {
+  Temperature: 0.5,
+  Rainbow: 1,
+  Grayscale: 0.25,
+  White: 0,
+  ColorCoded: 0.75
+};
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31378,16 +31347,16 @@ controls.dampingFactor = 0.05;
 var composer = new EffectComposer(renderer);
 var renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
+var afterImagePass = new AfterimagePass();
+afterImagePass.uniforms.damp.value = params.afterImageDamp;
+afterImagePass.enabled = params.afterImage;
+composer.addPass(afterImagePass);
 var fxaaPass = new ShaderPass(FXAAShader);
 var pixelRatio = renderer.getPixelRatio();
 fxaaPass.material.uniforms.resolution.value.x = 1 / (window.innerWidth * pixelRatio);
 fxaaPass.material.uniforms.resolution.value.y = 1 / (window.innerHeight * pixelRatio);
 fxaaPass.enabled = params.fxaa;
 composer.addPass(fxaaPass);
-var afterImagePass = new AfterimagePass();
-afterImagePass.uniforms.damp.value = params.afterImageDamp;
-afterImagePass.enabled = params.afterImage;
-composer.addPass(afterImagePass);
 var bloomPass = new UnrealBloomPass(new Vector2(window.innerWidth, window.innerHeight), params.bloomStrength, params.bloomRadius, params.bloomThreshold);
 renderer.toneMappingExposure = params.bloomExposure;
 bloomPass.enabled = params.bloom;
@@ -31421,7 +31390,7 @@ function render() {
   annealation.frog_drop(dt);
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen);
-    particles.geometry.attributes.color.needsUpdate = true;
+    particles.geometry.attributes.temperature.needsUpdate = true;
     particles.geometry.attributes.mass.needsUpdate = true;
   }
   particles.geometry.attributes.position.needsUpdate = true;
@@ -31437,10 +31406,10 @@ function init2() {
   const positions = new Float32Array(buffer, annealation.positions_ptr(), 3 * orbs.length);
   const speeds = new Float32Array(buffer, annealation.speeds_ptr(), 3 * orbs.length);
   const masses = new Float32Array(buffer, annealation.masses_ptr(), orbs.length);
-  const colors = new Float32Array(buffer, annealation.colors_ptr(), orbs.length * 3);
+  const temperatures = new Float32Array(buffer, annealation.temperatures_ptr(), orbs.length * 3);
   const geometry = new BufferGeometry();
   geometry.setDrawRange(0, orbs.length);
-  orbs.forEach(({position, speed, mass, color}, i) => {
+  orbs.forEach(({position, speed, mass, temperature}, i) => {
     positions[i * 3] = position.x;
     positions[i * 3 + 1] = position.y;
     positions[i * 3 + 2] = position.z;
@@ -31448,20 +31417,18 @@ function init2() {
     speeds[i * 3 + 1] = speed.y;
     speeds[i * 3 + 2] = speed.z;
     masses[i] = mass;
-    colors[i * 3] = color.r;
-    colors[i * 3 + 1] = color.g;
-    colors[i * 3 + 2] = color.b;
+    temperatures[i] = temperature;
   });
   geometry.setAttribute("position", new BufferAttribute(positions, 3));
   geometry.setAttribute("mass", new BufferAttribute(masses, 1));
-  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.setAttribute("temperature", new BufferAttribute(temperatures, 1));
   const material = new ShaderMaterial({
     vertexShader: vertexShader_default,
     fragmentShader: fragmentShader_default,
-    vertexColors: true,
     uniforms: {
       scale: {value: params.scale},
-      blackHoleMassThreshold: {value: params.blackHoleMassThreshold}
+      blackHoleMassThreshold: {value: params.blackHoleMassThreshold},
+      mode: {value: colorModes[params.colorMode]}
     }
   });
   particles = new Points(geometry, material);
@@ -31484,7 +31451,7 @@ function initGUI() {
     bloomPass.enabled = on;
     renderer.toneMapping = on ? ReinhardToneMapping : NoToneMapping;
   });
-  fx.add(params, "bloomStrength", 0, 3, 0.01).onChange((v) => bloomPass.strength = v);
+  fx.add(params, "bloomStrength", 0, 10, 0.01).onChange((v) => bloomPass.strength = v);
   fx.add(params, "bloomRadius", 0, 1, 0.01).onChange((v) => bloomPass.radius = v);
   fx.add(params, "bloomThreshold", 0, 1, 0.01).onChange((v) => bloomPass.threshold = v);
   fx.add(params, "bloomExposure", 1e-3, 128).onChange((v) => renderer.toneMappingExposure = v);
@@ -31498,8 +31465,7 @@ function initGUI() {
   config.add(params, "mass", 0, 1e3).name("mass (1e30kg)");
   config.add(params, "blackHoleMass", 0, 1e6, 1e3);
   config.add(params, "scale", 0, 1e3).onChange((v) => particles.material.uniforms.scale.value = v);
-  config.add(params, "saturation", 0, 1);
-  config.add(params, "luminance", 0, 1);
+  config.add(params, "colorMode", Object.keys(colorModes)).onChange((v) => particles.material.uniforms.mode.value = colorModes[v]);
   config.add({
     restart
   }, "restart");

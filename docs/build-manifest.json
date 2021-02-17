@@ -139,7 +139,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 11763,
+      "bytes": 11694,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -152,15 +152,15 @@
       ]
     },
     "dist/fragmentShader.js": {
-      "bytes": 647,
+      "bytes": 653,
       "imports": []
     },
     "dist/vertexShader.js": {
-      "bytes": 467,
+      "bytes": 1925,
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 8166,
+      "bytes": 8010,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -185,7 +185,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 7328,
+      "bytes": 7340,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -198,7 +198,7 @@
       "imports": []
     },
     "dist/index.js": {
-      "bytes": 12358,
+      "bytes": 12430,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -314,19 +314,19 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 10926
+          "bytesInOutput": 11051
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
         },
         "dist/fragmentShader.js": {
-          "bytesInOutput": 663
+          "bytesInOutput": 669
         },
         "dist/vertexShader.js": {
-          "bytesInOutput": 481
+          "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 8066
+          "bytesInOutput": 7909
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -335,16 +335,16 @@
           "bytesInOutput": 186
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 6089
+          "bytesInOutput": 6101
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
         "dist/index.js": {
-          "bytesInOutput": 7210
+          "bytesInOutput": 7369
         }
       },
-      "bytes": 1167437
+      "bytes": 1169040
     }
   }
 }

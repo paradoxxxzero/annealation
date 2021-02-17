@@ -1,28 +1,47 @@
 import { Color, Spherical, Vector3, Euler } from 'three'
 import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
 
-export const cube = ({
-  number,
-  range,
-  speed,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance,
-}) => {
+const colorEncode = (r, g, b, l = 256) =>
+  ~~(Math.min(r, 0.99) * l) +
+  ~~(Math.min(g, 0.99) * l) * l +
+  ~~(Math.min(b, 0.99) * l) * l * l
+
+const normalGauss = x => {
+  // [0, 1] -> [0, 1] max at 1/2
+  return Math.exp(-Math.pow((x - 0.5) * 4, 2))
+}
+const centeredGauss = x => {
+  // [-1, 1] -> [0, 1] max at 0
+  return Math.exp(-Math.pow(x * 2, 2))
+}
+
+const massToTemperature = mass =>
+  mass < 5 ? (mass + 1.09611) * 1900 : (mass + 1.7) * 1700
+
+const rngTemperatureMass = maxMass => {
+  const mass = maxMass * Math.pow(Math.random(), 15)
+  const theoricTemperature = massToTemperature(mass)
+  const variance = 0.75
+  return {
+    mass,
+    temperature:
+      theoricTemperature *
+      (1 + variance * centeredGauss(1 - 2 * Math.random())),
+  }
+}
+export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
       }
     }
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
+      // mass 10^30 kg
+      ...rngTemperatureMass(mass),
       // distance 10^16 m
       position: new Vector3(
         range / 2 - Math.random() * range,
@@ -43,8 +62,6 @@ export const sphere = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
@@ -52,7 +69,7 @@ export const sphere = ({
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
@@ -72,10 +89,7 @@ export const sphere = ({
         Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
       )
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position,
       speed,
     }
@@ -88,8 +102,6 @@ export const harmonicSphere = ({
   mass,
   speed,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
@@ -97,7 +109,7 @@ export const harmonicSphere = ({
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
@@ -119,10 +131,7 @@ export const harmonicSphere = ({
         Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
       )
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position,
       speed: speedVector,
     }
@@ -133,8 +142,6 @@ export const disc = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
@@ -142,7 +149,7 @@ export const disc = ({
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
@@ -162,10 +169,7 @@ export const disc = ({
         Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
       )
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position,
       speed,
     }
@@ -176,7 +180,7 @@ export const solarSystem = ({ gravitationalConstant }) => {
   const spherical = new Spherical()
   spherical.theta = Math.PI / 2
   const sun = {
-    color: new Color(1, 1, 0),
+    temperature: colorEncode(1, 1, 0),
     mass: 1989000,
     position: new Vector3(),
     speed: new Vector3(),
@@ -186,7 +190,7 @@ export const solarSystem = ({ gravitationalConstant }) => {
     spherical.radius = radius
     spherical.phi = Math.random() * 2 * Math.PI
     return {
-      color,
+      temperature: colorEncode(...color),
       mass,
       position: new Vector3().setFromSpherical(spherical),
       speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0)
@@ -197,30 +201,38 @@ export const solarSystem = ({ gravitationalConstant }) => {
     }
   }
 
-  const mercury = planete(0.3285, 57.909, new Color(0.8, 0.8, 0.8))
-  const venus = planete(4.867, 108.16, new Color(0.8, 0.8, 0))
-  const earth = planete(5.972, 149.6, new Color(0.15, 0.25, 1))
-  const mars = planete(0.639, 227.99, new Color(1, 0.5, 0.25))
-  const jupiter = planete(1898, 778.36, new Color(1, 0.65, 0.46))
-  const saturn = planete(568.3, 1433.5, new Color(0.55, 0.54, 0.4))
-  const uranus = planete(86.81, 2872.4, new Color(0, 1, 1))
-  const neptune = planete(102.4, 4498.4, new Color(0, 0, 1))
+  const mercury = planete(0.3285, 57.909, [0.8, 0.8, 0.8])
+  const venus = planete(4.867, 108.16, [0.8, 0.8, 0])
+  const earth = planete(5.972, 149.6, [0.15, 0.25, 1])
+  const mars = planete(0.639, 227.99, [1, 0.5, 0.25])
+  const jupiter = planete(1898, 778.36, [1, 0.65, 0.46])
+  const saturn = planete(568.3, 1433.5, [0.55, 0.54, 0.4])
+  const uranus = planete(86.81, 2872.4, [0, 1, 1])
+  const neptune = planete(102.4, 4498.4, [0, 0, 1])
 
   const satellite = (mass, radius, color, planete) => {
     spherical.radius = radius
     spherical.phi = Math.random() * 2 * Math.PI
     return {
-      color,
+      temperature: colorEncode(...color),
       mass,
       position: new Vector3().setFromSpherical(spherical).add(planete.position),
       speed: new Vector3(-Math.cos(spherical.phi), Math.sin(spherical.phi), 0)
         .normalize()
         .multiplyScalar(
           Math.sqrt((gravitationalConstant * planete.mass) / spherical.radius)
-        ),
+        )
+        .add(planete.speed),
     }
   }
-  const moon = satellite(0.07342, 0.3844, new Color(1, 1, 1), earth)
+  const moon = satellite(0.07342, 0.3844, [0.9, 0.9, 0.9], earth)
+  const io = satellite(0.089319, 0.4218, [0.9, 0.9, 0.9], jupiter)
+  const europa = satellite(0.048, 0.6711, [0.9, 0.9, 0.9], jupiter)
+  const ganymede = satellite(0.14819, 1.0704, [0.9, 0.9, 0.9], jupiter)
+  const callisto = satellite(0.10759, 1.8827, [0.9, 0.9, 0.9], jupiter)
+  const titan = satellite(0.13452, 1.22183, [0.9, 0.9, 0.9], saturn)
+  const rhea = satellite(0.002306, 0.52704, [0.9, 0.9, 0.9], saturn)
+  const iapetus = satellite(0.001805, 3.5613, [0.9, 0.9, 0.9], saturn)
 
   return [
     sun,
@@ -230,7 +242,14 @@ export const solarSystem = ({ gravitationalConstant }) => {
     moon,
     mars,
     jupiter,
+    io,
+    europa,
+    ganymede,
+    callisto,
     saturn,
+    titan,
+    rhea,
+    iapetus,
     uranus,
     neptune,
   ]
@@ -241,8 +260,6 @@ export const collidingDisc = ({
   range,
   mass,
   blackHoleMass,
-  saturation,
-  luminance,
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
@@ -250,7 +267,7 @@ export const collidingDisc = ({
   const orbs = new Array(number).fill().map((_, i) => {
     if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
@@ -276,10 +293,7 @@ export const collidingDisc = ({
     position.applyEuler(tilt)
     speed.applyEuler(tilt)
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position,
       speed,
     }
@@ -297,21 +311,13 @@ export const collidingDisc = ({
   return orbs
 }
 
-export const fountain = ({
-  number,
-  range,
-  mass,
-  speed,
-  blackHoleMass,
-  saturation,
-  luminance,
-}) => {
+export const fountain = ({ number, range, mass, speed, blackHoleMass }) => {
   const spherical = new Spherical()
 
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
@@ -323,31 +329,17 @@ export const fountain = ({
     const position = new Vector3().setFromSpherical(spherical)
 
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position,
       speed: new Vector3(0, speed * Math.random(), 0),
     }
   })
 }
 
-export const eightCubes = ({
-  number,
-  range,
-  mass,
-  speed,
-  blackHoleMass,
-  saturation,
-  luminance,
-}) => {
+export const eightCubes = ({ number, range, mass, speed, blackHoleMass }) => {
   const N = 8
   const orbs = new Array(number).fill().map(() => ({
-    color: new Color().setHSL(Math.random(), saturation, luminance),
-    // mass 10^31 kg
-    mass: Math.random() * mass,
-    // distance 10^16 m
+    ...rngTemperatureMass(mass),
     position: new Vector3(
       range / 2 - Math.random() * range,
       range / 2 - Math.random() * range,
@@ -380,7 +372,7 @@ export const eightCubes = ({
 
   if (blackHoleMass) {
     orbs.push({
-      color: new Color(1, 1, 1),
+      temperature: 0,
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3(),
@@ -390,30 +382,20 @@ export const eightCubes = ({
   return orbs
 }
 
-export const plane = ({
-  number,
-  range,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance,
-}) => {
+export const plane = ({ number, range, mass, blackHoleMass }) => {
   const tilt = new Euler(-Math.PI / 16, Math.PI / 4, 0, 'YXZ')
 
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
-        color: new Color(1, 1, 1),
+        temperature: 0,
         mass: blackHoleMass,
         position: new Vector3(),
         speed: new Vector3(),
       }
     }
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position: new Vector3(
         range / 2 - Math.random() * range,
         range * 0.75,
@@ -424,23 +406,13 @@ export const plane = ({
   })
 }
 
-export const teapot = ({
-  number,
-  range,
-  mass,
-  blackHoleMass,
-  saturation,
-  luminance,
-}) => {
+export const teapot = ({ number, range, mass, blackHoleMass }) => {
   const segments = ~~(Math.sqrt(number / 32) - 1)
   const teapotGeometry = new TeapotGeometry(range, segments)
   const positions = teapotGeometry.attributes.position
   const orbs = new Array(positions.count).fill().map((_, i) => {
     return {
-      color: new Color().setHSL(Math.random(), saturation, luminance),
-      // mass 10^31 kg
-      mass: Math.random() * mass,
-      // distance 10^16 m
+      ...rngTemperatureMass(mass),
       position: new Vector3(
         positions.getX(i),
         positions.getY(i),
@@ -451,7 +423,7 @@ export const teapot = ({
   })
   if (blackHoleMass) {
     orbs.push({
-      color: new Color(1, 1, 1),
+      temperature: 0,
       mass: blackHoleMass,
       position: new Vector3(),
       speed: new Vector3(),
