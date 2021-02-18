@@ -2442,7 +2442,7 @@ function updateDisplays(controllerArray) {
 }
 var GUI$1 = GUI;
 
-// _snowpack/pkg/common/three.module-8cbe7deb.js
+// _snowpack/pkg/common/three.module-7c46d396.js
 var REVISION = "125";
 var MOUSE = {LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2};
 var TOUCH = {ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3};
@@ -26344,7 +26344,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-// _snowpack/pkg/common/Pass-1267f303.js
+// _snowpack/pkg/common/Pass-2df2d89c.js
 function Pass() {
   this.enabled = true;
   this.needsSwap = true;
@@ -27139,7 +27139,7 @@ var CopyShader = {
   ].join("\n")
 };
 
-// _snowpack/pkg/common/ShaderPass-74f0528f.js
+// _snowpack/pkg/common/ShaderPass-e67124a9.js
 var ShaderPass = function(shader, textureID) {
   Pass.call(this);
   this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
@@ -28795,6 +28795,7 @@ __export(configurations_exports, {
   eightCubes: () => eightCubes,
   fountain: () => fountain,
   harmonicSphere: () => harmonicSphere,
+  lol: () => lol,
   plane: () => plane,
   solarSystem: () => solarSystem,
   sphere: () => sphere,
@@ -30460,6 +30461,7 @@ var disc = ({
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
+  const minRange = range / 10;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -30469,7 +30471,7 @@ var disc = ({
         speed: new Vector3()
       };
     }
-    spherical.radius = range * Math.sqrt(Math.random());
+    spherical.radius = minRange + (range - minRange) * Math.random();
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
     const position = new Vector3().setFromSpherical(spherical);
@@ -30554,6 +30556,7 @@ var collidingDisc = ({
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
+  const minRange = range / 10;
   const orbs = new Array(number).fill().map((_, i) => {
     if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
       return {
@@ -30563,7 +30566,7 @@ var collidingDisc = ({
         speed: new Vector3()
       };
     }
-    spherical.radius = range * Math.sqrt(Math.random());
+    spherical.radius = minRange + (range - minRange) * Math.random();
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
     const position = new Vector3().setFromSpherical(spherical);
@@ -30674,6 +30677,22 @@ var teapot = ({number, range, mass, blackHoleMass}) => {
   }
   return orbs;
 };
+var lol = () => {
+  return [
+    {
+      temperature: 5e3,
+      mass: 1,
+      position: new Vector3(-200, -200, 200),
+      speed: new Vector3()
+    },
+    {
+      temperature: 1e4,
+      mass: 1e3,
+      position: new Vector3(0, 0, 0),
+      speed: new Vector3()
+    }
+  ];
+};
 
 // dist/fragmentShader.js
 var fragmentShader_default = "varying float blackHole;\nvarying vec3 tColor;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(tColor) == 0.0) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(tColor, 1.0 );\n  }\n}";
@@ -30697,9 +30716,9 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "cube",
-        number: 1e3,
+        number: 1250,
         range: 1e3,
-        speed: 15,
+        speed: 5,
         mass: 10,
         blackHoleMass: 0,
         scale: 50,
@@ -31317,6 +31336,103 @@ var stats_min = createCommonjsModule(function(module, exports) {
 });
 var statsjs_default = stats_min;
 
+// dist/gravity.js
+var Gravity = class {
+  constructor(orbs) {
+    this.len = orbs.length;
+    this.positions = new Float32Array(3 * this.len);
+    this.masses = new Float32Array(this.len);
+    this.temperatures = new Float32Array(this.len);
+    this.position = orbs.map(({position}) => position);
+    this.speed = orbs.map(({speed}) => speed);
+    this.acceleration = orbs.map(() => new Vector3());
+    this.u = new Vector3();
+    this.origin = new Vector3();
+  }
+  frog_leap(dt) {
+    const half_dt = dt * 0.5;
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
+      this.position[i].addScaledVector(this.speed[i], dt);
+    }
+  }
+  simulate(G, softening, collisions, collisionThreshold, escapeDistance) {
+    var i, n, j, l;
+    const collided = [];
+    const skip = [];
+    const softening2 = softening * softening;
+    const threshold2 = collisionThreshold * collisionThreshold;
+    for (i = 0, n = this.len; i < n; i++) {
+      this.acceleration[i].set(0, 0, 0);
+      for (j = 0; j < i; j++) {
+        this.u.subVectors(this.position[j], this.position[i]);
+        let distance2 = this.u.lengthSq();
+        let distance = Math.sqrt(distance2 + softening2);
+        if (collisions) {
+          if (distance2 < threshold2) {
+            collided.push([i, j]);
+            skip.push(j);
+          }
+        }
+        this.u.normalize().multiplyScalar(G / (distance * distance));
+        this.acceleration[i].addScaledVector(this.u, this.masses[j]);
+        this.acceleration[j].addScaledVector(this.u, -this.masses[i]);
+      }
+    }
+    for (i = 0, n = this.len; i < n; i++) {
+      if (this.position[i].distanceTo(this.origin) > escapeDistance) {
+        skip.push(i);
+      }
+    }
+    if (skip.length) {
+      for (l = 0, n = collided.length; l < n; l++) {
+        ;
+        [i, j] = collided[l];
+        let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
+        this.position[i].multiplyScalar(this.masses[i]).addScaledVector(this.position[j], this.masses[j]).multiplyScalar(mass_ratio);
+        this.speed[i].multiplyScalar(this.masses[i]).addScaledVector(this.speed[j], this.masses[j]).multiplyScalar(mass_ratio);
+        this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
+        this.masses[i] += this.masses[j];
+      }
+      const positions = [...this.position].filter((_, i2) => !skip.includes(i2));
+      const speeds = [...this.speed].filter((_, i2) => !skip.includes(i2));
+      const masses = [...this.masses].filter((_, i2) => !skip.includes(i2));
+      const temperatures = [...this.temperatures].filter((_, i2) => !skip.includes(i2));
+      this.len -= skip.length;
+      for (i = 0, n = this.len; i < n; i++) {
+        this.position[i] = positions[i];
+        this.speed[i] = speeds[i];
+        this.masses[i] = masses[i];
+        this.temperatures[i] = temperatures[i];
+      }
+    }
+    return this.len;
+  }
+  frog_drop(dt) {
+    const half_dt = dt * 0.5;
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
+    }
+    this.update();
+  }
+  update() {
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.positions[i * 3] = this.position[i].x;
+      this.positions[i * 3 + 1] = this.position[i].y;
+      this.positions[i * 3 + 2] = this.position[i].z;
+    }
+  }
+  free() {
+    delete this.positions;
+    delete this.masses;
+    delete this.temperatures;
+    delete this.position;
+    delete this.speed;
+    delete this.acceleration;
+  }
+};
+var gravity_default = Gravity;
+
 // dist/index.js
 var colorModes = {
   Temperature: 0.5,
@@ -31325,6 +31441,10 @@ var colorModes = {
   White: 0,
   ColorCoded: 0.75
 };
+var particles;
+var gravity;
+var backends = ["js_p2p", "rust_p2p"];
+var unsavedParams = {backend: "rust_p2p"};
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31385,9 +31505,9 @@ function render() {
     collisionThreshold,
     escapeDistance
   } = params;
-  annealation.frog_leap(dt);
-  const newLen = annealation.simulate(G, softening, collisions, collisionThreshold, escapeDistance);
-  annealation.frog_drop(dt);
+  gravity.frog_leap(dt);
+  const newLen = gravity.simulate(G, softening, collisions, collisionThreshold, escapeDistance);
+  gravity.frog_drop(dt);
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen);
     particles.geometry.attributes.temperature.needsUpdate = true;
@@ -31397,31 +31517,37 @@ function render() {
   controls.update();
   composer.render();
 }
-var particles;
-var annealation;
 function init2() {
+  const {backend} = unsavedParams;
   const orbs = configurations_exports[params.configuration](params);
-  annealation = Annealation.new(orbs.length);
-  const {buffer} = wasm_memory();
-  const positions = new Float32Array(buffer, annealation.positions_ptr(), 3 * orbs.length);
-  const speeds = new Float32Array(buffer, annealation.speeds_ptr(), 3 * orbs.length);
-  const masses = new Float32Array(buffer, annealation.masses_ptr(), orbs.length);
-  const temperatures = new Float32Array(buffer, annealation.temperatures_ptr(), orbs.length * 3);
+  if (backend === "js_p2p") {
+    gravity = new gravity_default(orbs);
+  } else if (backend === "rust_p2p") {
+    gravity = Annealation.new(orbs.length);
+    const {buffer} = wasm_memory();
+    gravity.positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
+    gravity.masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
+    gravity.temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
+    const speeds = new Float32Array(buffer, gravity.speeds_ptr(), 3 * orbs.length);
+    orbs.forEach(({speed}, i) => {
+      speeds[i * 3] = speed.x;
+      speeds[i * 3 + 1] = speed.y;
+      speeds[i * 3 + 2] = speed.z;
+    });
+  }
+  orbs.forEach(({position, mass, temperature}, i) => {
+    gravity.positions[i * 3] = position.x;
+    gravity.positions[i * 3 + 1] = position.y;
+    gravity.positions[i * 3 + 2] = position.z;
+    gravity.masses[i] = mass;
+    gravity.temperatures[i] = temperature;
+  });
   const geometry = new BufferGeometry();
   geometry.setDrawRange(0, orbs.length);
-  orbs.forEach(({position, speed, mass, temperature}, i) => {
-    positions[i * 3] = position.x;
-    positions[i * 3 + 1] = position.y;
-    positions[i * 3 + 2] = position.z;
-    speeds[i * 3] = speed.x;
-    speeds[i * 3 + 1] = speed.y;
-    speeds[i * 3 + 2] = speed.z;
-    masses[i] = mass;
-    temperatures[i] = temperature;
-  });
-  geometry.setAttribute("position", new BufferAttribute(positions, 3));
-  geometry.setAttribute("mass", new BufferAttribute(masses, 1));
-  geometry.setAttribute("temperature", new BufferAttribute(temperatures, 1));
+  geometry.setAttribute("position", new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("mass", new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("temperature", new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage));
+  geometry.setDrawRange(0, orbs.length);
   const material = new ShaderMaterial({
     vertexShader: vertexShader_default,
     fragmentShader: fragmentShader_default,
@@ -31436,7 +31562,7 @@ function init2() {
 }
 function restart() {
   scene.clear();
-  annealation.free();
+  gravity.free();
   init2();
 }
 function initGUI() {
@@ -31444,6 +31570,7 @@ function initGUI() {
     load: presets_default,
     preset
   });
+  gui.add(unsavedParams, "backend", backends).onChange(restart);
   const fx = gui.addFolder("Render fx");
   fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);
   fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);

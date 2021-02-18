@@ -145,7 +145,7 @@ export const disc = ({
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
-
+  const minRange = range / 10
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -155,7 +155,7 @@ export const disc = ({
         speed: new Vector3(),
       }
     }
-    spherical.radius = range * Math.sqrt(Math.random())
+    spherical.radius = minRange + (range - minRange) * Math.random()
     spherical.theta = Math.random() * 2 * Math.PI
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
     const position = new Vector3().setFromSpherical(spherical)
@@ -263,6 +263,7 @@ export const collidingDisc = ({
   gravitationalConstant,
 }) => {
   const spherical = new Spherical()
+  const minRange = range / 10
   // TODO orient galaxies
   const orbs = new Array(number).fill().map((_, i) => {
     if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
@@ -273,7 +274,7 @@ export const collidingDisc = ({
         speed: new Vector3(),
       }
     }
-    spherical.radius = range * Math.sqrt(Math.random())
+    spherical.radius = minRange + (range - minRange) * Math.random()
     spherical.theta = Math.random() * 2 * Math.PI
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
     const position = new Vector3().setFromSpherical(spherical)
@@ -430,4 +431,21 @@ export const teapot = ({ number, range, mass, blackHoleMass }) => {
     })
   }
   return orbs
+}
+
+export const lol = () => {
+  return [
+    {
+      temperature: 5000,
+      mass: 1,
+      position: new Vector3(-200, -200, 200),
+      speed: new Vector3(),
+    },
+    {
+      temperature: 10000,
+      mass: 1000,
+      position: new Vector3(0, 0, 0),
+      speed: new Vector3(),
+    },
+  ]
 }

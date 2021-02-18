@@ -8,24 +8,24 @@
       "bytes": 86125,
       "imports": []
     },
-    "_snowpack/pkg/common/three.module-8cbe7deb.js": {
-      "bytes": 1009399,
+    "_snowpack/pkg/common/three.module-7c46d396.js": {
+      "bytes": 1009422,
       "imports": []
     },
     "_snowpack/pkg/three.js": {
-      "bytes": 299,
+      "bytes": 322,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         }
       ]
     },
-    "_snowpack/pkg/common/Pass-1267f303.js": {
+    "_snowpack/pkg/common/Pass-2df2d89c.js": {
       "bytes": 1789,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         }
       ]
@@ -34,11 +34,11 @@
       "bytes": 3234,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         }
       ]
@@ -47,7 +47,7 @@
       "bytes": 25115,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         }
       ]
@@ -56,15 +56,15 @@
       "bytes": 597,
       "imports": []
     },
-    "_snowpack/pkg/common/ShaderPass-74f0528f.js": {
+    "_snowpack/pkg/common/ShaderPass-e67124a9.js": {
       "bytes": 1561,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         }
       ]
@@ -73,7 +73,7 @@
       "bytes": 8816,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
@@ -81,11 +81,11 @@
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/ShaderPass-74f0528f.js",
+          "path": "_snowpack/pkg/common/ShaderPass-e67124a9.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         }
       ]
@@ -94,11 +94,11 @@
       "bytes": 1901,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         }
       ]
@@ -107,11 +107,11 @@
       "bytes": 13838,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         },
         {
@@ -124,7 +124,7 @@
       "bytes": 52398,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         }
       ]
@@ -133,13 +133,13 @@
       "bytes": 19532,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/configurations.js": {
-      "bytes": 11694,
+      "bytes": 12074,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -160,22 +160,22 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 8010,
+      "bytes": 8009,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
       "bytes": 177,
       "imports": [
         {
-          "path": "_snowpack/pkg/common/ShaderPass-74f0528f.js",
+          "path": "_snowpack/pkg/common/ShaderPass-e67124a9.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/three.module-8cbe7deb.js",
+          "path": "_snowpack/pkg/common/three.module-7c46d396.js",
           "kind": "import-statement"
         },
         {
-          "path": "_snowpack/pkg/common/Pass-1267f303.js",
+          "path": "_snowpack/pkg/common/Pass-2df2d89c.js",
           "kind": "import-statement"
         }
       ]
@@ -197,8 +197,17 @@
       "bytes": 2572,
       "imports": []
     },
+    "dist/gravity.js": {
+      "bytes": 3698,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/three.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
     "dist/index.js": {
-      "bytes": 12430,
+      "bytes": 9488,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -259,6 +268,10 @@
         {
           "path": "_snowpack/pkg/statsjs.js",
           "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity.js",
+          "kind": "import-statement"
         }
       ]
     }
@@ -280,13 +293,13 @@
         "_snowpack/pkg/dat.gui.js": {
           "bytesInOutput": 85977
         },
-        "_snowpack/pkg/common/three.module-8cbe7deb.js": {
+        "_snowpack/pkg/common/three.module-7c46d396.js": {
           "bytesInOutput": 921322
         },
         "_snowpack/pkg/three.js": {
           "bytesInOutput": 0
         },
-        "_snowpack/pkg/common/Pass-1267f303.js": {
+        "_snowpack/pkg/common/Pass-2df2d89c.js": {
           "bytesInOutput": 963
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/AfterimagePass.js": {
@@ -298,7 +311,7 @@
         "_snowpack/pkg/common/CopyShader-c0a4c94f.js": {
           "bytesInOutput": 525
         },
-        "_snowpack/pkg/common/ShaderPass-74f0528f.js": {
+        "_snowpack/pkg/common/ShaderPass-e67124a9.js": {
           "bytesInOutput": 1249
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/EffectComposer.js": {
@@ -314,7 +327,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 11051
+          "bytesInOutput": 11437
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -340,11 +353,14 @@
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
+        "dist/gravity.js": {
+          "bytesInOutput": 3584
+        },
         "dist/index.js": {
-          "bytesInOutput": 7369
+          "bytesInOutput": 7867
         }
       },
-      "bytes": 1169040
+      "bytes": 1173528
     }
   }
 }

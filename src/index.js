@@ -10,6 +10,7 @@ import {
   ShaderMaterial,
   Vector2,
   WebGLRenderer,
+  DynamicDrawUsage,
 } from 'three'
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -24,6 +25,7 @@ import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, { Annealation, wasm_memory } from 'wasm'
 import Stats from 'stats.js'
+import Gravity from './gravity'
 
 const colorModes = {
   Temperature: 0.5,
@@ -32,6 +34,9 @@ const colorModes = {
   White: 0,
   ColorCoded: 0.75,
 }
+let particles, gravity
+const backends = ['js_p2p', 'rust_p2p']
+const unsavedParams = { backend: 'rust_p2p' }
 
 const stats = new Stats()
 
@@ -131,15 +136,15 @@ function render() {
     escapeDistance,
   } = params
 
-  annealation.frog_leap(dt)
-  const newLen = annealation.simulate(
+  gravity.frog_leap(dt)
+  const newLen = gravity.simulate(
     G,
     softening,
     collisions,
     collisionThreshold,
     escapeDistance
   )
-  annealation.frog_drop(dt)
+  gravity.frog_drop(dt)
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen)
     particles.geometry.attributes.temperature.needsUpdate = true
@@ -150,60 +155,61 @@ function render() {
   composer.render()
 }
 
-// function collide([orb, otherOrb]) {
-//   return {
-//     color: orb.color.lerp(
-//       otherOrb.color,
-//       otherOrb.mass / (orb.mass + otherOrb.mass)
-//     ),
-//     mass: orb.mass + otherOrb.mass,
-//     position: orb.mass > otherOrb.mass ? orb.position : otherOrb.position,
-//     speed: new Vector3().addVectors(
-//       orb.speed.multiplyScalar(orb.mass / (orb.mass + otherOrb.mass)),
-//       otherOrb.speed.multiplyScalar(otherOrb.mass / (orb.mass + otherOrb.mass))
-//     ),
-//   }
-// }
-let particles, annealation
-
 function init() {
+  const { backend } = unsavedParams
   const orbs = configurations[params.configuration](params)
 
-  annealation = Annealation.new(orbs.length)
-  const { buffer } = wasm_memory()
-  const positions = new Float32Array(
-    buffer,
-    annealation.positions_ptr(),
-    3 * orbs.length
-  )
-  const speeds = new Float32Array(
-    buffer,
-    annealation.speeds_ptr(),
-    3 * orbs.length
-  )
-  const masses = new Float32Array(buffer, annealation.masses_ptr(), orbs.length)
-  const temperatures = new Float32Array(
-    buffer,
-    annealation.temperatures_ptr(),
-    orbs.length * 3
-  )
+  if (backend === 'js_p2p') {
+    gravity = new Gravity(orbs)
+  } else if (backend === 'rust_p2p') {
+    gravity = Annealation.new(orbs.length)
+    const { buffer } = wasm_memory()
+    gravity.positions = new Float32Array(
+      buffer,
+      gravity.positions_ptr(),
+      3 * orbs.length
+    )
+    gravity.masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length)
+    gravity.temperatures = new Float32Array(
+      buffer,
+      gravity.temperatures_ptr(),
+      orbs.length
+    )
+    // Extra init of speeds
+    const speeds = new Float32Array(
+      buffer,
+      gravity.speeds_ptr(),
+      3 * orbs.length
+    )
+    orbs.forEach(({ speed }, i) => {
+      speeds[i * 3] = speed.x
+      speeds[i * 3 + 1] = speed.y
+      speeds[i * 3 + 2] = speed.z
+    })
+  }
+  orbs.forEach(({ position, mass, temperature }, i) => {
+    gravity.positions[i * 3] = position.x
+    gravity.positions[i * 3 + 1] = position.y
+    gravity.positions[i * 3 + 2] = position.z
+    gravity.masses[i] = mass
+    gravity.temperatures[i] = temperature
+  })
 
   const geometry = new BufferGeometry()
   geometry.setDrawRange(0, orbs.length)
-  orbs.forEach(({ position, speed, mass, temperature }, i) => {
-    positions[i * 3] = position.x
-    positions[i * 3 + 1] = position.y
-    positions[i * 3 + 2] = position.z
-    speeds[i * 3] = speed.x
-    speeds[i * 3 + 1] = speed.y
-    speeds[i * 3 + 2] = speed.z
-    masses[i] = mass
-    temperatures[i] = temperature
-  })
-
-  geometry.setAttribute('position', new BufferAttribute(positions, 3))
-  geometry.setAttribute('mass', new BufferAttribute(masses, 1))
-  geometry.setAttribute('temperature', new BufferAttribute(temperatures, 1))
+  geometry.setAttribute(
+    'position',
+    new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage)
+  )
+  geometry.setAttribute(
+    'mass',
+    new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage)
+  )
+  geometry.setAttribute(
+    'temperature',
+    new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage)
+  )
+  geometry.setDrawRange(0, orbs.length)
 
   const material = new ShaderMaterial({
     vertexShader,
@@ -219,120 +225,9 @@ function init() {
   scene.add(particles)
 }
 
-// const u = new Vector3()
-
-// function simulate() {
-//   var i,
-//     n,
-//     j,
-//     updated = false
-
-//   const {
-//     simulationSpeed: dt,
-//     gravitationalConstant: G,
-//     collisions,
-//     softening,
-//     collisionScale,
-//   } = params
-
-//   const collided = []
-//   for (i = 0, n = orbs.length; i < n; i++) {
-//     const orb = orbs[i]
-//     orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
-//     orb.position.addScaledVector(orb.speed, dt)
-//   }
-//   for (i = 0, n = orbs.length; i < n; i++) {
-//     const orb = orbs[i]
-//     orb.acceleration.set(0, 0, 0)
-//     for (j = 0; j < i; j++) {
-//       const otherOrb = orbs[j]
-
-//       u.subVectors(otherOrb.position, orb.position)
-//       let distance2 = u.lengthSq()
-//       if (collisions) {
-//         if (
-//           distance2 <
-//           Math.max(
-//             softening,
-//             collisionScale * Math.cbrt(orb.mass * otherOrb.mass)
-//           )
-//         ) {
-//           if (!collided.map(([, otherOrb]) => otherOrb).includes(orb)) {
-//             collided.push([orb, otherOrb])
-//           }
-//           break
-//         }
-//       } else {
-//         distance2 += softening
-//       }
-
-//       // a = G * M / d²
-//       u.normalize().multiplyScalar(G / distance2)
-//       orb.acceleration.addScaledVector(u, otherOrb.mass)
-//       otherOrb.acceleration.addScaledVector(u, -orb.mass)
-//     }
-//   }
-
-//   if (collided.length) {
-//     const newOrbs = collided.map(collide)
-//     const deletedOrbs = collided.flat()
-
-//     orbs = [...orbs.filter(orb => !deletedOrbs.includes(orb)), ...newOrbs]
-//     updated = true
-//     geometry.setDrawRange(0, orbs.length)
-//   }
-
-//   const escaped = []
-//   for (i = 0, n = orbs.length; i < n; i++) {
-//     const orb = orbs[i]
-//     orb.speed.addScaledVector(orb.acceleration, dt * 0.5)
-
-//     if (orb.position.distanceTo(origin) > params.escapeDistance) {
-//       escaped.push(orb)
-//     }
-//   }
-//   if (escaped.length) {
-//     orbs = orbs.filter(orb => !escaped.includes(orb))
-//     updated = true
-//     geometry.setDrawRange(0, orbs.length)
-//   }
-//   return updated
-// }
-
-// function update(updated) {
-//   const { scale, blackHoleMassThreshold } = params
-//   for (var i = 0, n = orbs.length; i < n; i++) {
-//     const orb = orbs[i]
-//     // geometry.attributes.position.setXYZ(
-//     //   i,
-//     //   orb.position.x,
-//     //   orb.position.y,
-//     //   orb.position.z
-//     // )
-
-//     if (updated) {
-//       const blackHole = orb.mass >= blackHoleMassThreshold
-
-//       geometry.attributes.scale.setX(
-//         i,
-//         scale * (blackHole ? Math.pow(orb.mass, 0.1) : Math.cbrt(orb.mass))
-//       )
-//       geometry.attributes.color.setXYZ(
-//         i,
-//         blackHole ? 0 : orb.color.r,
-//         blackHole ? 0 : orb.color.g,
-//         blackHole ? 0 : orb.color.b
-//       )
-//     }
-//   }
-//   // geometry.attributes.position.needsUpdate = true
-//   geometry.attributes.scale.needsUpdate = updated
-//   geometry.attributes.color.needsUpdate = updated
-// }
-
 function restart() {
   scene.clear()
-  annealation.free()
+  gravity.free()
   init()
 }
 
@@ -341,7 +236,7 @@ function initGUI() {
     load: presets,
     preset,
   })
-
+  gui.add(unsavedParams, 'backend', backends).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
   fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
