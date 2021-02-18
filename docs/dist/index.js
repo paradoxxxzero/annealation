@@ -28795,7 +28795,6 @@ __export(configurations_exports, {
   eightCubes: () => eightCubes,
   fountain: () => fountain,
   harmonicSphere: () => harmonicSphere,
-  lol: () => lol,
   plane: () => plane,
   solarSystem: () => solarSystem,
   sphere: () => sphere,
@@ -30658,7 +30657,7 @@ var plane = ({number, range, mass, blackHoleMass}) => {
 };
 var teapot = ({number, range, mass, blackHoleMass}) => {
   const segments = ~~(Math.sqrt(number / 32) - 1);
-  const teapotGeometry = new TeapotGeometry(range, segments);
+  const teapotGeometry = new TeapotGeometry(~~(range / 2), segments);
   const positions = teapotGeometry.attributes.position;
   const orbs = new Array(positions.count).fill().map((_, i) => {
     return {
@@ -30677,22 +30676,6 @@ var teapot = ({number, range, mass, blackHoleMass}) => {
   }
   return orbs;
 };
-var lol = () => {
-  return [
-    {
-      temperature: 5e3,
-      mass: 1,
-      position: new Vector3(-200, -200, 200),
-      speed: new Vector3()
-    },
-    {
-      temperature: 1e4,
-      mass: 1e3,
-      position: new Vector3(0, 0, 0),
-      speed: new Vector3()
-    }
-  ];
-};
 
 // dist/fragmentShader.js
 var fragmentShader_default = "varying float blackHole;\nvarying vec3 tColor;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(tColor) == 0.0) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(tColor, 1.0 );\n  }\n}";
@@ -30706,6 +30689,7 @@ var presets_default = {
   remembered: {
     Cube: {
       0: {
+        backend: "rust_p2p",
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30734,6 +30718,7 @@ var presets_default = {
     },
     Galaxy: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30762,6 +30747,7 @@ var presets_default = {
     },
     Sphere: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30790,6 +30776,7 @@ var presets_default = {
     },
     HarmonicSphere: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30818,6 +30805,7 @@ var presets_default = {
     },
     ProtoSolarSystem: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -30846,6 +30834,7 @@ var presets_default = {
     },
     CollidingGalaxies: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30874,6 +30863,7 @@ var presets_default = {
     },
     Fountain: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30902,6 +30892,7 @@ var presets_default = {
     },
     EightCubes: {
       0: {
+        backend: "rust_p2p",
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30930,6 +30921,7 @@ var presets_default = {
     },
     Plane: {
       0: {
+        backend: "rust_p2p",
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30958,6 +30950,7 @@ var presets_default = {
     },
     Teapot: {
       0: {
+        backend: "rust_p2p",
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30969,7 +30962,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "teapot",
         number: 2e3,
-        range: 500,
+        range: 1e3,
         speed: 15,
         mass: 10,
         blackHoleMass: 0,
@@ -30986,6 +30979,7 @@ var presets_default = {
     },
     TeapotWithBlackHole: {
       0: {
+        backend: "rust_p2p",
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30997,7 +30991,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "teapot",
         number: 2e3,
-        range: 500,
+        range: 1e3,
         speed: 15,
         mass: 10,
         blackHoleMass: 25e3,
@@ -31005,6 +30999,35 @@ var presets_default = {
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    Ekusupuroshon: {
+      0: {
+        backend: "js_fmm",
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "cube",
+        number: 5e4,
+        range: 1,
+        speed: 0,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 30,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 3e-3,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
@@ -31336,8 +31359,8 @@ var stats_min = createCommonjsModule(function(module, exports) {
 });
 var statsjs_default = stats_min;
 
-// dist/gravity.js
-var Gravity = class {
+// dist/gravity/p2p.js
+var P2PGravity = class {
   constructor(orbs) {
     this.len = orbs.length;
     this.positions = new Float32Array(3 * this.len);
@@ -31431,9 +31454,125 @@ var Gravity = class {
     delete this.acceleration;
   }
 };
-var gravity_default = Gravity;
+var p2p_default = P2PGravity;
+
+// dist/gravity/fmm.js
+var FMMGravity = class {
+  constructor(orbs, range) {
+    this.len = orbs.length;
+    this.positions = new Float32Array(3 * this.len);
+    this.masses = new Float32Array(this.len);
+    this.temperatures = new Float32Array(this.len);
+    this.position = orbs.map(({position}) => position);
+    this.speed = orbs.map(({speed}) => speed);
+    this.acceleration = orbs.map(() => new Vector3());
+    this.u = new Vector3();
+    this.origin = new Vector3();
+    this.range = range * 5;
+    this.levels = 9;
+    this.childrenShifts = new Array(8).fill().map((_, i) => i.toString(2).padStart(3, "0").split("").map((s) => parseInt(s)));
+    const grid_size = 1 << 3 * this.levels;
+    this.xGrid = new Float32Array(grid_size);
+    this.yGrid = new Float32Array(grid_size);
+    this.zGrid = new Float32Array(grid_size);
+  }
+  frog_leap(dt) {
+    const half_dt = dt * 0.5;
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
+      this.position[i].addScaledVector(this.speed[i], dt);
+    }
+  }
+  getCells(position) {
+    const cells = [];
+    var num, size, x, y, z, half_range = this.range * 0.5;
+    for (var level = 1; level < this.levels; level++) {
+      num = 1 << level;
+      size = this.range / num;
+      x = Math.floor((position.x + half_range) / size);
+      y = Math.floor((position.y + half_range) / size);
+      z = Math.floor((position.z + half_range) / size);
+      if (0 <= x && x < num && 0 <= y && y < num && 0 <= z && z < num) {
+        cells.push([level, x, y, z]);
+      }
+    }
+    return cells;
+  }
+  getHash(level, x, y, z) {
+    return (1 << 3 * level) + x * (1 << 2 * level) + y * (1 << 1 * level) + z;
+  }
+  simulate(G) {
+    var i, n, cells, cell_size, cell_hash, half_range = this.range * 0.5;
+    for (i = 0, n = this.len; i < n; i++) {
+      cells = this.getCells(this.position[i]);
+      var cell_level = 0, cell_x = 0, cell_y = 0, cell_z = 0, cell_num, occ_level, occ_x, occ_y, occ_z, x, y, z, level, shift, cell_i, shift_i, offset_x, offset_y, offset_z, k, distance;
+      for (cell_i = 1; cell_i < cells.length; cell_i++) {
+        ;
+        [occ_level, occ_x, occ_y, occ_z] = cells[cell_i];
+        for (shift_i = 0; shift_i < this.childrenShifts.length; shift_i++) {
+          shift = this.childrenShifts[shift_i];
+          x = 2 * cell_x + shift[0];
+          y = 2 * cell_y + shift[1];
+          z = 2 * cell_z + shift[2];
+          level = cell_level + 1;
+          cell_num = 1 << level;
+          if (!(x == occ_x && y == occ_y && z == occ_z && level == occ_level)) {
+            cell_hash = this.getHash(level, x, y, z);
+            cell_size = this.range / cell_num;
+            offset_x = this.position[i].x - (x + 0.5) * cell_size + half_range;
+            offset_y = this.position[i].y - (y + 0.5) * cell_size + half_range;
+            offset_z = this.position[i].z - (z + 0.5) * cell_size + half_range;
+            distance = Math.sqrt(offset_x * offset_x + offset_y * offset_y + offset_z * offset_z);
+            k = G * this.masses[i] / (distance * distance * distance);
+            this.xGrid[cell_hash] += k * offset_x;
+            this.yGrid[cell_hash] += k * offset_y;
+            this.zGrid[cell_hash] += k * offset_z;
+          }
+        }
+        cell_level = occ_level;
+        cell_x = occ_x;
+        cell_y = occ_y;
+        cell_z = occ_z;
+      }
+    }
+    for (i = 0, n = this.len; i < n; i++) {
+      cells = this.getCells(this.position[i]);
+      for (cell_i = 0; cell_i < cells.length; cell_i++) {
+        cell_hash = this.getHash(...cells[cell_i]);
+        this.acceleration[i].x += this.xGrid[cell_hash];
+        this.acceleration[i].y += this.yGrid[cell_hash];
+        this.acceleration[i].z += this.zGrid[cell_hash];
+      }
+    }
+    return this.len;
+  }
+  frog_drop(dt) {
+    const half_dt = dt * 0.5;
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
+    }
+    this.update();
+  }
+  update() {
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.positions[i * 3] = this.position[i].x;
+      this.positions[i * 3 + 1] = this.position[i].y;
+      this.positions[i * 3 + 2] = this.position[i].z;
+    }
+  }
+  free() {
+    delete this.positions;
+    delete this.masses;
+    delete this.temperatures;
+    delete this.position;
+    delete this.speed;
+    delete this.acceleration;
+  }
+};
+var fmm_default = FMMGravity;
 
 // dist/index.js
+var raf = null;
 var colorModes = {
   Temperature: 0.5,
   Rainbow: 1,
@@ -31443,8 +31582,7 @@ var colorModes = {
 };
 var particles;
 var gravity;
-var backends = ["js_p2p", "rust_p2p"];
-var unsavedParams = {backend: "rust_p2p"};
+var backends = ["js_p2p", "rust_p2p", "js_fmm"];
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31492,7 +31630,7 @@ function onWindowResize() {
   fxaaPass.material.uniforms.resolution.value.y = 1 / (window.innerHeight * pixelRatio2);
 }
 function animate() {
-  requestAnimationFrame(animate);
+  raf = requestAnimationFrame(animate);
   stats.update();
   render();
 }
@@ -31518,10 +31656,19 @@ function render() {
   composer.render();
 }
 function init2() {
-  const {backend} = unsavedParams;
-  const orbs = configurations_exports[params.configuration](params);
+  const {
+    backend,
+    configuration,
+    range,
+    scale,
+    blackHoleMassThreshold,
+    colorMode
+  } = params;
+  const orbs = configurations_exports[configuration](params);
   if (backend === "js_p2p") {
-    gravity = new gravity_default(orbs);
+    gravity = new p2p_default(orbs);
+  } else if (backend === "js_fmm") {
+    gravity = new fmm_default(orbs, range);
   } else if (backend === "rust_p2p") {
     gravity = Annealation.new(orbs.length);
     const {buffer} = wasm_memory();
@@ -31552,25 +31699,27 @@ function init2() {
     vertexShader: vertexShader_default,
     fragmentShader: fragmentShader_default,
     uniforms: {
-      scale: {value: params.scale},
-      blackHoleMassThreshold: {value: params.blackHoleMassThreshold},
-      mode: {value: colorModes[params.colorMode]}
+      scale: {value: scale},
+      blackHoleMassThreshold: {value: blackHoleMassThreshold},
+      mode: {value: colorModes[colorMode]}
     }
   });
   particles = new Points(geometry, material);
   scene.add(particles);
 }
 function restart() {
+  cancelAnimationFrame(raf);
   scene.clear();
   gravity.free();
   init2();
+  raf = requestAnimationFrame(animate);
 }
 function initGUI() {
   const gui = new GUI$1({
     load: presets_default,
     preset
   });
-  gui.add(unsavedParams, "backend", backends).onChange(restart);
+  gui.add(params, "backend", backends).onChange(restart);
   const fx = gui.addFolder("Render fx");
   fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);
   fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);
@@ -31586,7 +31735,7 @@ function initGUI() {
   fx.add(params, "afterImageDamp", 0, 1).onChange((v) => afterImagePass.uniforms.damp.value = v);
   const config = gui.addFolder("Configuration");
   config.add(params, "configuration", Object.keys(configurations_exports));
-  config.add(params, "number", 0, 5e3, 1);
+  config.add(params, "number", 0, 5e4, 1);
   config.add(params, "range", 0, 5e3, 1).name("range (1e15m)");
   config.add(params, "speed", 0, 1e3).name("speed (1e2m.s)");
   config.add(params, "mass", 0, 1e3).name("mass (1e30kg)");
@@ -31620,5 +31769,5 @@ var wasmPromise = wasm_default();
 wasmPromise.then(() => {
   init2();
   initGUI();
-  requestAnimationFrame(animate);
+  raf = requestAnimationFrame(animate);
 });

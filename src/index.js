@@ -25,7 +25,9 @@ import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, { Annealation, wasm_memory } from 'wasm'
 import Stats from 'stats.js'
-import Gravity from './gravity'
+import P2PGravity from './gravity/p2p'
+import FMMGravity from './gravity/fmm'
+let raf = null
 
 const colorModes = {
   Temperature: 0.5,
@@ -35,8 +37,7 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = ['js_p2p', 'rust_p2p']
-const unsavedParams = { backend: 'rust_p2p' }
+const backends = ['js_p2p', 'rust_p2p', 'js_fmm']
 
 const stats = new Stats()
 
@@ -121,7 +122,7 @@ function onWindowResize() {
 }
 
 function animate() {
-  requestAnimationFrame(animate)
+  raf = requestAnimationFrame(animate)
   stats.update()
   render()
 }
@@ -156,11 +157,20 @@ function render() {
 }
 
 function init() {
-  const { backend } = unsavedParams
-  const orbs = configurations[params.configuration](params)
+  const {
+    backend,
+    configuration,
+    range,
+    scale,
+    blackHoleMassThreshold,
+    colorMode,
+  } = params
+  const orbs = configurations[configuration](params)
 
   if (backend === 'js_p2p') {
-    gravity = new Gravity(orbs)
+    gravity = new P2PGravity(orbs)
+  } else if (backend === 'js_fmm') {
+    gravity = new FMMGravity(orbs, range)
   } else if (backend === 'rust_p2p') {
     gravity = Annealation.new(orbs.length)
     const { buffer } = wasm_memory()
@@ -215,9 +225,9 @@ function init() {
     vertexShader,
     fragmentShader,
     uniforms: {
-      scale: { value: params.scale },
-      blackHoleMassThreshold: { value: params.blackHoleMassThreshold },
-      mode: { value: colorModes[params.colorMode] },
+      scale: { value: scale },
+      blackHoleMassThreshold: { value: blackHoleMassThreshold },
+      mode: { value: colorModes[colorMode] },
     },
   })
 
@@ -226,9 +236,11 @@ function init() {
 }
 
 function restart() {
+  cancelAnimationFrame(raf)
   scene.clear()
   gravity.free()
   init()
+  raf = requestAnimationFrame(animate)
 }
 
 function initGUI() {
@@ -236,7 +248,7 @@ function initGUI() {
     load: presets,
     preset,
   })
-  gui.add(unsavedParams, 'backend', backends).onChange(restart)
+  gui.add(params, 'backend', backends).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
   fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
@@ -263,7 +275,7 @@ function initGUI() {
 
   const config = gui.addFolder('Configuration')
   config.add(params, 'configuration', Object.keys(configurations))
-  config.add(params, 'number', 0, 5000, 1)
+  config.add(params, 'number', 0, 50000, 1)
   config.add(params, 'range', 0, 5000, 1).name('range (1e15m)')
   config.add(params, 'speed', 0, 1000).name('speed (1e2m.s)')
   config.add(params, 'mass', 0, 1000).name('mass (1e30kg)')
@@ -315,5 +327,5 @@ const wasmPromise = wasmInit()
 wasmPromise.then(() => {
   init()
   initGUI()
-  requestAnimationFrame(animate)
+  raf = requestAnimationFrame(animate)
 })

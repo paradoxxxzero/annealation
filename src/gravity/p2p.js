@@ -1,5 +1,5 @@
 import { Vector3 } from 'three'
-export default class Gravity {
+export default class P2PGravity {
   constructor(orbs) {
     this.len = orbs.length
     this.positions = new Float32Array(3 * this.len)

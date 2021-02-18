@@ -139,7 +139,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 12074,
+      "bytes": 11787,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -160,7 +160,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 8009,
+      "bytes": 9049,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -197,8 +197,17 @@
       "bytes": 2572,
       "imports": []
     },
-    "dist/gravity.js": {
-      "bytes": 3698,
+    "dist/gravity/p2p.js": {
+      "bytes": 3704,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/three.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/gravity/fmm.js": {
+      "bytes": 4819,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -207,7 +216,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 9488,
+      "bytes": 9727,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -270,7 +279,11 @@
           "kind": "import-statement"
         },
         {
-          "path": "dist/gravity.js",
+          "path": "dist/gravity/p2p.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/fmm.js",
           "kind": "import-statement"
         }
       ]
@@ -327,7 +340,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 11437
+          "bytesInOutput": 11147
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -339,7 +352,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 7909
+          "bytesInOutput": 8938
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -353,14 +366,17 @@
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
-        "dist/gravity.js": {
-          "bytesInOutput": 3584
+        "dist/gravity/p2p.js": {
+          "bytesInOutput": 3586
+        },
+        "dist/gravity/fmm.js": {
+          "bytesInOutput": 4411
         },
         "dist/index.js": {
-          "bytesInOutput": 7867
+          "bytesInOutput": 8058
         }
       },
-      "bytes": 1173528
+      "bytes": 1178899
     }
   }
 }

@@ -409,7 +409,7 @@ export const plane = ({ number, range, mass, blackHoleMass }) => {
 
 export const teapot = ({ number, range, mass, blackHoleMass }) => {
   const segments = ~~(Math.sqrt(number / 32) - 1)
-  const teapotGeometry = new TeapotGeometry(range, segments)
+  const teapotGeometry = new TeapotGeometry(~~(range / 2), segments)
   const positions = teapotGeometry.attributes.position
   const orbs = new Array(positions.count).fill().map((_, i) => {
     return {
@@ -431,21 +431,4 @@ export const teapot = ({ number, range, mass, blackHoleMass }) => {
     })
   }
   return orbs
-}
-
-export const lol = () => {
-  return [
-    {
-      temperature: 5000,
-      mass: 1,
-      position: new Vector3(-200, -200, 200),
-      speed: new Vector3(),
-    },
-    {
-      temperature: 10000,
-      mass: 1000,
-      position: new Vector3(0, 0, 0),
-      speed: new Vector3(),
-    },
-  ]
 }
