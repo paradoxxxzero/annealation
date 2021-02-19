@@ -1,7 +1,7 @@
 import { Vector3 } from 'three'
 
 export default class FMMGravity {
-  constructor(orbs, range) {
+  constructor(orbs, range, resolution) {
     this.len = orbs.length
     this.positions = new Float32Array(3 * this.len)
     this.masses = new Float32Array(this.len)
@@ -14,19 +14,10 @@ export default class FMMGravity {
     this.origin = new Vector3()
 
     this.range = range * 5
-    this.levels = 9
+    this.levels = resolution
 
-    this.childrenShifts = new Array(8).fill().map((_, i) =>
-      i
-        .toString(2)
-        .padStart(3, '0')
-        .split('')
-        .map(s => parseInt(s))
-    )
-    const grid_size = 1 << (3 * this.levels)
-    this.xGrid = new Float32Array(grid_size)
-    this.yGrid = new Float32Array(grid_size)
-    this.zGrid = new Float32Array(grid_size)
+    this.grid_dimension_size = 1 << (3 * this.levels)
+    this.grid = new Float32Array(this.grid_dimension_size * 3)
   }
 
   frog_leap(dt) {
@@ -69,12 +60,24 @@ export default class FMMGravity {
   }
 
   simulate(G) {
+    this.grid.fill(0)
+
     var i,
       n,
       cells,
       cell_size,
       cell_hash,
-      half_range = this.range * 0.5
+      half_range = this.range * 0.5,
+      childrenShifts = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 1, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+      ]
 
     // Computing cells from all particles
     for (i = 0, n = this.len; i < n; i++) {
@@ -100,12 +103,10 @@ export default class FMMGravity {
         offset_z,
         k,
         distance
-
       for (cell_i = 1; cell_i < cells.length; cell_i++) {
         ;[occ_level, occ_x, occ_y, occ_z] = cells[cell_i]
-
-        for (shift_i = 0; shift_i < this.childrenShifts.length; shift_i++) {
-          shift = this.childrenShifts[shift_i]
+        for (shift_i = 0; shift_i < childrenShifts.length; shift_i++) {
+          shift = childrenShifts[shift_i]
           x = 2 * cell_x + shift[0]
           y = 2 * cell_y + shift[1]
           z = 2 * cell_z + shift[2]
@@ -125,9 +126,9 @@ export default class FMMGravity {
             )
             k = (G * this.masses[i]) / (distance * distance * distance)
 
-            this.xGrid[cell_hash] += k * offset_x
-            this.yGrid[cell_hash] += k * offset_y
-            this.zGrid[cell_hash] += k * offset_z
+            this.grid[cell_hash] += k * offset_x
+            this.grid[cell_hash + this.grid_dimension_size] += k * offset_y
+            this.grid[cell_hash + 2 * this.grid_dimension_size] += k * offset_z
           }
         }
         cell_level = occ_level
@@ -140,11 +141,16 @@ export default class FMMGravity {
     // Applying force from all cells to particles
     for (i = 0, n = this.len; i < n; i++) {
       cells = this.getCells(this.position[i])
+      this.acceleration[i].set(0, 0, 0)
       for (cell_i = 0; cell_i < cells.length; cell_i++) {
         cell_hash = this.getHash(...cells[cell_i])
-        this.acceleration[i].x += this.xGrid[cell_hash]
-        this.acceleration[i].y += this.yGrid[cell_hash]
-        this.acceleration[i].z += this.zGrid[cell_hash]
+        this.acceleration[i].x += this.grid[cell_hash]
+        this.acceleration[i].y += this.grid[
+          cell_hash + this.grid_dimension_size
+        ]
+        this.acceleration[i].z += this.grid[
+          cell_hash + 2 * this.grid_dimension_size
+        ]
       }
     }
     return this.len

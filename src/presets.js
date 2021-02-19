@@ -4,6 +4,7 @@ export default {
     Cube: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -33,6 +34,7 @@ export default {
     Galaxy: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -62,6 +64,7 @@ export default {
     Sphere: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -91,6 +94,7 @@ export default {
     HarmonicSphere: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -120,6 +124,7 @@ export default {
     ProtoSolarSystem: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -149,6 +154,7 @@ export default {
     CollidingGalaxies: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -178,6 +184,7 @@ export default {
     Fountain: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -207,6 +214,7 @@ export default {
     EightCubes: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -236,6 +244,7 @@ export default {
     Plane: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -265,6 +274,7 @@ export default {
     Teapot: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -294,6 +304,7 @@ export default {
     TeapotWithBlackHole: {
       0: {
         backend: 'rust_p2p',
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -323,6 +334,7 @@ export default {
     Ekusupuroshon: {
       0: {
         backend: 'js_fmm',
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -341,7 +353,7 @@ export default {
         scale: 30,
         colorMode: 'Temperature',
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.003,
+        simulationSpeed: 0.005,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,

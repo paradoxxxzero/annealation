@@ -27,6 +27,7 @@ import wasmInit, { Annealation, wasm_memory } from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
+import NoGravity from './gravity/none'
 let raf = null
 
 const colorModes = {
@@ -37,7 +38,7 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = ['js_p2p', 'rust_p2p', 'js_fmm']
+const backends = ['js_p2p', 'rust_p2p', 'js_fmm', 'js_none']
 
 const stats = new Stats()
 
@@ -136,7 +137,6 @@ function render() {
     collisionThreshold,
     escapeDistance,
   } = params
-
   gravity.frog_leap(dt)
   const newLen = gravity.simulate(
     G,
@@ -164,13 +164,16 @@ function init() {
     scale,
     blackHoleMassThreshold,
     colorMode,
+    resolution,
   } = params
   const orbs = configurations[configuration](params)
 
   if (backend === 'js_p2p') {
     gravity = new P2PGravity(orbs)
+  } else if (backend === 'js_none') {
+    gravity = new NoGravity(orbs)
   } else if (backend === 'js_fmm') {
-    gravity = new FMMGravity(orbs, range)
+    gravity = new FMMGravity(orbs, range, resolution)
   } else if (backend === 'rust_p2p') {
     gravity = Annealation.new(orbs.length)
     const { buffer } = wasm_memory()
@@ -249,6 +252,7 @@ function initGUI() {
     preset,
   })
   gui.add(params, 'backend', backends).onChange(restart)
+  gui.add(params, 'resolution', 1, 9).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
   fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))

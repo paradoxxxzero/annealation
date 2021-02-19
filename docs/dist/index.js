@@ -30690,6 +30690,7 @@ var presets_default = {
     Cube: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30719,6 +30720,7 @@ var presets_default = {
     Galaxy: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30748,6 +30750,7 @@ var presets_default = {
     Sphere: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30777,6 +30780,7 @@ var presets_default = {
     HarmonicSphere: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30806,6 +30810,7 @@ var presets_default = {
     ProtoSolarSystem: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -30835,6 +30840,7 @@ var presets_default = {
     CollidingGalaxies: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30864,6 +30870,7 @@ var presets_default = {
     Fountain: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30893,6 +30900,7 @@ var presets_default = {
     EightCubes: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30922,6 +30930,7 @@ var presets_default = {
     Plane: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30951,6 +30960,7 @@ var presets_default = {
     Teapot: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30980,6 +30990,7 @@ var presets_default = {
     TeapotWithBlackHole: {
       0: {
         backend: "rust_p2p",
+        resolution: 8,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -31009,6 +31020,7 @@ var presets_default = {
     Ekusupuroshon: {
       0: {
         backend: "js_fmm",
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -31027,7 +31039,7 @@ var presets_default = {
         scale: 30,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
-        simulationSpeed: 3e-3,
+        simulationSpeed: 5e-3,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
@@ -31458,7 +31470,7 @@ var p2p_default = P2PGravity;
 
 // dist/gravity/fmm.js
 var FMMGravity = class {
-  constructor(orbs, range) {
+  constructor(orbs, range, resolution) {
     this.len = orbs.length;
     this.positions = new Float32Array(3 * this.len);
     this.masses = new Float32Array(this.len);
@@ -31469,12 +31481,9 @@ var FMMGravity = class {
     this.u = new Vector3();
     this.origin = new Vector3();
     this.range = range * 5;
-    this.levels = 9;
-    this.childrenShifts = new Array(8).fill().map((_, i) => i.toString(2).padStart(3, "0").split("").map((s) => parseInt(s)));
-    const grid_size = 1 << 3 * this.levels;
-    this.xGrid = new Float32Array(grid_size);
-    this.yGrid = new Float32Array(grid_size);
-    this.zGrid = new Float32Array(grid_size);
+    this.levels = resolution;
+    this.grid_dimension_size = 1 << 3 * this.levels;
+    this.grid = new Float32Array(this.grid_dimension_size * 3);
   }
   frog_leap(dt) {
     const half_dt = dt * 0.5;
@@ -31502,15 +31511,25 @@ var FMMGravity = class {
     return (1 << 3 * level) + x * (1 << 2 * level) + y * (1 << 1 * level) + z;
   }
   simulate(G) {
-    var i, n, cells, cell_size, cell_hash, half_range = this.range * 0.5;
+    this.grid.fill(0);
+    var i, n, cells, cell_size, cell_hash, half_range = this.range * 0.5, childrenShifts = [
+      [0, 0, 0],
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+      [1, 1, 0],
+      [0, 1, 1],
+      [1, 0, 1],
+      [1, 1, 1]
+    ];
     for (i = 0, n = this.len; i < n; i++) {
       cells = this.getCells(this.position[i]);
       var cell_level = 0, cell_x = 0, cell_y = 0, cell_z = 0, cell_num, occ_level, occ_x, occ_y, occ_z, x, y, z, level, shift, cell_i, shift_i, offset_x, offset_y, offset_z, k, distance;
       for (cell_i = 1; cell_i < cells.length; cell_i++) {
         ;
         [occ_level, occ_x, occ_y, occ_z] = cells[cell_i];
-        for (shift_i = 0; shift_i < this.childrenShifts.length; shift_i++) {
-          shift = this.childrenShifts[shift_i];
+        for (shift_i = 0; shift_i < childrenShifts.length; shift_i++) {
+          shift = childrenShifts[shift_i];
           x = 2 * cell_x + shift[0];
           y = 2 * cell_y + shift[1];
           z = 2 * cell_z + shift[2];
@@ -31524,9 +31543,9 @@ var FMMGravity = class {
             offset_z = this.position[i].z - (z + 0.5) * cell_size + half_range;
             distance = Math.sqrt(offset_x * offset_x + offset_y * offset_y + offset_z * offset_z);
             k = G * this.masses[i] / (distance * distance * distance);
-            this.xGrid[cell_hash] += k * offset_x;
-            this.yGrid[cell_hash] += k * offset_y;
-            this.zGrid[cell_hash] += k * offset_z;
+            this.grid[cell_hash] += k * offset_x;
+            this.grid[cell_hash + this.grid_dimension_size] += k * offset_y;
+            this.grid[cell_hash + 2 * this.grid_dimension_size] += k * offset_z;
           }
         }
         cell_level = occ_level;
@@ -31537,11 +31556,12 @@ var FMMGravity = class {
     }
     for (i = 0, n = this.len; i < n; i++) {
       cells = this.getCells(this.position[i]);
+      this.acceleration[i].set(0, 0, 0);
       for (cell_i = 0; cell_i < cells.length; cell_i++) {
         cell_hash = this.getHash(...cells[cell_i]);
-        this.acceleration[i].x += this.xGrid[cell_hash];
-        this.acceleration[i].y += this.yGrid[cell_hash];
-        this.acceleration[i].z += this.zGrid[cell_hash];
+        this.acceleration[i].x += this.grid[cell_hash];
+        this.acceleration[i].y += this.grid[cell_hash + this.grid_dimension_size];
+        this.acceleration[i].z += this.grid[cell_hash + 2 * this.grid_dimension_size];
       }
     }
     return this.len;
@@ -31571,6 +31591,90 @@ var FMMGravity = class {
 };
 var fmm_default = FMMGravity;
 
+// dist/gravity/none.js
+var NoGravity = class {
+  constructor(orbs) {
+    this.len = orbs.length;
+    this.positions = new Float32Array(3 * this.len);
+    this.masses = new Float32Array(this.len);
+    this.temperatures = new Float32Array(this.len);
+    this.position = orbs.map(({position}) => position);
+    this.speed = orbs.map(({speed}) => speed);
+    this.u = new Vector3();
+    this.origin = new Vector3();
+  }
+  frog_leap(dt) {
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.position[i].addScaledVector(this.speed[i], dt);
+    }
+  }
+  simulate(G, softening, collisions, collisionThreshold, escapeDistance) {
+    var i, n, j, l;
+    const collided = [];
+    const skip = [];
+    const threshold2 = collisionThreshold * collisionThreshold;
+    if (collisions) {
+      for (i = 0, n = this.len; i < n; i++) {
+        for (j = 0; j < i; j++) {
+          this.u.subVectors(this.position[j], this.position[i]);
+          let distance2 = this.u.lengthSq();
+          if (distance2 < threshold2) {
+            collided.push([i, j]);
+            skip.push(j);
+          }
+        }
+      }
+    }
+    for (i = 0, n = this.len; i < n; i++) {
+      if (this.position[i].distanceTo(this.origin) > escapeDistance) {
+        skip.push(i);
+      }
+    }
+    if (skip.length) {
+      for (l = 0, n = collided.length; l < n; l++) {
+        ;
+        [i, j] = collided[l];
+        let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
+        this.position[i].multiplyScalar(this.masses[i]).addScaledVector(this.position[j], this.masses[j]).multiplyScalar(mass_ratio);
+        this.speed[i].multiplyScalar(this.masses[i]).addScaledVector(this.speed[j], this.masses[j]).multiplyScalar(mass_ratio);
+        this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
+        this.masses[i] += this.masses[j];
+      }
+      const positions = [...this.position].filter((_, i2) => !skip.includes(i2));
+      const speeds = [...this.speed].filter((_, i2) => !skip.includes(i2));
+      const masses = [...this.masses].filter((_, i2) => !skip.includes(i2));
+      const temperatures = [...this.temperatures].filter((_, i2) => !skip.includes(i2));
+      this.len -= skip.length;
+      for (i = 0, n = this.len; i < n; i++) {
+        this.position[i] = positions[i];
+        this.speed[i] = speeds[i];
+        this.masses[i] = masses[i];
+        this.temperatures[i] = temperatures[i];
+      }
+    }
+    return this.len;
+  }
+  frog_drop(dt) {
+    this.update();
+  }
+  update() {
+    for (var i = 0, n = this.len; i < n; i++) {
+      this.positions[i * 3] = this.position[i].x;
+      this.positions[i * 3 + 1] = this.position[i].y;
+      this.positions[i * 3 + 2] = this.position[i].z;
+    }
+  }
+  free() {
+    delete this.positions;
+    delete this.masses;
+    delete this.temperatures;
+    delete this.position;
+    delete this.speed;
+    delete this.acceleration;
+  }
+};
+var none_default = NoGravity;
+
 // dist/index.js
 var raf = null;
 var colorModes = {
@@ -31582,7 +31686,7 @@ var colorModes = {
 };
 var particles;
 var gravity;
-var backends = ["js_p2p", "rust_p2p", "js_fmm"];
+var backends = ["js_p2p", "rust_p2p", "js_fmm", "js_none"];
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31662,13 +31766,16 @@ function init2() {
     range,
     scale,
     blackHoleMassThreshold,
-    colorMode
+    colorMode,
+    resolution
   } = params;
   const orbs = configurations_exports[configuration](params);
   if (backend === "js_p2p") {
     gravity = new p2p_default(orbs);
+  } else if (backend === "js_none") {
+    gravity = new none_default(orbs);
   } else if (backend === "js_fmm") {
-    gravity = new fmm_default(orbs, range);
+    gravity = new fmm_default(orbs, range, resolution);
   } else if (backend === "rust_p2p") {
     gravity = Annealation.new(orbs.length);
     const {buffer} = wasm_memory();
@@ -31720,6 +31827,7 @@ function initGUI() {
     preset
   });
   gui.add(params, "backend", backends).onChange(restart);
+  gui.add(params, "resolution", 1, 9).onChange(restart);
   const fx = gui.addFolder("Render fx");
   fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);
   fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);
