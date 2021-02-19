@@ -4,7 +4,7 @@ export default {
     Cube: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -34,7 +34,7 @@ export default {
     Galaxy: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -46,8 +46,8 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'disc',
         number: 1000,
-        range: 1000,
-        speed: 15,
+        range: 1500,
+        speed: 1,
         mass: 10,
         blackHoleMass: 100000,
         scale: 30,
@@ -64,7 +64,7 @@ export default {
     Sphere: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -76,8 +76,8 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'sphere',
         number: 1000,
-        range: 750,
-        speed: 15,
+        range: 1500,
+        speed: 1,
         mass: 10,
         blackHoleMass: 500000,
         scale: 30,
@@ -94,7 +94,7 @@ export default {
     HarmonicSphere: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -105,7 +105,7 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'harmonicSphere',
-        number: 1000,
+        number: 1500,
         range: 750,
         speed: 15,
         mass: 10,
@@ -124,7 +124,7 @@ export default {
     ProtoSolarSystem: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -154,7 +154,7 @@ export default {
     CollidingGalaxies: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -166,7 +166,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'collidingDisc',
         number: 1250,
-        range: 750,
+        range: 3000,
         speed: 15,
         mass: 10,
         blackHoleMass: 500000,
@@ -184,7 +184,7 @@ export default {
     Fountain: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -196,7 +196,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'fountain',
         number: 1000,
-        range: 1000,
+        range: 2000,
         speed: 5,
         mass: 20,
         blackHoleMass: 100000,
@@ -214,7 +214,7 @@ export default {
     EightCubes: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -226,7 +226,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'eightCubes',
         number: 1000,
-        range: 250,
+        range: 1000,
         speed: 5,
         mass: 10,
         blackHoleMass: 0,
@@ -244,7 +244,7 @@ export default {
     Plane: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -256,7 +256,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'plane',
         number: 1250,
-        range: 1250,
+        range: 3000,
         speed: 15,
         mass: 10,
         blackHoleMass: 500000,
@@ -274,7 +274,7 @@ export default {
     Teapot: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -286,7 +286,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'teapot',
         number: 2000,
-        range: 1000,
+        range: 2500,
         speed: 15,
         mass: 10,
         blackHoleMass: 0,
@@ -304,7 +304,7 @@ export default {
     TeapotWithBlackHole: {
       0: {
         backend: 'rust_p2p',
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -316,7 +316,7 @@ export default {
         afterImageDamp: 0.75,
         configuration: 'teapot',
         number: 2000,
-        range: 1000,
+        range: 2500,
         speed: 15,
         mass: 10,
         blackHoleMass: 25000,
@@ -334,6 +334,36 @@ export default {
     Ekusupuroshon: {
       0: {
         backend: 'js_fmm',
+        resolution: 3,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: 'sphere',
+        number: 50000,
+        range: 100,
+        speed: 0,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 30,
+        colorMode: 'Temperature',
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 10,
+        escapeDistance: 10000,
+        blackHoleMassThreshold: 10000,
+      },
+    },
+    BigSphere: {
+      0: {
+        backend: 'js_fmm',
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -344,16 +374,16 @@ export default {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: 'cube',
-        number: 50000,
-        range: 1,
+        configuration: 'sphere',
+        number: 15000,
+        range: 2000,
         speed: 0,
         mass: 10,
         blackHoleMass: 0,
         scale: 30,
         colorMode: 'Temperature',
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.005,
+        simulationSpeed: 2.0,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,

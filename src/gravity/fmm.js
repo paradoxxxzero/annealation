@@ -13,8 +13,8 @@ export default class FMMGravity {
     this.u = new Vector3()
     this.origin = new Vector3()
 
-    this.range = range * 5
-    this.levels = resolution
+    this.range = range
+    this.levels = ~~resolution
 
     this.grid_dimension_size = 1 << (3 * this.levels)
     this.grid = new Float32Array(this.grid_dimension_size * 3)

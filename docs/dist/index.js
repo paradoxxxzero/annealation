@@ -30394,10 +30394,12 @@ var sphere = ({
   number,
   range,
   mass,
+  speed,
   blackHoleMass,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
+  range *= 0.5;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -30414,11 +30416,11 @@ var sphere = ({
     const x = 1 - 2 * Math.random();
     const y = 1 - 2 * Math.random();
     const z = -(x * position.x + y * position.y) / position.z;
-    const speed = new Vector3(x, y, z).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    const speedVector = new Vector3(x, y, z).normalize().multiplyScalar(speed * Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
       ...rngTemperatureMass(mass),
       position,
-      speed
+      speed: speedVector
     };
   });
 };
@@ -30431,6 +30433,7 @@ var harmonicSphere = ({
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
+  range *= 0.5;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -30456,10 +30459,12 @@ var disc = ({
   number,
   range,
   mass,
+  speed,
   blackHoleMass,
   gravitationalConstant
 }) => {
   const spherical = new Spherical();
+  range *= 0.5;
   const minRange = range / 10;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
@@ -30474,11 +30479,11 @@ var disc = ({
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
     const position = new Vector3().setFromSpherical(spherical);
-    const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    const speedVector = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(speed * Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
       ...rngTemperatureMass(mass),
       position,
-      speed
+      speed: speedVector
     };
   });
 };
@@ -30565,7 +30570,7 @@ var collidingDisc = ({
         speed: new Vector3()
       };
     }
-    spherical.radius = minRange + (range - minRange) * Math.random();
+    spherical.radius = 0.2 * (minRange + (range - minRange) * Math.random());
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
     const position = new Vector3().setFromSpherical(spherical);
@@ -30579,8 +30584,8 @@ var collidingDisc = ({
       speed
     };
   });
-  const firstShift = new Vector3(750, 750, -1e3);
-  const secondShift = new Vector3(-750, -750, 1e3);
+  const firstShift = new Vector3(range * 0.15, range * 0.15, -range * 0.25);
+  const secondShift = new Vector3(-range * 0.15, -range * 0.15, range * 0.25);
   const firstDisc = orbs.slice(0, ~~(number / 2));
   const secondDisc = orbs.slice(~~(number / 2));
   firstDisc.forEach((orb) => {
@@ -30593,6 +30598,7 @@ var collidingDisc = ({
 };
 var fountain = ({number, range, mass, speed, blackHoleMass}) => {
   const spherical = new Spherical();
+  range *= 0.5;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -30615,13 +30621,14 @@ var fountain = ({number, range, mass, speed, blackHoleMass}) => {
 };
 var eightCubes = ({number, range, mass, speed, blackHoleMass}) => {
   const N = 8;
+  range *= 0.333;
   const orbs = new Array(number).fill().map(() => ({
     ...rngTemperatureMass(mass),
     position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
     speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
   }));
   const cubes = new Array(N).fill().map((_, i) => orbs.slice(~~(i * number / N), ~~((i + 1) * number / N)));
-  const shifts = new Array(N).fill().map((_, i) => new Vector3(...i.toString(2).padStart(3, "0").split("").map((s) => s === "0" ? -1 : 1)).multiplyScalar(500));
+  const shifts = new Array(N).fill().map((_, i) => new Vector3(...i.toString(2).padStart(3, "0").split("").map((s) => s === "0" ? -1 : 1)).multiplyScalar(range));
   cubes.forEach((cube2, i) => {
     cube2.forEach((orb) => {
       orb.position.add(shifts[i]);
@@ -30638,7 +30645,7 @@ var eightCubes = ({number, range, mass, speed, blackHoleMass}) => {
   return orbs;
 };
 var plane = ({number, range, mass, blackHoleMass}) => {
-  const tilt = new Euler(-Math.PI / 16, Math.PI / 4, 0, "YXZ");
+  range *= 0.25;
   return new Array(number).fill().map((_, i) => {
     if (i === 0 && blackHoleMass) {
       return {
@@ -30650,14 +30657,14 @@ var plane = ({number, range, mass, blackHoleMass}) => {
     }
     return {
       ...rngTemperatureMass(mass),
-      position: new Vector3(range / 2 - Math.random() * range, range * 0.75, range / 2 - Math.random() * range).applyEuler(tilt),
+      position: new Vector3(range / 2 - Math.random() * range, range, range / 2 - Math.random() * range),
       speed: new Vector3()
     };
   });
 };
 var teapot = ({number, range, mass, blackHoleMass}) => {
   const segments = ~~(Math.sqrt(number / 32) - 1);
-  const teapotGeometry = new TeapotGeometry(~~(range / 2), segments);
+  const teapotGeometry = new TeapotGeometry(~~(range / 5), segments);
   const positions = teapotGeometry.attributes.position;
   const orbs = new Array(positions.count).fill().map((_, i) => {
     return {
@@ -30690,7 +30697,7 @@ var presets_default = {
     Cube: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30720,7 +30727,7 @@ var presets_default = {
     Galaxy: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30732,8 +30739,8 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "disc",
         number: 1e3,
-        range: 1e3,
-        speed: 15,
+        range: 1500,
+        speed: 1,
         mass: 10,
         blackHoleMass: 1e5,
         scale: 30,
@@ -30750,7 +30757,7 @@ var presets_default = {
     Sphere: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30762,8 +30769,8 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "sphere",
         number: 1e3,
-        range: 750,
-        speed: 15,
+        range: 1500,
+        speed: 1,
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
@@ -30780,7 +30787,7 @@ var presets_default = {
     HarmonicSphere: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30791,7 +30798,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "harmonicSphere",
-        number: 1e3,
+        number: 1500,
         range: 750,
         speed: 15,
         mass: 10,
@@ -30810,7 +30817,7 @@ var presets_default = {
     ProtoSolarSystem: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -30840,7 +30847,7 @@ var presets_default = {
     CollidingGalaxies: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30852,7 +30859,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "collidingDisc",
         number: 1250,
-        range: 750,
+        range: 3e3,
         speed: 15,
         mass: 10,
         blackHoleMass: 5e5,
@@ -30870,7 +30877,7 @@ var presets_default = {
     Fountain: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30882,7 +30889,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "fountain",
         number: 1e3,
-        range: 1e3,
+        range: 2e3,
         speed: 5,
         mass: 20,
         blackHoleMass: 1e5,
@@ -30900,7 +30907,7 @@ var presets_default = {
     EightCubes: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30912,7 +30919,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "eightCubes",
         number: 1e3,
-        range: 250,
+        range: 1e3,
         speed: 5,
         mass: 10,
         blackHoleMass: 0,
@@ -30930,7 +30937,7 @@ var presets_default = {
     Plane: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -30942,7 +30949,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "plane",
         number: 1250,
-        range: 1250,
+        range: 3e3,
         speed: 15,
         mass: 10,
         blackHoleMass: 5e5,
@@ -30960,7 +30967,7 @@ var presets_default = {
     Teapot: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -30972,7 +30979,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "teapot",
         number: 2e3,
-        range: 1e3,
+        range: 2500,
         speed: 15,
         mass: 10,
         blackHoleMass: 0,
@@ -30990,7 +30997,7 @@ var presets_default = {
     TeapotWithBlackHole: {
       0: {
         backend: "rust_p2p",
-        resolution: 8,
+        resolution: 7,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -31002,7 +31009,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "teapot",
         number: 2e3,
-        range: 1e3,
+        range: 2500,
         speed: 15,
         mass: 10,
         blackHoleMass: 25e3,
@@ -31020,6 +31027,36 @@ var presets_default = {
     Ekusupuroshon: {
       0: {
         backend: "js_fmm",
+        resolution: 3,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "sphere",
+        number: 5e4,
+        range: 100,
+        speed: 0,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 30,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    BigSphere: {
+      0: {
+        backend: "js_fmm",
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -31030,16 +31067,16 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "cube",
-        number: 5e4,
-        range: 1,
+        configuration: "sphere",
+        number: 15e3,
+        range: 2e3,
         speed: 0,
         mass: 10,
         blackHoleMass: 0,
         scale: 30,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
-        simulationSpeed: 5e-3,
+        simulationSpeed: 2,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
@@ -31480,8 +31517,8 @@ var FMMGravity = class {
     this.acceleration = orbs.map(() => new Vector3());
     this.u = new Vector3();
     this.origin = new Vector3();
-    this.range = range * 5;
-    this.levels = resolution;
+    this.range = range;
+    this.levels = ~~resolution;
     this.grid_dimension_size = 1 << 3 * this.levels;
     this.grid = new Float32Array(this.grid_dimension_size * 3);
   }
@@ -31670,7 +31707,6 @@ var NoGravity = class {
     delete this.temperatures;
     delete this.position;
     delete this.speed;
-    delete this.acceleration;
   }
 };
 var none_default = NoGravity;

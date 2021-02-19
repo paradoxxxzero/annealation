@@ -139,7 +139,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 11787,
+      "bytes": 11947,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -160,7 +160,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 9325,
+      "bytes": 10070,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -207,7 +207,7 @@
       ]
     },
     "dist/gravity/fmm.js": {
-      "bytes": 4993,
+      "bytes": 4991,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -216,7 +216,7 @@
       ]
     },
     "dist/gravity/none.js": {
-      "bytes": 3027,
+      "bytes": 2998,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -353,7 +353,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 11147
+          "bytesInOutput": 11294
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -365,7 +365,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 9214
+          "bytesInOutput": 9951
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -383,16 +383,16 @@
           "bytesInOutput": 3586
         },
         "dist/gravity/fmm.js": {
-          "bytesInOutput": 4565
+          "bytesInOutput": 4563
         },
         "dist/gravity/none.js": {
-          "bytesInOutput": 2928
+          "bytesInOutput": 2898
         },
         "dist/index.js": {
           "bytesInOutput": 8230
         }
       },
-      "bytes": 1182454
+      "bytes": 1183306
     }
   }
 }

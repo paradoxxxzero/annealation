@@ -96,6 +96,5 @@ export default class NoGravity {
     delete this.temperatures
     delete this.position
     delete this.speed
-    delete this.acceleration
   }
 }
