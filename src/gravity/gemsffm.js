@@ -7,6 +7,9 @@ export default class FMMGemsGravity {
     this.speeds = new Float32Array(3 * this.len)
     this.accelerations = new Float32Array(3 * this.len)
 
+    // Temp alloc optim
+    this.buffer = new Float32Array(this.len * 3)
+
     // Consts
     this.numExpansions = 10 // order of expansion in FMM
     this.maxP2PInteraction = 27 // max of P2P interacting boxes
@@ -56,7 +59,6 @@ export default class FMMGemsGravity {
     this.interactionList = new Array(this.numBoxIndexLeaf)
       .fill()
       .map(() => new Array(this.maxM2LInteraction).fill())
-    // TODO this.interactionList -> this.numBoxIndexLeaf ->maxM2LInteraction
     this.boxOffsetStart = new Uint32Array(this.numBoxIndexLeaf)
     this.boxOffsetEnd = new Uint32Array(this.numBoxIndexLeaf)
   }
@@ -88,9 +90,12 @@ export default class FMMGemsGravity {
   }
 
   // Generate Morton index for a box center to use in M2L translation
-  morton1(boxIndex3D, boxIndex, numLevel) {
-    var i, nx, ny, nz
-    boxIndex = 0
+  morton1(boxIndex3D, numLevel) {
+    var i,
+      nx,
+      ny,
+      nz,
+      boxIndex = 0
     for (i = 0; i < numLevel; i++) {
       nx = boxIndex3D.x % 2
       boxIndex3D.x >>= 1
@@ -104,6 +109,7 @@ export default class FMMGemsGravity {
       boxIndex3D.z >>= 1
       boxIndex += nz * (1 << (3 * i + 2))
     }
+    return boxIndex
   }
 
   // Returns 3D box index from Morton index
@@ -220,29 +226,40 @@ export default class FMMGemsGravity {
     for (i = 0; i < this.len; i++) {
       this.permutation[i] = this.sortIndex[i]
     }
-    const positionsBuffer = new Float32Array(this.len * 3)
-    const massesBuffer = new Float32Array(this.len)
-    const temperaturesBuffer = new Float32Array(this.len)
-    const speedsBuffer = new Float32Array(this.len * 3)
     for (i = 0; i < this.len; i++) {
-      positionsBuffer[i * 3] = this.positions[this.permutation[i] * 3]
-      positionsBuffer[i * 3 + 1] = this.positions[this.permutation[i] * 3 + 1]
-      positionsBuffer[i * 3 + 2] = this.positions[this.permutation[i] * 3 + 2]
-      massesBuffer[i] = this.masses[this.permutation[i]]
-      temperaturesBuffer[i] = this.temperatures[this.permutation[i]]
-      speedsBuffer[i * 3] = this.speeds[this.permutation[i] * 3]
-      speedsBuffer[i * 3 + 1] = this.speeds[this.permutation[i] * 3 + 1]
-      speedsBuffer[i * 3 + 2] = this.speeds[this.permutation[i] * 3 + 2]
+      this.buffer[i * 3] = this.positions[this.permutation[i] * 3]
+      this.buffer[i * 3 + 1] = this.positions[this.permutation[i] * 3 + 1]
+      this.buffer[i * 3 + 2] = this.positions[this.permutation[i] * 3 + 2]
     }
     for (i = 0; i < this.len; i++) {
-      this.positions[i * 3] = positionsBuffer[i * 3]
-      this.positions[i * 3 + 1] = positionsBuffer[i * 3 + 1]
-      this.positions[i * 3 + 2] = positionsBuffer[i * 3 + 2]
-      this.masses[i] = massesBuffer[i]
-      this.temperatures[i] = temperaturesBuffer[i]
-      this.speeds[i * 3] = speedsBuffer[i * 3]
-      this.speeds[i * 3 + 1] = speedsBuffer[i * 3 + 1]
-      this.speeds[i * 3 + 2] = speedsBuffer[i * 3 + 2]
+      this.positions[i * 3] = this.buffer[i * 3]
+      this.positions[i * 3 + 1] = this.buffer[i * 3 + 1]
+      this.positions[i * 3 + 2] = this.buffer[i * 3 + 2]
+    }
+  }
+
+  unsortParticles() {
+    var i
+
+    for (i = 0; i < this.len; i++) {
+      this.buffer[this.permutation[i] * 3] = this.accelerations[i * 3]
+      this.buffer[this.permutation[i] * 3 + 1] = this.accelerations[i * 3 + 1]
+      this.buffer[this.permutation[i] * 3 + 2] = this.accelerations[i * 3 + 2]
+    }
+    for (i = 0; i < this.len; i++) {
+      this.accelerations[i * 3] = this.buffer[i * 3]
+      this.accelerations[i * 3 + 1] = this.buffer[i * 3 + 1]
+      this.accelerations[i * 3 + 2] = this.buffer[i * 3 + 2]
+    }
+    for (i = 0; i < this.len; i++) {
+      this.buffer[this.permutation[i] * 3] = this.positions[i * 3]
+      this.buffer[this.permutation[i] * 3 + 1] = this.positions[i * 3 + 1]
+      this.buffer[this.permutation[i] * 3 + 2] = this.positions[i * 3 + 2]
+    }
+    for (i = 0; i < this.len; i++) {
+      this.positions[i * 3] = this.buffer[i * 3]
+      this.positions[i * 3 + 1] = this.buffer[i * 3 + 1]
+      this.positions[i * 3 + 2] = this.buffer[i * 3 + 2]
     }
   }
 
@@ -292,8 +309,9 @@ export default class FMMGemsGravity {
         this.boxIndexMask[this.mortonIndex[i]] = this.numBoxIndex
         this.boxIndexFull[this.numBoxIndex] = this.mortonIndex[i]
         this.particleOffset[0][this.numBoxIndex] = i
-        if (this.numBoxIndex > 0)
+        if (this.numBoxIndex > 0) {
           this.particleOffset[1][this.numBoxIndex - 1] = i - 1
+        }
         currentIndex = this.mortonIndex[i]
         this.numBoxIndex++
       }
@@ -367,7 +385,7 @@ export default class FMMGemsGravity {
               boxIndex3D.x = jx
               boxIndex3D.y = jy
               boxIndex3D.z = jz
-              this.morton1(boxIndex3D, boxIndex, numLevel)
+              boxIndex = this.morton1(boxIndex3D, numLevel)
               jj = this.boxIndexMask[boxIndex]
               if (jj != -1) {
                 this.interactionList[ii][this.numInteraction[ii]] = jj
@@ -446,7 +464,7 @@ export default class FMMGemsGravity {
                       boxIndex3D.x = jx
                       boxIndex3D.y = jy
                       boxIndex3D.z = jz
-                      this.morton1(boxIndex3D, boxIndex, numLevel)
+                      boxIndex = this.morton1(boxIndex3D, numLevel)
                       jj = this.boxIndexMask[boxIndex]
                       if (jj != -1) {
                         this.interactionList[ii][this.numInteraction[ii]] = jj
@@ -528,7 +546,7 @@ export default class FMMGemsGravity {
                 dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening2
               )
             invDistCube = invDist * invDist * invDist
-            s = this.masses[j].w * invDistCube
+            s = this.masses[j] * invDistCube
             ai.x -= dist.x * s
             ai.y -= dist.y * s
             ai.z -= dist.z * s
@@ -572,7 +590,8 @@ export default class FMMGemsGravity {
     }
     this.p2p(G, softening * softening)
 
-    return -1
+    this.unsortParticles()
+    return this.len
   }
 
   frog_drop(dt) {
