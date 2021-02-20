@@ -20,6 +20,7 @@ export default class FMMGemsGravity {
     // Allocs once
     this.mortonIndex = new Uint32Array(this.len)
     this.sortValue = new Uint32Array(this.len)
+    this.permutation = new Uint32Array(this.len)
     this.sortIndex = new Uint32Array(this.len)
     this.sortValueBuffer = new Uint32Array(this.len)
     this.sortIndexBuffer = new Uint32Array(this.len)
@@ -52,10 +53,83 @@ export default class FMMGemsGravity {
     this.boxIndexFull = new Uint32Array(this.numBoxIndexTotal)
     this.levelOffset = new Uint32Array(this.maxLevel)
     this.numInteraction = new Uint32Array(this.numBoxIndexLeaf)
-    this.interactionList = new Uint32Array(this.numBoxIndexLeaf)
+    this.interactionList = new Array(this.numBoxIndexLeaf)
+      .fill()
+      .map(() => new Array(this.maxM2LInteraction).fill())
     // TODO this.interactionList -> this.numBoxIndexLeaf ->maxM2LInteraction
     this.boxOffsetStart = new Uint32Array(this.numBoxIndexLeaf)
     this.boxOffsetEnd = new Uint32Array(this.numBoxIndexLeaf)
+  }
+
+  // Generate Morton index from particle coordinates
+  morton() {
+    const boxSize = this.rootBoxSize / (1 << this.maxLevel)
+
+    for (var j = 0; j < this.len; j++) {
+      var nx = ~~((this.positions[j * 3] - this.boxMin.x) / boxSize)
+      var ny = ~~((this.positions[j * 3 + 1] - this.boxMin.y) / boxSize)
+      var nz = ~~((this.positions[j * 3 + 2] - this.boxMin.z) / boxSize)
+      if (nx >= 1 << this.maxLevel) nx--
+      if (ny >= 1 << this.maxLevel) ny--
+      if (nz >= 1 << this.maxLevel) nz--
+      var boxIndex = 0
+      for (var i = 0; i < this.maxLevel; i++) {
+        boxIndex += nx % 2 << (3 * i + 1)
+        nx >>= 1
+
+        boxIndex += ny % 2 << (3 * i)
+        ny >>= 1
+
+        boxIndex += nz % 2 << (3 * i + 2)
+        nz >>= 1
+      }
+      this.mortonIndex[j] = boxIndex
+    }
+  }
+
+  // Generate Morton index for a box center to use in M2L translation
+  morton1(boxIndex3D, boxIndex, numLevel) {
+    var i, nx, ny, nz
+    boxIndex = 0
+    for (i = 0; i < numLevel; i++) {
+      nx = boxIndex3D.x % 2
+      boxIndex3D.x >>= 1
+      boxIndex += nx * (1 << (3 * i + 1))
+
+      ny = boxIndex3D.y % 2
+      boxIndex3D.y >>= 1
+      boxIndex += ny * (1 << (3 * i))
+
+      nz = boxIndex3D.z % 2
+      boxIndex3D.z >>= 1
+      boxIndex += nz * (1 << (3 * i + 2))
+    }
+  }
+
+  // Returns 3D box index from Morton index
+  unmorton(boxIndex, boxIndex3D) {
+    var i,
+      j,
+      mortonIndex3D = [0, 0, 0]
+
+    for (i = 0; i < 3; i++) {
+      mortonIndex3D[i] = 0
+    }
+
+    var n = boxIndex,
+      k = 0
+
+    i = 0
+    while (n != 0) {
+      j = 2 - k
+      mortonIndex3D[j] += (n % 2) * (1 << i)
+      n >>= 1
+      k = (k + 1) % 3
+      if (k == 0) i++
+    }
+    boxIndex3D.x = mortonIndex3D[1]
+    boxIndex3D.y = mortonIndex3D[2]
+    boxIndex3D.z = mortonIndex3D[0]
   }
 
   setDomainSize() {
@@ -110,29 +184,100 @@ export default class FMMGemsGravity {
     }
     this.numBoxIndexFull = 1 << (3 * this.maxLevel)
   }
+  // Prepare for binning particles by first sorting the Morton index
+  sort() {
+    var i
 
-  morton() {
-    const boxSize = this.rootBoxSize / (1 << this.maxLevel)
+    for (i = 0; i < this.numBoxIndexFull; i++) {
+      this.sortIndexBuffer[i] = 0
+    }
+    for (i = 0; i < this.len; i++) {
+      this.sortIndexBuffer[this.sortValue[i]]++
+    }
+    for (i = 1; i < this.numBoxIndexFull; i++) {
+      this.sortIndexBuffer[i] += this.sortIndexBuffer[i - 1]
+    }
+    for (i = this.len - 1; i >= 0; i--) {
+      this.sortIndexBuffer[this.sortValue[i]]--
+      this.sortValueBuffer[
+        this.sortIndexBuffer[this.sortValue[i]]
+      ] = this.sortValue[i]
+      this.sortIndex[this.sortIndexBuffer[this.sortValue[i]]] = i
+    }
+    for (i = 0; i < this.len; i++) {
+      this.sortValue[i] = this.sortValueBuffer[i]
+    }
+  }
+  sortParticles() {
+    var i
 
-    for (var j = 0; j < this.len; j++) {
-      var nx = ~~((this.position[j * 3] - this.boxMin.x) / boxSize)
-      var ny = ~~((this.position[j * 3 + 1] - this.boxMin.y) / boxSize)
-      var nz = ~~((this.position[j * 3 + 2] - this.boxMin.z) / boxSize)
-      if (nx >= 1 << this.maxLevel) nx--
-      if (ny >= 1 << this.maxLevel) ny--
-      if (nz >= 1 << this.maxLevel) nz--
-      var boxIndex = 0
-      for (var i = 0; i < this.maxLevel; i++) {
-        boxIndex += nx % 2 << (3 * i + 1)
-        nx >>= 1
+    this.morton(this.len)
+    for (i = 0; i < this.len; i++) {
+      this.sortValue[i] = this.mortonIndex[i]
+      this.sortIndex[i] = i
+    }
+    this.sort(this.len)
+    for (i = 0; i < this.len; i++) {
+      this.permutation[i] = this.sortIndex[i]
+    }
+    const positionsBuffer = new Float32Array(this.len * 3)
+    const massesBuffer = new Float32Array(this.len)
+    const temperaturesBuffer = new Float32Array(this.len)
+    const speedsBuffer = new Float32Array(this.len * 3)
+    for (i = 0; i < this.len; i++) {
+      positionsBuffer[i * 3] = this.positions[this.permutation[i] * 3]
+      positionsBuffer[i * 3 + 1] = this.positions[this.permutation[i] * 3 + 1]
+      positionsBuffer[i * 3 + 2] = this.positions[this.permutation[i] * 3 + 2]
+      massesBuffer[i] = this.masses[this.permutation[i]]
+      temperaturesBuffer[i] = this.temperatures[this.permutation[i]]
+      speedsBuffer[i * 3] = this.speeds[this.permutation[i] * 3]
+      speedsBuffer[i * 3 + 1] = this.speeds[this.permutation[i] * 3 + 1]
+      speedsBuffer[i * 3 + 2] = this.speeds[this.permutation[i] * 3 + 2]
+    }
+    for (i = 0; i < this.len; i++) {
+      this.positions[i * 3] = positionsBuffer[i * 3]
+      this.positions[i * 3 + 1] = positionsBuffer[i * 3 + 1]
+      this.positions[i * 3 + 2] = positionsBuffer[i * 3 + 2]
+      this.masses[i] = massesBuffer[i]
+      this.temperatures[i] = temperaturesBuffer[i]
+      this.speeds[i * 3] = speedsBuffer[i * 3]
+      this.speeds[i * 3 + 1] = speedsBuffer[i * 3 + 1]
+      this.speeds[i * 3 + 2] = speedsBuffer[i * 3 + 2]
+    }
+  }
 
-        boxIndex += ny % 2 << (3 * i)
-        ny >>= 1
+  countNonEmptyBoxes() {
+    this.morton(this.len)
+    for (i = 0; i < this.len; i++) {
+      this.sortValue[i] = this.mortonIndex[i]
+      this.sortIndex[i] = i
+    }
+    this.sort(this.len)
 
-        boxIndex += nz % 2 << (3 * i + 2)
-        nz >>= 1
+    // Count non-empty boxes at leaf level
+    this.numBoxIndexLeaf = 0 // counter
+    var currentIndex = -1
+    for (var i = 0; i < this.len; i++) {
+      if (this.sortValue[i] != currentIndex) {
+        this.numBoxIndexLeaf++
+        currentIndex = this.sortValue[i]
       }
-      this.mortonIndex[j] = boxIndex
+    }
+
+    // Count non-empty boxes for all levels
+    this.numBoxIndexTotal = this.numBoxIndexLeaf
+    for (var numLevel = this.maxLevel - 1; numLevel >= 2; numLevel--) {
+      currentIndex = -1
+      for (i = 0; i < this.len; i++) {
+        if (
+          this.sortValue[i] / (1 << (3 * (this.maxLevel - numLevel))) !=
+          currentIndex
+        ) {
+          this.numBoxIndexTotal++
+          currentIndex =
+            this.sortValue[i] / (1 << (3 * (this.maxLevel - numLevel)))
+        }
+      }
     }
   }
 
@@ -156,12 +301,178 @@ export default class FMMGemsGravity {
     this.particleOffset[1][this.numBoxIndex - 1] = this.len - 1
   }
 
-  direct(G, softening2) {
-    var i, j, invDist, invDistCube
+  getInteractionList(numLevel, interactionType) {
+    var jxmin,
+      jxmax,
+      jymin,
+      jymax,
+      jzmin,
+      jzmax,
+      ii,
+      ib,
+      jj,
+      jb,
+      ix,
+      iy,
+      iz,
+      jx,
+      jy,
+      jz,
+      boxIndex
+    var ixp, iyp, izp, jxp, jyp, jzp
+    var boxIndex3D = { x: 0, y: 0, z: 0 }
 
-    var dist = { x: 0, y: 0, z: 0 }
+    // Initialize the minimum and maximum values
+    jxmin = 1000000
+    jxmax = -1000000
+    jymin = 1000000
+    jymax = -1000000
+    jzmin = 1000000
+    jzmax = -1000000
+    // Calculate the minimum and maximum of boxIndex3D
+    for (jj = 0; jj < this.numBoxIndex; jj++) {
+      jb = jj + this.levelOffset[numLevel - 1]
+      this.unmorton(this.boxIndexFull[jb], boxIndex3D)
+      jxmin = Math.min(jxmin, boxIndex3D.x)
+      jxmax = Math.max(jxmax, boxIndex3D.x)
+      jymin = Math.min(jymin, boxIndex3D.y)
+      jymax = Math.max(jymax, boxIndex3D.y)
+      jzmin = Math.min(jzmin, boxIndex3D.z)
+      jzmax = Math.max(jzmax, boxIndex3D.z)
+    }
+    // P2P
+    if (interactionType == 0) {
+      for (ii = 0; ii < this.numBoxIndex; ii++) {
+        ib = ii + this.levelOffset[numLevel - 1]
+        this.numInteraction[ii] = 0
+        this.unmorton(this.boxIndexFull[ib], boxIndex3D)
+        ix = boxIndex3D.x
+        iy = boxIndex3D.y
+        iz = boxIndex3D.z
+        for (
+          jx = Math.max(ix - 1, jxmin);
+          jx <= Math.min(ix + 1, jxmax);
+          jx++
+        ) {
+          for (
+            jy = Math.max(iy - 1, jymin);
+            jy <= Math.min(iy + 1, jymax);
+            jy++
+          ) {
+            for (
+              jz = Math.max(iz - 1, jzmin);
+              jz <= Math.min(iz + 1, jzmax);
+              jz++
+            ) {
+              boxIndex3D.x = jx
+              boxIndex3D.y = jy
+              boxIndex3D.z = jz
+              this.morton1(boxIndex3D, boxIndex, numLevel)
+              jj = this.boxIndexMask[boxIndex]
+              if (jj != -1) {
+                this.interactionList[ii][this.numInteraction[ii]] = jj
+                this.numInteraction[ii]++
+              }
+            }
+          }
+        }
+      }
+      // M2L at level 2
+    } else if (interactionType == 1) {
+      for (ii = 0; ii < this.numBoxIndex; ii++) {
+        ib = ii + this.levelOffset[numLevel - 1]
+        this.numInteraction[ii] = 0
+        this.unmorton(this.boxIndexFull[ib], boxIndex3D)
+        ix = boxIndex3D.x
+        iy = boxIndex3D.y
+        iz = boxIndex3D.z
+        for (jj = 0; jj < this.numBoxIndex; jj++) {
+          jb = jj + this.levelOffset[numLevel - 1]
+          this.unmorton(this.boxIndexFull[jb], boxIndex3D)
+          jx = boxIndex3D.x
+          jy = boxIndex3D.y
+          jz = boxIndex3D.z
+          if (
+            jx < ix - 1 ||
+            ix + 1 < jx ||
+            jy < iy - 1 ||
+            iy + 1 < jy ||
+            jz < iz - 1 ||
+            iz + 1 < jz
+          ) {
+            this.interactionList[ii][this.numInteraction[ii]] = jj
+            this.numInteraction[ii]++
+          }
+        }
+      }
+      // M2L at lower levels
+    } else if (interactionType == 2) {
+      for (ii = 0; ii < this.numBoxIndex; ii++) {
+        ib = ii + this.levelOffset[numLevel - 1]
+        this.numInteraction[ii] = 0
+        this.unmorton(this.boxIndexFull[ib], boxIndex3D)
+        ix = boxIndex3D.x
+        iy = boxIndex3D.y
+        iz = boxIndex3D.z
+        ixp = (ix + 2) / 2
+        iyp = (iy + 2) / 2
+        izp = (iz + 2) / 2
+        for (jxp = ixp - 1; jxp <= ixp + 1; jxp++) {
+          for (jyp = iyp - 1; jyp <= iyp + 1; jyp++) {
+            for (jzp = izp - 1; jzp <= izp + 1; jzp++) {
+              for (
+                jx = Math.max(2 * jxp - 2, jxmin);
+                jx <= Math.min(2 * jxp - 1, jxmax);
+                jx++
+              ) {
+                for (
+                  jy = Math.max(2 * jyp - 2, jymin);
+                  jy <= Math.min(2 * jyp - 1, jymax);
+                  jy++
+                ) {
+                  for (
+                    jz = Math.max(2 * jzp - 2, jzmin);
+                    jz <= Math.min(2 * jzp - 1, jzmax);
+                    jz++
+                  ) {
+                    if (
+                      jx < ix - 1 ||
+                      ix + 1 < jx ||
+                      jy < iy - 1 ||
+                      iy + 1 < jy ||
+                      jz < iz - 1 ||
+                      iz + 1 < jz
+                    ) {
+                      boxIndex3D.x = jx
+                      boxIndex3D.y = jy
+                      boxIndex3D.z = jz
+                      this.morton1(boxIndex3D, boxIndex, numLevel)
+                      jj = this.boxIndexMask[boxIndex]
+                      if (jj != -1) {
+                        this.interactionList[ii][this.numInteraction[ii]] = jj
+                        this.numInteraction[ii]++
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  direct(G, softening2) {
+    var i,
+      j,
+      invDist,
+      invDistCube,
+      ai,
+      dist = { x: 0, y: 0, z: 0 }
+
     for (i = 0; i < this.len; i++) {
-      var ai = { x: 0, y: 0, z: 0 }
+      ai = { x: 0, y: 0, z: 0 }
       for (j = 0; j < this.len; j++) {
         dist.x = this.positions[i * 3] - this.positions[j * 3]
         dist.y = this.positions[i * 3 + 1] - this.positions[j * 3 + 1]
@@ -183,9 +494,17 @@ export default class FMMGemsGravity {
   }
 
   p2p(G, softening2) {
-    var ii, ij, jj, i, j
+    var ii,
+      ij,
+      jj,
+      i,
+      j,
+      s,
+      invDist,
+      invDistCube,
+      ai,
+      dist = { x: 0, y: 0, z: 0 }
 
-    var dist = { x: 0, y: 0, z: 0 }
     for (ii = 0; ii < this.numBoxIndex; ii++) {
       for (ij = 0; ij < this.numInteraction[ii]; ij++) {
         jj = this.interactionList[ii][ij]
@@ -194,7 +513,7 @@ export default class FMMGemsGravity {
           i <= this.particleOffset[1][ii];
           i++
         ) {
-          var ai = { x: 0.0, y: 0.0, z: 0.0 }
+          ai = { x: 0.0, y: 0.0, z: 0.0 }
           for (
             j = this.particleOffset[0][jj];
             j <= this.particleOffset[1][jj];
@@ -203,13 +522,13 @@ export default class FMMGemsGravity {
             dist.x = this.positions[i * 3] - this.positions[j * 3]
             dist.y = this.positions[i * 3 + 1] - this.positions[j * 3 + 1]
             dist.z = this.positions[i * 3 + 2] - this.positions[j * 3 + 2]
-            var invDist =
-              1.0 /
+            invDist =
+              1 /
               Math.sqrt(
                 dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening2
               )
-            var invDistCube = invDist * invDist * invDist
-            var s = this.masses[j].w * invDistCube
+            invDistCube = invDist * invDist * invDist
+            s = this.masses[j].w * invDistCube
             ai.x -= dist.x * s
             ai.y -= dist.y * s
             ai.z -= dist.z * s
@@ -241,7 +560,7 @@ export default class FMMGemsGravity {
 
     let numLevel = this.maxLevel
     this.levelOffset[numLevel - 1] = 0
-    this.precalc() // kernel
+    // TODO this.precalc() // kernel
     this.getBoxData()
 
     this.getInteractionList(numLevel, 0)
@@ -253,7 +572,7 @@ export default class FMMGemsGravity {
     }
     this.p2p(G, softening * softening)
 
-    return this.len
+    return -1
   }
 
   frog_drop(dt) {
@@ -270,8 +589,7 @@ export default class FMMGemsGravity {
     delete this.positions
     delete this.masses
     delete this.temperatures
-    delete this.position
-    delete this.speed
+    delete this.speeds
     delete this.acceleration
   }
 }

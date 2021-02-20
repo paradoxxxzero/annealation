@@ -147,8 +147,10 @@ function render() {
     escapeDistance
   )
   gravity.frog_drop(dt)
-  if (newLen !== particles.geometry.drawRange.count) {
-    particles.geometry.setDrawRange(0, newLen)
+  if (newLen == -1 || newLen !== particles.geometry.drawRange.count) {
+    if (newLen !== -1) {
+      particles.geometry.setDrawRange(0, newLen)
+    }
     particles.geometry.attributes.temperature.needsUpdate = true
     particles.geometry.attributes.mass.needsUpdate = true
   }
