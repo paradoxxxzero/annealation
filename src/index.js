@@ -28,6 +28,7 @@ import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
 import NoGravity from './gravity/none'
+import FMMGemsGravity from './gravity/gemsffm'
 let raf = null
 
 const colorModes = {
@@ -38,7 +39,7 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = ['js_p2p', 'rust_p2p', 'js_fmm', 'js_none']
+const backends = ['js_p2p', 'rust_p2p', 'js_gemsfmm', 'js_fmm', 'js_none']
 
 const stats = new Stats()
 
@@ -174,6 +175,8 @@ function init() {
     gravity = new NoGravity(orbs)
   } else if (backend === 'js_fmm') {
     gravity = new FMMGravity(orbs, range, resolution)
+  } else if (backend === 'js_gemsfmm') {
+    gravity = new FMMGemsGravity(orbs.length)
   } else if (backend === 'rust_p2p') {
     gravity = Annealation.new(orbs.length)
     const { buffer } = wasm_memory()
@@ -188,24 +191,24 @@ function init() {
       gravity.temperatures_ptr(),
       orbs.length
     )
-    // Extra init of speeds
-    const speeds = new Float32Array(
+    gravity.speeds = new Float32Array(
       buffer,
       gravity.speeds_ptr(),
       3 * orbs.length
     )
-    orbs.forEach(({ speed }, i) => {
-      speeds[i * 3] = speed.x
-      speeds[i * 3 + 1] = speed.y
-      speeds[i * 3 + 2] = speed.z
-    })
   }
-  orbs.forEach(({ position, mass, temperature }, i) => {
+
+  orbs.forEach(({ position, mass, temperature, speed }, i) => {
     gravity.positions[i * 3] = position.x
     gravity.positions[i * 3 + 1] = position.y
     gravity.positions[i * 3 + 2] = position.z
     gravity.masses[i] = mass
     gravity.temperatures[i] = temperature
+    if (['js_gemsfmm', 'rust_p2p'].includes(backend)) {
+      gravity.speeds[i * 3] = speed.x
+      gravity.speeds[i * 3 + 1] = speed.y
+      gravity.speeds[i * 3 + 2] = speed.z
+    }
   })
 
   const geometry = new BufferGeometry()
