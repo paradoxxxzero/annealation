@@ -39,7 +39,8 @@ export default class FMMGemsGravity {
     this.maxLevel = 0
 
     // Dynamic Allocs
-    this.particleOffset = [null, null]
+    this.particleOffset = null
+    this.particleOffset2 = null
     this.boxIndexMask = null
     this.boxIndexFull = null
     this.levelOffset = null
@@ -50,15 +51,15 @@ export default class FMMGemsGravity {
   }
 
   allocate() {
-    this.particleOffset[0] = new Uint32Array(this.numBoxIndexLeaf)
-    this.particleOffset[1] = new Uint32Array(this.numBoxIndexLeaf)
+    this.particleOffset = new Uint32Array(this.numBoxIndexLeaf)
+    this.particleOffset2 = new Uint32Array(this.numBoxIndexLeaf)
     this.boxIndexMask = new Uint32Array(this.numBoxIndexFull)
     this.boxIndexFull = new Uint32Array(this.numBoxIndexTotal)
     this.levelOffset = new Uint32Array(this.maxLevel)
     this.numInteraction = new Uint32Array(this.numBoxIndexLeaf)
     this.interactionList = new Array(this.numBoxIndexLeaf)
       .fill()
-      .map(() => new Array(this.maxM2LInteraction).fill())
+      .map(() => new Array(this.maxM2LInteraction).fill(0))
     this.boxOffsetStart = new Uint32Array(this.numBoxIndexLeaf)
     this.boxOffsetEnd = new Uint32Array(this.numBoxIndexLeaf)
   }
@@ -118,10 +119,6 @@ export default class FMMGemsGravity {
       j,
       mortonIndex3D = [0, 0, 0]
 
-    for (i = 0; i < 3; i++) {
-      mortonIndex3D[i] = 0
-    }
-
     var n = boxIndex,
       k = 0
 
@@ -167,9 +164,9 @@ export default class FMMGemsGravity {
   }
 
   setOptimumLevel() {
-    //  const level_switch=[2e4,1.7e5,1.3e6,1e7,7e7,5e8] // cpu-tree
-    //  const level_switch=[1.3e4,1e5,7e5,5e6,3e7,1.5e8] // cpu-fmm
-    //  const level_switch=[1e5,5e5,5e6,3e7,2e8,1.5e9] // gpu-tree
+    // const level_switch = [2e4, 1.7e5, 1.3e6, 1e7, 7e7, 5e8] // cpu-tree
+    // const level_switch = [1.3e4, 1e5, 7e5, 5e6, 3e7, 1.5e8] // cpu-fmm
+    // const level_switch = [1e5, 5e5, 5e6, 3e7, 2e8, 1.5e9] // gpu-tree
     const level_switch = [1e5, 7e5, 7e6, 5e7, 3e8, 2e9] // gpu-fmm
 
     this.maxLevel = 1
@@ -303,20 +300,22 @@ export default class FMMGemsGravity {
 
     this.numBoxIndex = 0
     var currentIndex = -1
-    for (var i = 0; i < this.numBoxIndexFull; i++) this.boxIndexMask[i] = -1
+    for (var i = 0; i < this.numBoxIndexFull; i++) {
+      this.boxIndexMask[i] = -1
+    }
     for (i = 0; i < this.len; i++) {
       if (this.mortonIndex[i] != currentIndex) {
         this.boxIndexMask[this.mortonIndex[i]] = this.numBoxIndex
         this.boxIndexFull[this.numBoxIndex] = this.mortonIndex[i]
-        this.particleOffset[0][this.numBoxIndex] = i
+        this.particleOffset[this.numBoxIndex] = i
         if (this.numBoxIndex > 0) {
-          this.particleOffset[1][this.numBoxIndex - 1] = i - 1
+          this.particleOffset2[this.numBoxIndex - 1] = i - 1
         }
         currentIndex = this.mortonIndex[i]
         this.numBoxIndex++
       }
     }
-    this.particleOffset[1][this.numBoxIndex - 1] = this.len - 1
+    this.particleOffset2[this.numBoxIndex - 1] = this.len - 1
   }
 
   getInteractionList(numLevel, interactionType) {
@@ -505,56 +504,46 @@ export default class FMMGemsGravity {
         ai.y -= dist.y * invDistCube
         ai.z -= dist.z * invDistCube
       }
-      this.accelerations[i * 3] -= G * ai.x
-      this.accelerations[i * 3 + 1] -= G * ai.y
-      this.accelerations[i * 3 + 2] -= G * ai.z
+      this.accelerations[i * 3] += G * ai.x
+      this.accelerations[i * 3 + 1] += G * ai.y
+      this.accelerations[i * 3 + 2] += G * ai.z
+    }
+  }
+
+  sum(G, is, ie, js, je, softening2) {
+    var dx, dy, dz, ax, ay, az
+    for (var i = is; i <= ie; i++) {
+      ax = 0
+      ay = 0
+      az = 0
+      for (var j = js; j <= je; j++) {
+        dx = this.positions[i * 3] - this.positions[j * 3]
+        dy = this.positions[i * 3 + 1] - this.positions[j * 3 + 1]
+        dz = this.positions[i * 3 + 2] - this.positions[j * 3 + 2]
+        var invDist = 1 / Math.sqrt(dx * dx + dy * dy + dz * dz + softening2)
+        var s = this.masses[j] * invDist * invDist * invDist
+        ax -= dx * s
+        ay -= dy * s
+        az -= dz * s
+      }
+      this.accelerations[i * 3] += G * ax
+      this.accelerations[i * 3 + 1] += G * ay
+      this.accelerations[i * 3 + 2] += G * az
     }
   }
 
   p2p(G, softening2) {
-    var ii,
-      ij,
-      jj,
-      i,
-      j,
-      s,
-      invDist,
-      invDistCube,
-      ai,
-      dist = { x: 0, y: 0, z: 0 }
+    var ii, ij, jj
 
     for (ii = 0; ii < this.numBoxIndex; ii++) {
       for (ij = 0; ij < this.numInteraction[ii]; ij++) {
         jj = this.interactionList[ii][ij]
-        for (
-          i = this.particleOffset[0][ii];
-          i <= this.particleOffset[1][ii];
-          i++
-        ) {
-          ai = { x: 0.0, y: 0.0, z: 0.0 }
-          for (
-            j = this.particleOffset[0][jj];
-            j <= this.particleOffset[1][jj];
-            j++
-          ) {
-            dist.x = this.positions[i * 3] - this.positions[j * 3]
-            dist.y = this.positions[i * 3 + 1] - this.positions[j * 3 + 1]
-            dist.z = this.positions[i * 3 + 2] - this.positions[j * 3 + 2]
-            invDist =
-              1 /
-              Math.sqrt(
-                dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening2
-              )
-            invDistCube = invDist * invDist * invDist
-            s = this.masses[j] * invDistCube
-            ai.x -= dist.x * s
-            ai.y -= dist.y * s
-            ai.z -= dist.z * s
-          }
-          this.accelerations[i * 3] -= G * ai.x
-          this.accelerations[i * 3 + 1] -= G * ai.y
-          this.accelerations[i * 3 + 2] -= G * ai.z
-        }
+
+        var is = this.particleOffset[ii],
+          ie = this.particleOffset2[ii],
+          js = this.particleOffset[jj],
+          je = this.particleOffset2[jj]
+        this.sum(G, is, ie, js, je, softening2)
       }
     }
   }
@@ -578,7 +567,7 @@ export default class FMMGemsGravity {
 
     let numLevel = this.maxLevel
     this.levelOffset[numLevel - 1] = 0
-    // TODO this.precalc() // kernel
+    // TODO this.precalc() // kernel
     this.getBoxData()
 
     this.getInteractionList(numLevel, 0)
