@@ -896,69 +896,82 @@ impl FMMRustGravity {
     }
   }
 
-  // // p2m
-  //  pub fn p2m(numBoxIndex: i32) {
-  // let jj,j,n,m,nm,nms; // i32
-  //   vec3<int> boxIndex3D;
-  //   vec3<float> boxCenter;
-  //   vec3<double> dist;
-  //   double boxSize,rho,alpha,beta;
-  //   double xx,s2,fact,pn,p,p1,p2,rhom,rhon;
-  //   double YnmReal[numExpansion2];
-  //   std::complex<double> MnmVector[numCoefficients],I(0f32,1f32),eim;
-
-  //   boxSize = rootBoxSize/(1 << maxLevel);
-  //   for jj in (0..numBoxIndex) {
-  //     tree.unmorton(boxIndexFull[jj],boxIndex3D);
-  //     boxCenter.x = boxMin.x+(boxIndex3D.x+0.5)*boxSize;
-  //     boxCenter.y = boxMin.y+(boxIndex3D.y+0.5)*boxSize;
-  //     boxCenter.z = boxMin.z+(boxIndex3D.z+0.5)*boxSize;
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       MnmVector[j] = 0;
-  //     }
-  //     for( j=particleOffset[0][jj]; j<=particleOffset[1][jj]; j++ ) {
-  //       dist.x = bodyPos[j].x-boxCenter.x;
-  //       dist.y = bodyPos[j].y-boxCenter.y;
-  //       dist.z = bodyPos[j].z-boxCenter.z;
-  //       cart2sph(rho,alpha,beta,dist.x,dist.y,dist.z);
-  //       xx = cos(alpha);
-  //       s2 = sqrt((1-xx)*(1+xx));
-  //       fact = 1;
-  //       pn = 1;
-  //       rhom = 1;
-  //       for( m=0; m<numExpansions; m++ ) {
-  //         p = pn;
-  //         nm = m*m+2*m;
-  //         YnmReal[nm] = rhom*factorial[nm]*p;
-  //         p1 = p;
-  //         p = xx*(2*m+1)*p;
-  //         rhom *= rho;
-  //         rhon = rhom;
-  //         for( n=m+1; n<numExpansions; n++ ) {
-  //           nm = n*n+n+m;
-  //           YnmReal[nm] = rhon*factorial[nm]*p;
-  //           p2 = p1;
-  //           p1 = p;
-  //           p = (xx*(2*n+1)*p1-(n+m)*p2)/(n-m+1);
-  //           rhon *=rho;
-  //         }
-  //         pn = -pn*fact*s2;
-  //         fact += 2;
-  //       }
-  //       for( n=0; n<numExpansions; n++ ) {
-  //         for( m=0; m<=n; m++ ) {
-  //           nm = n*n+n+m;
-  //           nms = n*(n+1)/2+m;
-  //           eim = exp(-m*beta*I);
-  //           MnmVector[nms] += ((std::complex<double>) bodyPos[j].w)*YnmReal[nm]*eim;
-  //         }
-  //       }
-  //     }
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       Mnm[jj][j] = MnmVector[j];
-  //     }
-  //   }
-  // }
+  // p2m
+  fn p2m(
+    &self,
+    numBoxIndex: usize,
+    rootBoxSize: f32,
+    boxMin: &Vec3<f32>,
+    maxLevel: usize,
+    boxIndexFull: &Vec<usize>,
+    particleOffset: &[Vec<usize>; 2],
+    Mnm: &mut Vec<Vec<Complex>>,
+  ) {
+    // let jj,j,n,m,nm,nms; // i32
+    //   vec3<int> boxIndex3D;
+    //   vec3<float> boxCenter;
+    //   vec3<double> dist;
+    //   double boxSize,rho,alpha,beta;
+    //   double xx,s2,fact,pn,p,p1,p2,rhom,rhon;
+    //   double YnmReal[numExpansion2];
+    //   std::complex<double> MnmVector[numCoefficients],I(0f32,1f32),eim;
+    let I = Complex::new(0f32, 1f32);
+    let mut YnmReal = vec![0f32; numExpansion2];
+    let boxSize = rootBoxSize / (1 << maxLevel) as f32;
+    let mut dist = Vec3::new(0f32, 0f32, 0f32);
+    let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
+    for jj in 0..numBoxIndex {
+      let boxIndex3D = self.unmorton(boxIndexFull[jj]);
+      boxCenter.x = boxMin.x + (boxIndex3D.x as f32 + 0.5) * boxSize;
+      boxCenter.y = boxMin.y + (boxIndex3D.y as f32 + 0.5) * boxSize;
+      boxCenter.z = boxMin.z + (boxIndex3D.z as f32 + 0.5) * boxSize;
+      let mut MnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
+      for j in 0..numCoefficients {
+        MnmVector[j] = Complex::new(0f32, 0f32);
+      }
+      for j in particleOffset[0][jj]..particleOffset[1][jj] {
+        dist.x = self.positions[j * 3] - boxCenter.x;
+        dist.y = self.positions[j * 3 + 1] - boxCenter.y;
+        dist.z = self.positions[j * 3 + 2] - boxCenter.z;
+        let (rho, alpha, beta) = self.cart2sph(dist.x, dist.y, dist.z);
+        let xx = alpha.cos();
+        let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
+        let mut fact = 1f32;
+        let mut pn = 1f32;
+        let mut rhom = 1f32;
+        for m in 0..numExpansions {
+          let mut p = pn;
+          let mut nm = m * m + 2 * m;
+          YnmReal[nm] = rhom * self.factorial[nm] * p;
+          let mut p1 = p;
+          p = xx * (2 * m + 1) as f32 * p;
+          rhom *= rho;
+          let mut rhon = rhom;
+          for n in (m + 1)..numExpansions {
+            nm = n * n + n + m;
+            YnmReal[nm] = rhon * self.factorial[nm] * p;
+            let p2 = p1;
+            p1 = p;
+            p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+            rhon *= rho;
+          }
+          pn = -pn * fact * s2;
+          fact += 2f32;
+        }
+        for n in 0..numExpansions {
+          for m in 0..=n {
+            let nm = n * n + n + m;
+            let nms = n * (n + 1) / 2 + m;
+            let eim = (-(m as f32) * beta * I).exp();
+            MnmVector[nms] += Complex::new(self.masses[j], 0f32) * YnmReal[nm] * eim;
+          }
+        }
+      }
+      for j in 0..numCoefficients {
+        Mnm[jj][j] = MnmVector[j];
+      }
+    }
+  }
 
   // // m2m
   //  pub fn m2m(numBoxIndex: i32, numBoxIndexOld: i32, numLevel: i32) {
@@ -1368,11 +1381,11 @@ impl FMMRustGravity {
     let LnmOld = (0..numBoxIndexLeaf)
       .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
-    let Mnm = (0..numBoxIndexTotal)
+    let mut Mnm = (0..numBoxIndexTotal)
       .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
 
-    let numLevel = maxLevel;
+    let mut numLevel = maxLevel;
 
     levelOffset[numLevel - 1] = 0;
     self.morton(maxLevel, rootBoxSize, boxMin);
@@ -1410,10 +1423,18 @@ impl FMMRustGravity {
       &particleOffset,
     );
 
-    // numLevel = maxLevel;
+    numLevel = maxLevel;
 
-    // // P2M
-    //   self.p2m(numBoxIndex);
+    // P2M
+    self.p2m(
+      numBoxIndex,
+      rootBoxSize,
+      &boxMin,
+      maxLevel,
+      &boxIndexFull,
+      &particleOffset,
+      &mut Mnm,
+    );
 
     //   if(maxLevel > 2) {
     //     for( numLevel=maxLevel-1; numLevel>=2; numLevel-- ) {
