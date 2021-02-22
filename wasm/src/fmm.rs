@@ -417,38 +417,64 @@ impl FMMRustGravity {
   }
 
   // Propagate non-empty/full link list to parent boxes
-  //   fn getBoxDataOfParent(&self, int& numBoxIndex, numLevel: i32, treeOrFMM: i32) {
-  // let i,numBoxIndexOld,currentIndex,boxIndex; // i32
-  //   levelOffset[numLevel-1] = levelOffset[numLevel]+numBoxIndex;
-  //   numBoxIndexOld = numBoxIndex;
-  //   numBoxIndex = 0;
-  //   currentIndex = -1;
-  //   for( i=0; i<numBoxIndexFull; i++ ) boxIndexMask[i] = -1;
-  //   for( i=0; i<numBoxIndexOld; i++ ) {
-  //     boxIndex = i+levelOffset[numLevel];
-  //     if( currentIndex != boxIndexFull[boxIndex]/8 ) {
-  //       currentIndex = boxIndexFull[boxIndex]/8;
-  //       boxIndexMask[currentIndex] = numBoxIndex;
-  //       boxIndexFull[numBoxIndex+levelOffset[numLevel-1]] = currentIndex;
-  //       if( treeOrFMM == 0 ) {
-  //         particleOffset[0][numBoxIndex] = particleOffset[0][i];
-  //         if( numBoxIndex > 0 ) particleOffset[1][numBoxIndex-1] = particleOffset[0][i]-1;
-  //       }
-  //       numBoxIndex++;
-  //     }
-  //   }
-  //   if( treeOrFMM == 0 ) particleOffset[1][numBoxIndex-1] = particleOffset[1][numBoxIndexOld-1];
-  // }
+  fn getBoxDataOfParent(
+    &self,
+    numBoxIndex: usize,
+    numBoxIndexFull: usize,
+    numLevel: usize,
+    treeOrFMM: usize,
+    levelOffset: &mut Vec<usize>,
+    boxIndexMask: &mut Vec<usize>,
+    boxIndexFull: &mut Vec<usize>,
+    particleOffset: &mut [Vec<usize>; 2],
+  ) -> usize {
+    // let i,numBoxIndexOld,currentIndex,boxIndex; // i32
+    levelOffset[numLevel - 1] = levelOffset[numLevel] + numBoxIndex;
+    let numBoxIndexOld = numBoxIndex;
+    let mut newNumBoxIndex = 0;
+    let mut currentIndex = usize::MAX;
+    for i in 0..numBoxIndexFull {
+      boxIndexMask[i] = usize::MAX;
+    }
+    for i in 0..numBoxIndexOld {
+      let boxIndex = i + levelOffset[numLevel];
+      if currentIndex != boxIndexFull[boxIndex] / 8 {
+        currentIndex = boxIndexFull[boxIndex] / 8;
+        boxIndexMask[currentIndex] = newNumBoxIndex;
+        boxIndexFull[newNumBoxIndex + levelOffset[numLevel - 1]] = currentIndex;
+        if treeOrFMM == 0 {
+          particleOffset[0][newNumBoxIndex] = particleOffset[0][i];
+          if newNumBoxIndex > 0 {
+            particleOffset[1][newNumBoxIndex - 1] = particleOffset[0][i] - 1;
+          }
+        }
+        newNumBoxIndex += 1;
+      }
+    }
+    if treeOrFMM == 0 {
+      particleOffset[1][numBoxIndex - 1] = particleOffset[1][numBoxIndexOld - 1];
+    }
+    newNumBoxIndex
+  }
 
   // Recalculate non-empty box index for current level
-  //   fn getBoxIndexMask(&self, numBoxIndex: i32, numLevel: i32) {
-  // let i,boxIndex; // i32
-  //   for( i=0; i<numBoxIndexFull; i++ ) boxIndexMask[i] = -1;
-  //   for( i=0; i<numBoxIndex; i++ ) {
-  //     boxIndex = i+levelOffset[numLevel-1];
-  //     boxIndexMask[boxIndexFull[boxIndex]] = i;
-  //   }
-  // }
+  fn getBoxIndexMask(
+    &self,
+    numBoxIndex: usize,
+    numBoxIndexFull: usize,
+    numLevel: usize,
+    levelOffset: &Vec<usize>,
+    boxIndexMask: &mut Vec<usize>,
+    boxIndexFull: &Vec<usize>,
+  ) {
+    for i in 0..numBoxIndexFull {
+      boxIndexMask[i] = usize::MAX;
+    }
+    for i in 0..numBoxIndex {
+      let boxIndex = i + levelOffset[numLevel - 1];
+      boxIndexMask[boxIndexFull[boxIndex]] = i;
+    }
+  }
 
   // Calculate the interaction list for P2P and M2L
   fn getInteractionList(
@@ -688,7 +714,7 @@ impl FMMRustGravity {
         let npm = n * n + n + m;
         let nmm = n * n + n - m;
         self.Ynm[npn] = Complex::new(self.factorial[npm] * p, 0f32);
-        self.Ynm[nmn] = self.Ynm[npm].conj();
+        self.Ynm[nmm] = self.Ynm[npm].conj();
         p2 = p1;
         p1 = p;
         p = ((2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
@@ -833,29 +859,29 @@ impl FMMRustGravity {
     }
   }
 
-  // // Spherical harmonic rotation
-  //  pub fn rotation(std::complex<double>* Cnm, std::complex<double>* CnmOut, std::complex<double>** Dnm) {
-  // let n,m,nms,k,nk,nks; // i32
-  //   std::complex<double> CnmScalar;
+  // Spherical harmonic rotation
+  fn rotation(&self, Cnm: &Vec<Complex>, Dnm: &Vec<Vec<Complex>>) -> Vec<Complex> {
+    let mut CnmOut = vec![Complex::new(0f32, 0f32); numCoefficients];
 
-  //   for( n=0; n<numExpansions; n++ ) {
-  //     for( m=0; m<=n; m++ ) {
-  //       nms = n*(n+1)/2+m;
-  //       CnmScalar = 0;
-  //       for( k=-n; k<=-1; k++ ) {
-  //         nk = n*(n+1)+k;
-  //         nks = n*(n+1)/2-k;
-  //         CnmScalar += Dnm[m][nk]*conj(Cnm[nks]);
-  //       }
-  //       for( k=0; k<=n; k++ ) {
-  //         nk = n*(n+1)+k;
-  //         nks = n*(n+1)/2+k;
-  //         CnmScalar += Dnm[m][nk]*Cnm[nks];
-  //       }
-  //       CnmOut[nms] = CnmScalar;
-  //     }
-  //   }
-  // }
+    for n in 0..(numExpansions as i32) {
+      for m in 0..=n {
+        let nms = n * (n + 1) / 2 + m;
+        let mut CnmScalar = Complex::new(0f32, 0f32);
+        for k in -n..=-1 {
+          let nk = n * (n + 1) + k;
+          let nks = n * (n + 1) / 2 - k;
+          CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize].conj();
+        }
+        for k in 0..=n {
+          let nk = n * (n + 1) + k;
+          let nks = n * (n + 1) / 2 + k;
+          CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize];
+        }
+        CnmOut[nms as usize] = CnmScalar;
+      }
+    }
+    CnmOut
+  }
 
   // // p2p
   fn p2p(
@@ -907,14 +933,6 @@ impl FMMRustGravity {
     particleOffset: &[Vec<usize>; 2],
     Mnm: &mut Vec<Vec<Complex>>,
   ) {
-    // let jj,j,n,m,nm,nms; // i32
-    //   vec3<int> boxIndex3D;
-    //   vec3<float> boxCenter;
-    //   vec3<double> dist;
-    //   double boxSize,rho,alpha,beta;
-    //   double xx,s2,fact,pn,p,p1,p2,rhom,rhon;
-    //   double YnmReal[numExpansion2];
-    //   std::complex<double> MnmVector[numCoefficients],I(0f32,1f32),eim;
     let I = Complex::new(0f32, 1f32);
     let mut YnmReal = vec![0f32; numExpansion2];
     let boxSize = rootBoxSize / (1 << maxLevel) as f32;
@@ -973,57 +991,65 @@ impl FMMRustGravity {
     }
   }
 
-  // // m2m
-  //  pub fn m2m(numBoxIndex: i32, numBoxIndexOld: i32, numLevel: i32) {
-  // let ii,ib,j,jj,nfjp,nfjc,jb,je,k,jk,jks,n,jnk,jnks,nm; // i32
-  //   vec3<int> boxIndex3D;
-  //   double boxSize,rho;
-  //   std::complex<double> cnm,MnmScalar;
-  //   std::complex<double> MnmVectorB[numCoefficients],MnmVectorA[numCoefficients];
+  // m2m
+  fn m2m(
+    &self,
+    numBoxIndex: usize,
+    numBoxIndexOld: usize,
+    numLevel: usize,
+    rootBoxSize: f32,
+    levelOffset: &mut Vec<usize>,
+    boxIndexMask: &mut Vec<usize>,
+    boxIndexFull: &mut Vec<usize>,
+    Mnm: &mut Vec<Vec<Complex>>,
+  ) {
+    let mut MnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
 
-  //   boxSize = rootBoxSize/(1 << numLevel);
-  //   for ii in (0..numBoxIndex) {
-  //     ib = ii+levelOffset[numLevel-1];
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       Mnm[ib][j] = 0;
-  //     }
-  //   }
-  //   for( jj=0; jj<numBoxIndexOld; jj++ ) {
-  //     jb = jj+levelOffset[numLevel];
-  //     nfjp = boxIndexFull[jb]/8;
-  //     nfjc = boxIndexFull[jb]%8;
-  //     ib = boxIndexMask[nfjp]+levelOffset[numLevel-1];
-  //     tree.unmorton(nfjc,boxIndex3D);
-  //     boxIndex3D.x = 4-boxIndex3D.x*2;
-  //     boxIndex3D.y = 4-boxIndex3D.y*2;
-  //     boxIndex3D.z = 4-boxIndex3D.z*2;
-  //     tree.morton1(boxIndex3D,je,3);
-  //     rho = boxSize*sqrt(3f32)/4;
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       MnmVectorA[j] = Mnm[jb][j];
-  //     }
-  //     rotation(MnmVectorA,MnmVectorB,Dnm[je]);
-  //     for( j=0; j<numExpansions; j++ ) {
-  //       for( k=0; k<=j; k++ ) {
-  //         jk = j*j+j+k;
-  //         jks = j*(j+1)/2+k;
-  //         MnmScalar = 0;
-  //         for( n=0; n<=j-abs(k); n++ ) {
-  //           jnk = (j-n)*(j-n)+j-n+k;
-  //           jnks = (j-n)*(j-n+1)/2+k;
-  //           nm = n*n+n;
-  //           cnm = pow(-1f32,n)*anm[nm]*anm[jnk]/anm[jk]*pow(rho,n)*Ynm[nm];
-  //           MnmScalar += MnmVectorB[jnks]*cnm;
-  //         }
-  //         MnmVectorA[jks] = MnmScalar;
-  //       }
-  //     }
-  //     rotation(MnmVectorA,MnmVectorB,Dnm[je+numRelativeBox]);
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       Mnm[ib][j] += MnmVectorB[j];
-  //     }
-  //   }
-  // }
+    let boxSize = rootBoxSize / (1 << numLevel) as f32;
+    for ii in 0..numBoxIndex {
+      let ib = ii + levelOffset[numLevel - 1];
+      for j in 0..numCoefficients {
+        Mnm[ib][j] = Complex::new(0f32, 0f32);
+      }
+    }
+    for jj in 0..numBoxIndexOld {
+      let jb = jj + levelOffset[numLevel];
+      let nfjp = boxIndexFull[jb] / 8;
+      let nfjc = boxIndexFull[jb] % 8;
+      let ib = boxIndexMask[nfjp] + levelOffset[numLevel - 1];
+      let mut boxIndex3D = self.unmorton(nfjc);
+      boxIndex3D.x = 4 - boxIndex3D.x * 2;
+      boxIndex3D.y = 4 - boxIndex3D.y * 2;
+      boxIndex3D.z = 4 - boxIndex3D.z * 2;
+      let je = self.morton1(&mut boxIndex3D, 3);
+      let rho = boxSize * (3f32).sqrt() / 4f32;
+      for j in 0..numCoefficients {
+        MnmVectorA[j] = Mnm[jb][j];
+      }
+      let MnmVectorB = self.rotation(&MnmVectorA, &self.Dnm[je]);
+      for j in 0..numExpansions {
+        for k in 0..=j {
+          let jk = j * j + j + k;
+          let jks = j * (j + 1) / 2 + k;
+          let mut MnmScalar = Complex::new(0f32, 0f32);
+          for n in 0..=j - k {
+            let jnk = (j - n) * (j - n) + j - n + k;
+            let jnks = (j - n) * (j - n + 1) / 2 + k;
+            let nm = n * n + n;
+            let cnm = -1f32.powi(n as i32) * self.anm[nm] * self.anm[jnk] / self.anm[jk]
+              * rho.powi(n as i32)
+              * self.Ynm[nm];
+            MnmScalar += MnmVectorB[jnks] * cnm;
+          }
+          MnmVectorA[jks] = MnmScalar;
+        }
+      }
+      let MnmVectorB = self.rotation(&MnmVectorA, &self.Dnm[je + numRelativeBox]);
+      for j in 0..numCoefficients {
+        Mnm[ib][j] += MnmVectorB[j];
+      }
+    }
+  }
 
   // // m2l
   //  pub fn m2l(numBoxIndex: i32, numLevel: i32) {
@@ -1356,7 +1382,7 @@ impl FMMRustGravity {
     escape_distance: f32,
   ) -> usize {
     // self.direct(g);
-    let treeOrFMM = 0; // or 1
+    let treeOrFMM = 1; // or 1
 
     let (boxMin, rootBoxSize) = self.setDomainSize();
     let (maxLevel, numBoxIndexFull) = self.setOptimumLevel();
@@ -1389,7 +1415,7 @@ impl FMMRustGravity {
 
     levelOffset[numLevel - 1] = 0;
     self.morton(maxLevel, rootBoxSize, boxMin);
-    let numBoxIndex = self.getBoxData(
+    let mut numBoxIndex = self.getBoxData(
       numBoxIndexFull,
       &mut boxIndexMask,
       &mut boxIndexFull,
@@ -1436,53 +1462,113 @@ impl FMMRustGravity {
       &mut Mnm,
     );
 
-    //   if(maxLevel > 2) {
-    //     for( numLevel=maxLevel-1; numLevel>=2; numLevel-- ) {
-    //       if( treeOrFMM == 0 ) {
-    // // M2P at lower levels
-    //         getInteractionList(numBoxIndex,numLevel+1,2);
-    //         self.m2p(numBoxIndex,numLevel+1);
-    //       }
+    if maxLevel > 2 {
+      for numLevel in (2..maxLevel).rev() {
+        if treeOrFMM == 0 {
+          // M2P at lower levels
+          let (numInteraction, interactionList) = self.getInteractionList(
+            numBoxIndex,
+            numBoxIndexLeaf,
+            numLevel + 1,
+            2,
+            &levelOffset,
+            &boxIndexMask,
+            &boxIndexFull,
+          );
+          // self.m2p(
+          //   numBoxIndex,
+          //   numLevel + 1,
+          //   rootBoxSize,
+          //   &boxMin,
+          //   maxLevel,
+          //   &boxIndexFull,
+          //   &particleOffset,
+          //   &mut Mnm,
+          // );
+        }
 
-    // // M2M
-    //       let numBoxIndexOld = numBoxIndex;
-    //       getBoxDataOfParent(numBoxIndex,numLevel,treeOrFMM);
-    //       self.m2m(numBoxIndex,numBoxIndexOld,numLevel);
-    //     }
-    //     numLevel = 2;
+        // M2M
+        let numBoxIndexOld = numBoxIndex;
+        numBoxIndex = self.getBoxDataOfParent(
+          numBoxIndex,
+          numBoxIndexFull,
+          numLevel,
+          treeOrFMM,
+          &mut levelOffset,
+          &mut boxIndexMask,
+          &mut boxIndexFull,
+          &mut particleOffset,
+        );
+        self.m2m(
+          numBoxIndex,
+          numBoxIndexOld,
+          numLevel,
+          rootBoxSize,
+          &mut levelOffset,
+          &mut boxIndexMask,
+          &mut boxIndexFull,
+          &mut Mnm,
+        );
+      }
+      numLevel = 2;
+    } else {
+      self.getBoxIndexMask(
+        numBoxIndex,
+        numBoxIndexFull,
+        numLevel,
+        &levelOffset,
+        &mut boxIndexMask,
+        &boxIndexFull,
+      );
+    }
+    let (numInteraction, interactionList) = self.getInteractionList(
+      numBoxIndex,
+      numBoxIndexLeaf,
+      numLevel,
+      1,
+      &levelOffset,
+      &boxIndexMask,
+      &boxIndexFull,
+    );
 
-    //   } else {
-    //     getBoxIndexMask(numBoxIndex,numLevel);
+    if treeOrFMM == 0 {
+      // M2P at level 2
+      // self.m2p(numBoxIndex, numLevel);
+    } else {
+      // M2L at level 2
+      // self.m2l(numBoxIndex, numLevel);
 
-    //   }
+      // L2L
+      if maxLevel > 2 {
+        for numLevel in 3..=maxLevel {
+          numBoxIndex = levelOffset[numLevel - 2] - levelOffset[numLevel - 1];
+          // self.l2l(numBoxIndex, numLevel);
+          self.getBoxIndexMask(
+            numBoxIndex,
+            numBoxIndexFull,
+            numLevel,
+            &levelOffset,
+            &mut boxIndexMask,
+            &boxIndexFull,
+          );
 
-    //   if( treeOrFMM == 0 ) {
-
-    // // M2P at level 2
-    //     getInteractionList(numBoxIndex,numLevel,1);
-    //     self.m2p(numBoxIndex,numLevel);
-
-    //   } else {
-    // // M2L at level 2
-    //     getInteractionList(numBoxIndex,numLevel,1);
-    //     self.m2l(numBoxIndex,numLevel);
-
-    // // L2L
-    //     if( maxLevel > 2 ) {
-    //       for numLevel in (3..maxLevel+1)
-    //         numBoxIndex = levelOffset[numLevel-2]-levelOffset[numLevel-1];
-    //         self.l2l(numBoxIndex,numLevel);
-    //         getBoxIndexMask(numBoxIndex,numLevel);
-
-    // // M2L at lower levels
-    //         getInteractionList(numBoxIndex,numLevel,2);
-    //         self.m2l(numBoxIndex,numLevel);
-    //       }
-    //       numLevel = maxLevel;
-    //     }
-    // // L2P
-    //     self.l2p(numBoxIndex);
-    //   }
+          // M2L at lower levels
+          let (numInteraction, interactionList) = self.getInteractionList(
+            numBoxIndex,
+            numBoxIndexLeaf,
+            numLevel,
+            2,
+            &levelOffset,
+            &boxIndexMask,
+            &boxIndexFull,
+          );
+          // self.m2l(numBoxIndex, numLevel);
+        }
+        numLevel = maxLevel;
+      }
+      // L2P
+      // self.l2p(numBoxIndex);
+    }
     self.unsortParticles(permutation);
     self.len
   }
