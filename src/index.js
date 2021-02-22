@@ -23,7 +23,7 @@ import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import wasmInit, { Annealation, wasm_memory } from 'wasm'
+import wasmInit, { P2PRustGravity, FMMRustGravity, wasm_memory } from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
@@ -38,7 +38,7 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = ['js_p2p', 'rust_p2p', 'js_fmm', 'js_none']
+const backends = ['js_p2p', 'rust_p2p', 'js_fmm', 'rust_fmm', 'js_none']
 
 const stats = new Stats()
 
@@ -174,8 +174,12 @@ function init() {
     gravity = new NoGravity(orbs)
   } else if (backend === 'js_fmm') {
     gravity = new FMMGravity(orbs, range, resolution)
-  } else if (backend === 'rust_p2p') {
-    gravity = Annealation.new(orbs.length)
+  } else if (backend === 'rust_p2p' || backend === 'rust_fmm') {
+    if (backend === 'rust_p2p') {
+      gravity = P2PRustGravity.new(orbs.length)
+    } else if (backend === 'rust_fmm') {
+      gravity = FMMRustGravity.new(orbs.length)
+    }
     const { buffer } = wasm_memory()
     gravity.positions = new Float32Array(
       buffer,

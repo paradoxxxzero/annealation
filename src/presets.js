@@ -3,7 +3,7 @@ export default {
   remembered: {
     Cube: {
       0: {
-        backend: 'rust_p2p',
+        backend: 'rust_fmm',
         resolution: 7,
         autoRotate: true,
         fxaa: true,
