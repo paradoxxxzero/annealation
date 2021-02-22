@@ -57,6 +57,44 @@ export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
   })
 }
 
+export const regularCube = ({ number, range, speed, mass, blackHoleMass }) => {
+  const n = ~~Math.cbrt(number)
+  return new Array(n)
+    .fill()
+    .map((_, i) =>
+      new Array(n).fill().map((_, j) =>
+        new Array(n).fill().map((_, k) => {
+          const pos = new Vector3(i / n - 1 / 2, j / n - 1 / 2, k / n - 1 / 2)
+          return {
+            // mass 10^30 kg
+            mass,
+            temperature: 15000 * (0.75 - pos.lengthSq()) - 3000,
+            // distance 10^161 m
+            position: pos.multiplyScalar(range),
+            speed: new Vector3(
+              speed / 2 - Math.random() * speed,
+              speed / 2 - Math.random() * speed,
+              speed / 2 - Math.random() * speed
+            ),
+          }
+        })
+      )
+    )
+    .flat(3)
+    .concat(
+      blackHoleMass
+        ? [
+            {
+              temperature: 0,
+              mass: blackHoleMass,
+              position: new Vector3(),
+              speed: new Vector3(),
+            },
+          ]
+        : []
+    )
+}
+
 export const sphere = ({
   number,
   range,

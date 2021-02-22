@@ -9,12 +9,13 @@ use wasm_bindgen::prelude::*;
 extern "C" {
   #[wasm_bindgen(js_namespace = console)]
   fn log(s: &str);
+}
 
-  #[wasm_bindgen(js_namespace = console, js_name = log)]
-  fn log_f32(s: &str, a: f32);
-
-  #[wasm_bindgen(js_namespace = console, js_name = log)]
-  fn log_usize(s: &str, a: usize);
+#[allow(unused_macros)]
+macro_rules! console_log {
+  // Note that this is using the `log` function imported above during
+  // `bare_bones`
+  ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -38,7 +39,7 @@ const sourceBufferSize: usize = 100000; // max of GPU source buffer
 const threadsPerBlockTypeA: usize = 128; // size of GPU thread block P2P
 const threadsPerBlockTypeB: usize = 64; // size of GPU thread block M2L
 
-const eps: f32 = 1e-6; // single precision epsilon
+const eps: f32 = 100f32; //1e-6; // single precision epsilon
 
 const numExpansion2: usize = numExpansions * numExpansions;
 const numExpansion4: usize = numExpansion2 * numExpansion2;
@@ -249,7 +250,6 @@ impl FMMRustGravity {
     boxIndex3D.x = mortonIndex3D[1];
     boxIndex3D.y = mortonIndex3D[2];
     boxIndex3D.z = mortonIndex3D[0];
-
     boxIndex3D
   }
 
@@ -307,6 +307,16 @@ impl FMMRustGravity {
 
   // Unsorting particles upon exit (optional)
   fn unsortParticles(&mut self, permutation: Vec<usize>) {
+    for i in 0..self.len {
+      self.sortPositionBuffer[permutation[i] * 3] = self.accelerations[i * 3];
+      self.sortPositionBuffer[permutation[i] * 3 + 1] = self.accelerations[i * 3 + 1];
+      self.sortPositionBuffer[permutation[i] * 3 + 2] = self.accelerations[i * 3 + 2];
+    }
+    for i in 0..self.len {
+      self.accelerations[i * 3] = self.sortPositionBuffer[i * 3];
+      self.accelerations[i * 3 + 1] = self.sortPositionBuffer[i * 3 + 1];
+      self.accelerations[i * 3 + 2] = self.sortPositionBuffer[i * 3 + 2];
+    }
     for i in 0..self.len {
       self.sortPositionBuffer[permutation[i] * 3] = self.positions[i * 3];
       self.sortPositionBuffer[permutation[i] * 3 + 1] = self.positions[i * 3 + 1];
@@ -428,12 +438,12 @@ impl FMMRustGravity {
     boxIndexFull: &Vec<usize>,
   ) -> (Vec<usize>, Vec<Vec<usize>>) {
     let mut numInteraction = vec![0; numBoxIndexLeaf];
-    let mut interactionList = iter::repeat(vec![0; maxM2LInteraction])
-      .take(numBoxIndexLeaf)
+    // let mut interactionList = iter::repeat(vec![0; maxM2LInteraction])
+    //   .take(numBoxIndexLeaf)
+    //   .collect::<Vec<_>>();
+    let mut interactionList = (0..numBoxIndexLeaf)
+      .map(|_| vec![0; maxM2LInteraction])
       .collect::<Vec<_>>();
-    // let mut interactionList = (0..numBoxIndexLeaf)
-    // .map(|_| vec![0; maxM2LInteraction])
-    // .collect();
     // Initialize the minimum and maximum values
     let mut jxmin = 1000000;
     let mut jxmax = 0;
@@ -461,9 +471,9 @@ impl FMMRustGravity {
         let ix = boxIndex3D.x;
         let iy = boxIndex3D.y;
         let iz = boxIndex3D.z;
-        for jx in jxmin.max(ix - 1)..(jxmax.min(ix + 1) + 1) {
-          for jy in jymin.max(iy - 1)..(jymax.min(iy + 1) + 1) {
-            for jz in jzmin.max(iz - 1)..(jzmax.min(iz + 1) + 1) {
+        for jx in jxmin.max(ix.max(1) - 1)..(jxmax.min(ix + 1) + 1) {
+          for jy in jymin.max(iy.max(1) - 1)..(jymax.min(iy + 1) + 1) {
+            for jz in jzmin.max(iz.max(1) - 1)..(jzmax.min(iz + 1) + 1) {
               boxIndex3D.x = jx;
               boxIndex3D.y = jy;
               boxIndex3D.z = jz;
@@ -568,6 +578,9 @@ impl FMMRustGravity {
     for i in 0..self.len {
       let mut ai = Vec3::new(0f32, 0f32, 0f32);
       for j in 0..self.len {
+        if i == j {
+          continue;
+        }
         dist.x = self.positions[i * 3] - self.positions[j * 3];
         dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
         dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
@@ -823,19 +836,21 @@ impl FMMRustGravity {
         for i in particleOffset[0][ii]..(particleOffset[1][ii] + 1) {
           let mut ai = Vec3::new(0f32, 0f32, 0f32);
           for j in particleOffset[0][jj]..(particleOffset[1][jj] + 1) {
+            if i == j {
+              continue;
+            }
             dist.x = self.positions[i * 3] - self.positions[j * 3];
             dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
             dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
             let invDist = 1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + eps).sqrt();
-            let invDistCube = invDist * invDist * invDist;
-            let s = self.masses[j] * invDistCube;
-            ai.x -= dist.x * s;
-            ai.y -= dist.y * s;
-            ai.z -= dist.z * s;
+            let invDistCube = self.masses[j] * invDist * invDist * invDist;
+            ai.x -= dist.x * invDistCube;
+            ai.y -= dist.y * invDistCube;
+            ai.z -= dist.z * invDistCube;
           }
-          self.accelerations[i * 3] -= g * ai.x;
-          self.accelerations[i * 3 + 1] -= g * ai.y;
-          self.accelerations[i * 3 + 2] -= g * ai.z;
+          self.accelerations[i * 3] += g * ai.x;
+          self.accelerations[i * 3 + 1] += g * ai.y;
+          self.accelerations[i * 3 + 2] += g * ai.z;
         }
       }
     }
