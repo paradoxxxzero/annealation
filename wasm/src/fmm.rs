@@ -311,11 +311,13 @@ impl FMMRustGravity {
       self.sortPositionBuffer[permutation[i] * 3] = self.positions[i * 3];
       self.sortPositionBuffer[permutation[i] * 3 + 1] = self.positions[i * 3 + 1];
       self.sortPositionBuffer[permutation[i] * 3 + 2] = self.positions[i * 3 + 2];
+      self.sortMassBuffer[permutation[i]] = self.masses[i];
     }
     for i in 0..self.len {
       self.positions[i * 3] = self.sortPositionBuffer[i * 3];
       self.positions[i * 3 + 1] = self.sortPositionBuffer[i * 3 + 1];
       self.positions[i * 3 + 2] = self.sortPositionBuffer[i * 3 + 2];
+      self.masses[i] = self.sortMassBuffer[i];
     }
   }
 
@@ -429,6 +431,9 @@ impl FMMRustGravity {
     let mut interactionList = iter::repeat(vec![0; maxM2LInteraction])
       .take(numBoxIndexLeaf)
       .collect::<Vec<_>>();
+    // let mut interactionList = (0..numBoxIndexLeaf)
+    // .map(|_| vec![0; maxM2LInteraction])
+    // .collect();
     // Initialize the minimum and maximum values
     let mut jxmin = 1000000;
     let mut jxmax = 0;
@@ -1282,6 +1287,7 @@ impl FMMRustGravity {
     threshold: f32,
     escape_distance: f32,
   ) -> usize {
+    // self.direct(g);
     let treeOrFMM = 0; // or 1
 
     let (boxMin, rootBoxSize) = self.setDomainSize();
@@ -1363,7 +1369,7 @@ impl FMMRustGravity {
       &particleOffset,
     );
 
-    //   numLevel = maxLevel;
+    // numLevel = maxLevel;
 
     // // P2M
     //   self.p2m(numBoxIndex);

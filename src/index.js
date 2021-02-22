@@ -167,13 +167,17 @@ function init() {
     resolution,
   } = params
   const orbs = configurations[configuration](params)
+  let positions, masses, temperatures
 
   if (backend === 'js_p2p') {
     gravity = new P2PGravity(orbs)
+    ;({ positions, masses, temperatures } = gravity)
   } else if (backend === 'js_none') {
     gravity = new NoGravity(orbs)
+    ;({ positions, masses, temperatures } = gravity)
   } else if (backend === 'js_fmm') {
     gravity = new FMMGravity(orbs, range, resolution)
+    ;({ positions, masses, temperatures } = gravity)
   } else if (backend === 'rust_p2p' || backend === 'rust_fmm') {
     if (backend === 'rust_p2p') {
       gravity = P2PRustGravity.new(orbs.length)
@@ -181,13 +185,13 @@ function init() {
       gravity = FMMRustGravity.new(orbs.length)
     }
     const { buffer } = wasm_memory()
-    gravity.positions = new Float32Array(
+    positions = new Float32Array(
       buffer,
       gravity.positions_ptr(),
       3 * orbs.length
     )
-    gravity.masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length)
-    gravity.temperatures = new Float32Array(
+    masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length)
+    temperatures = new Float32Array(
       buffer,
       gravity.temperatures_ptr(),
       orbs.length
@@ -205,26 +209,26 @@ function init() {
     })
   }
   orbs.forEach(({ position, mass, temperature }, i) => {
-    gravity.positions[i * 3] = position.x
-    gravity.positions[i * 3 + 1] = position.y
-    gravity.positions[i * 3 + 2] = position.z
-    gravity.masses[i] = mass
-    gravity.temperatures[i] = temperature
+    positions[i * 3] = position.x
+    positions[i * 3 + 1] = position.y
+    positions[i * 3 + 2] = position.z
+    masses[i] = mass
+    temperatures[i] = temperature
   })
 
   const geometry = new BufferGeometry()
   geometry.setDrawRange(0, orbs.length)
   geometry.setAttribute(
     'position',
-    new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage)
+    new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage)
   )
   geometry.setAttribute(
     'mass',
-    new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage)
+    new BufferAttribute(masses, 1).setUsage(DynamicDrawUsage)
   )
   geometry.setAttribute(
     'temperature',
-    new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage)
+    new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage)
   )
   geometry.setDrawRange(0, orbs.length)
 
