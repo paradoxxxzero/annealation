@@ -183,6 +183,7 @@ function init() {
       gravity = P2PRustGravity.new(orbs.length)
     } else if (backend === 'rust_fmm') {
       gravity = FMMRustGravity.new(orbs.length)
+      gravity.precalc()
     }
     const { buffer } = wasm_memory()
     positions = new Float32Array(

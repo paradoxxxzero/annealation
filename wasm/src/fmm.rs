@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use crate::utils::init_hook;
-use num_complex::Complex64 as Complex;
-use std::iter;
+use num_complex::Complex32 as Complex;
+use std::f32;
 use std::usize;
 use wasm_bindgen::prelude::*;
 
@@ -39,7 +39,7 @@ const sourceBufferSize: usize = 100000; // max of GPU source buffer
 const threadsPerBlockTypeA: usize = 128; // size of GPU thread block P2P
 const threadsPerBlockTypeB: usize = 64; // size of GPU thread block M2L
 
-const eps: f32 = 100f32; //1e-6; // single precision epsilon
+const eps: f32 = 1e-6; // single precision epsilon
 
 const numExpansion2: usize = numExpansions * numExpansions;
 const numExpansion4: usize = numExpansion2 * numExpansion2;
@@ -62,6 +62,12 @@ pub struct FMMRustGravity {
   sortIndexBuffer: Vec<usize>,
   sortPositionBuffer: Vec<f32>,
   sortMassBuffer: Vec<f32>,
+  factorial: Vec<f32>,
+
+  Anm: Vec<f32>,
+  anm: Vec<f32>,
+  Dnm: Vec<Vec<Vec<Complex>>>,
+  Ynm: Vec<Complex>,
 }
 
 #[wasm_bindgen]
@@ -82,6 +88,17 @@ impl FMMRustGravity {
     let sortIndexBuffer = vec![0; len];
     let sortPositionBuffer = vec![0f32; 3 * len];
     let sortMassBuffer = vec![0f32; len];
+    let factorial = vec![0f32; 4 * numExpansion2];
+    let Anm = vec![0f32; numExpansion4];
+    let anm = vec![0f32; 4 * numExpansion2];
+    let Dnm = (0..(2 * numRelativeBox))
+      .map(|_| {
+        (0..numExpansions)
+          .map(|_| vec![Complex::new(0f32, 0f32); numExpansion2])
+          .collect::<Vec<_>>()
+      })
+      .collect::<Vec<_>>();
+    let Ynm = vec![Complex::new(0f32, 0f32); 4 * numExpansion2];
 
     FMMRustGravity {
       positions,
@@ -99,6 +116,13 @@ impl FMMRustGravity {
       sortIndexBuffer,
       sortPositionBuffer,
       sortMassBuffer,
+      factorial,
+
+      // precalc
+      Anm,
+      anm,
+      Dnm,
+      Ynm,
     }
   }
 
@@ -438,9 +462,6 @@ impl FMMRustGravity {
     boxIndexFull: &Vec<usize>,
   ) -> (Vec<usize>, Vec<Vec<usize>>) {
     let mut numInteraction = vec![0; numBoxIndexLeaf];
-    // let mut interactionList = iter::repeat(vec![0; maxM2LInteraction])
-    //   .take(numBoxIndexLeaf)
-    //   .collect::<Vec<_>>();
     let mut interactionList = (0..numBoxIndexLeaf)
       .map(|_| vec![0; maxM2LInteraction])
       .collect::<Vec<_>>();
@@ -524,9 +545,10 @@ impl FMMRustGravity {
         for jxp in (ixp - 1)..(ixp + 2) {
           for jyp in (iyp - 1)..(iyp + 2) {
             for jzp in (izp - 1)..(izp + 2) {
-              for jx in (jxmin.max(2 * jxp - 2))..(jxmax.min(2 * jxp - 1) + 1) {
-                for jy in (jymin.max(2 * jyp - 2))..(jymax.min(2 * jyp - 1) + 1) {
-                  for jz in (jzmin.max(2 * jzp - 2))..(jzmax.min(2 * jzp - 1) + 1) {
+              // TODO: Check usize overflow
+              for jx in (jxmin.max(2 * jxp.max(1) - 2))..(jxmax.min(2 * jxp - 1) + 1) {
+                for jy in (jymin.max(2 * jyp.max(1) - 2))..(jymax.min(2 * jyp - 1) + 1) {
+                  for jz in (jzmin.max(2 * jzp.max(1) - 2))..(jzmax.min(2 * jzp - 1) + 1) {
                     if jx < ix - 1
                       || ix + 1 < jx
                       || jy < iy - 1
@@ -555,22 +577,22 @@ impl FMMRustGravity {
     (numInteraction, interactionList)
   }
 
-  // fn cart2sph(double& r, double& theta, double& phi, double dx, double dy, double dz) {
-  //   r=sqrtf(dx*dx+dy*dy+dz*dz)+eps;
-  //   theta=acosf(dz/r);
-  //   if(fabs(dx)+fabs(dy)<eps){
-  //     phi=0;
-  //   }
-  //   else if(fabs(dx)<eps){
-  //     phi=dy/fabs(dy)*M_PI*0.5;
-  //   }
-  //   else if(dx>0){
-  //     phi=atanf(dy/dx);
-  //   }
-  //   else{
-  //     phi=atanf(dy/dx)+M_PI;
-  //   }
-  // }
+  fn cart2sph(&self, dx: f32, dy: f32, dz: f32) -> (f32, f32, f32) {
+    let r = (dx * dx + dy * dy + dz * dz).sqrt() + eps;
+    let theta = (dz / r).acos();
+    let phi;
+
+    if dx.abs() + dy.abs() < eps {
+      phi = 0f32;
+    } else if dx.abs() < eps {
+      phi = dy / dy.abs() * f32::consts::PI * 0.5;
+    } else if dx > 0f32 {
+      phi = (dy / dx).atan();
+    } else {
+      phi = (dy / dx).atan() + f32::consts::PI;
+    }
+    (r, theta, phi)
+  }
 
   // direct summation kernel
   fn direct(&mut self, g: f32) {
@@ -596,205 +618,220 @@ impl FMMRustGravity {
     }
   }
 
-  // // precalculate M2L translation matrix and Wigner rotation matrix
-  //  pub fn precalc() {
-  // let n,m,nm,nabsm,j,k,nk,npn,nmn,npm,nmm,nmk,i,nmk1,nm1k,nmk2; // i32
-  //   vec3<int> boxIndex3D;
-  //   vec3<double> dist;
-  //   double anmk[2][numExpansion4];
-  //   double Dnmd[numExpansion4];
-  //   double fnma,fnpa,pn,p,p1,p2,anmd,anmkd,rho,alpha,beta,sc,ank,ek;
-  //   std::complex<double> expBeta[numExpansion2],I(0f32,1f32);
+  // precalculate M2L translation matrix and Wigner rotation matrix
 
-  // let jk,jkn,jnk; // i32
-  //   double fnmm,fnpm,fad;
+  pub fn precalc(&mut self) {
+    // let n,m,nm,nabsm,j,k,nk,npn,nmn,npm,nmm,nmk,i,nmk1,nm1k,nmk2; // i32
+    //   vec3<int> boxIndex3D;
+    //   vec3<double> dist;
+    //   double anmk[2][numExpansion4];
+    //   double Dnmd[numExpansion4];
+    //   double fnma,fnpa,pn,p,p1,p2,anmd,anmkd,rho,alpha,beta,sc,ank,ek;
+    //   std::complex<double> expBeta[numExpansion2],I(0f32,1f32);
 
-  //   for( n=0; n<2*numExpansions; n++ ) {
-  //     for( m=-n; m<=n; m++ ) {
-  //       nm = n*n+n+m;
-  //       nabsm = abs(m);
-  //       fnmm = 1f32;
-  //       for( i=1; i<=n-m; i++ ) fnmm *= i;
-  //       fnpm = 1f32;
-  //       for( i=1; i<=n+m; i++ ) fnpm *= i;
-  //       fnma = 1f32;
-  //       for( i=1; i<=n-nabsm; i++ ) fnma *= i;
-  //       fnpa = 1f32;
-  //       for( i=1; i<=n+nabsm; i++ ) fnpa *= i;
-  //       factorial[nm] = sqrt(fnma/fnpa);
-  //       fad = sqrt(fnmm*fnpm);
-  //       anm[nm] = pow(-1f32,n)/fad;
-  //     }
-  //   }
+    // let jk,jkn,jnk; // i32
+    //   double fnmm,fnpm,fad;
 
-  //   for( j=0; j<numExpansions; j++) {
-  //     for( k=-j; k<=j; k++ ){
-  //       jk = j*j+j+k;
-  //       for( n=abs(k); n<numExpansions; n++ ) {
-  //         nk = n*n+n+k;
-  //         jkn = jk*numExpansion2+nk;
-  //         jnk = (j+n)*(j+n)+j+n;
-  //         Anm[jkn] = pow(-1f32,j+k)*anm[nk]*anm[jk]/anm[jnk];
-  //       }
-  //     }
-  //   }
+    for n in 0..(2 * numExpansions as i32) {
+      for m in -n..=n {
+        let nm = (n * n + n + m) as usize;
+        let nabsm = m.abs();
+        let mut fnmm = 1f32;
+        for i in 1..=(n - m) {
+          fnmm *= i as f32;
+        }
+        let mut fnpm = 1f32;
+        for i in 1..=(n + m) {
+          fnpm *= i as f32;
+        }
+        let mut fnma = 1f32;
+        for i in 1..=(n - nabsm) {
+          fnma *= i as f32;
+        }
+        let mut fnpa = 1f32;
+        for i in 1..=(n + nabsm) {
+          fnpa *= i as f32;
+        }
+        self.factorial[nm] = (fnma / fnpa).sqrt();
+        let fad = (fnmm * fnpm).sqrt();
+        self.anm[nm] = -1f32.powi(n) / fad;
+      }
+    }
 
-  //   pn = 1;
-  //   for( m=0; m<2*numExpansions; m++ ) {
-  //     p = pn;
-  //     npn = m*m+2*m;
-  //     nmn = m*m;
-  //     Ynm[npn] = factorial[npn]*p;
-  //     Ynm[nmn] = conj(Ynm[npn]);
-  //     p1 = p;
-  //     p = (2*m+1)*p;
-  //     for( n=m+1; n<2*numExpansions; n++ ) {
-  //       npm = n*n+n+m;
-  //       nmm = n*n+n-m;
-  //       Ynm[npm] = factorial[npm]*p;
-  //       Ynm[nmm] = conj(Ynm[npm]);
-  //       p2 = p1;
-  //       p1 = p;
-  //       p = ((2*n+1)*p1-(n+m)*p2)/(n-m+1);
-  //     }
-  //     pn = 0;
-  //   }
+    for j in 0..(numExpansions as i32) {
+      for k in -j..=j {
+        let jk = j * j + j + k;
+        for n in k.abs()..(numExpansions as i32) {
+          let nk = n * n + n + k;
+          let jkn = jk * (numExpansion2 as i32) + nk;
+          let jnk = (j + n) * (j + n) + j + n;
+          self.Anm[jkn as usize] =
+            -1f32.powi(j + k) * self.anm[nk as usize] * self.anm[jk as usize]
+              / self.anm[jnk as usize];
+        }
+      }
+    }
 
-  //   for( n=0; n<numExpansions; n++ ) {
-  //     for( m=1; m<=n; m++ ) {
-  //       anmd = n*(n+1)-m*(m-1);
-  //       for( k=1-m; k<m; k++ ) {
-  //         nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //         anmkd = ((double) (n*(n+1)-k*(k+1)))/(n*(n+1)-m*(m-1));
-  //         anmk[0][nmk] = -(m+k)/sqrt(anmd);
-  //         anmk[1][nmk] = sqrt(anmkd);
-  //       }
-  //     }
-  //   }
+    let mut pn = 1f32;
+    let mut p;
+    let mut p1;
+    let mut p2;
+    for m in 0..(2 * numExpansions) {
+      p = pn;
+      let npn = m * m + 2 * m;
+      let nmn = m * m;
+      self.Ynm[npn] = Complex::new(self.factorial[npn] * p, 0f32);
+      self.Ynm[nmn] = self.Ynm[npn].conj();
+      p1 = p;
+      p = (2 * m + 1) as f32 * p;
+      for n in (m + 1)..(2 * numExpansions) {
+        let npm = n * n + n + m;
+        let nmm = n * n + n - m;
+        self.Ynm[npn] = Complex::new(self.factorial[npm] * p, 0f32);
+        self.Ynm[nmn] = self.Ynm[npm].conj();
+        p2 = p1;
+        p1 = p;
+        p = ((2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+      }
+      pn = 0f32;
+    }
 
-  //   for( i=0; i<numRelativeBox; i++ ) {
-  //     tree.unmorton(i,boxIndex3D);
-  //     dist.x = boxIndex3D.x-3;
-  //     dist.y = boxIndex3D.y-3;
-  //     dist.z = boxIndex3D.z-3;
-  //     cart2sph(rho,alpha,beta,dist.x,dist.y,dist.z);
+    let mut anmk = [vec![0f32; numExpansion4], vec![0f32; numExpansion4]];
+    for n in 0..numExpansions {
+      for m in 1..=n {
+        let anmd = (n * (n + 1) - m * (m - 1)) as f32;
+        for k in (1 - m)..m {
+          let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+          let anmkd = ((n * (n + 1) - k * (k + 1)) / (n * (n + 1) - m * (m - 1))) as f32;
+          anmk[0][nmk] = -((m + k) as f32) / anmd.sqrt();
+          anmk[1][nmk] = anmkd.sqrt();
+        }
+      }
+    }
+    let I = Complex::new(0f32, 1f32);
+    let mut expBeta = vec![Complex::new(0f32, 0f32); numExpansion2];
+    let mut Dnmd = vec![0f32; numExpansion4];
 
-  //     sc = sin(alpha)/(1+cos(alpha));
-  //     for( n=0; n<4*numExpansions-3; n++ ) {
-  //       expBeta[n] = exp((n-2*numExpansions+2)*beta*I);
-  //     }
+    for i in 0..numRelativeBox {
+      let boxIndex3D = self.unmorton(i);
+      let dist = Vec3::new(
+        (boxIndex3D.x - 3) as f32,
+        (boxIndex3D.y - 3) as f32,
+        (boxIndex3D.z - 3) as f32,
+      );
+      let (_, mut alpha, mut beta) = self.cart2sph(dist.x, dist.y, dist.z);
 
-  //     for( n=0; n<numExpansions; n++ )  {
-  //       nmk = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+n;
-  //       Dnmd[nmk] = pow(cos(alpha*0.5),2*n);
-  //       for( k=n; k>=1-n; k-- ) {
-  //         nmk = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+k;
-  //         nmk1 = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+k-1;
-  //         ank = ((double) n+k)/(n-k+1);
-  //         Dnmd[nmk1] = sqrt(ank)*tan(alpha*0.5)*Dnmd[nmk];
-  //       }
-  //       for( m=n; m>=1; m-- ) {
-  //         for( k=m-1; k>=1-m; k-- ){
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k+1;
-  //           nm1k = (4*n*n*n+6*n*n+5*n)/3+(m-1)*(2*n+1)+k;
-  //           Dnmd[nm1k] = anmk[1][nmk]*Dnmd[nmk1]+anmk[0][nmk]*sc*Dnmd[nmk];
-  //         }
-  //       }
-  //     }
+      let mut sc = alpha.sin() / (1f32 + alpha.cos());
+      for n in 0..(4 * numExpansions - 3) {
+        expBeta[n] = ((n - 2 * numExpansions + 2) as f32 * beta * I).exp();
+      }
 
-  //     for( n=1; n<numExpansions; n++ ) {
-  //       for( m=0; m<=n; m++ ) {
-  //         for( k=-m; k<=-1; k++ ) {
-  //           ek = pow(-1f32,k);
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3-k*(2*n+1)-m;
-  //           Dnmd[nmk] = ek*Dnmd[nmk];
-  //           Dnmd[nmk1] = pow(-1f32,m+k)*Dnmd[nmk];
-  //         }
-  //         for( k=0; k<=m; k++ ) {
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3+k*(2*n+1)+m;
-  //           nmk2 = (4*n*n*n+6*n*n+5*n)/3-k*(2*n+1)-m;
-  //           Dnmd[nmk1] = pow(-1f32,m+k)*Dnmd[nmk];
-  //           Dnmd[nmk2] = Dnmd[nmk1];
-  //         }
-  //       }
-  //     }
+      for n in 0..numExpansions {
+        let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + n;
+        Dnmd[nmk] = (alpha * 0.5).cos().powi((2 * n) as i32);
+        for k in ((1 - n)..(n + 1)).rev() {
+          let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k;
+          let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k - 1;
+          let ank = (n + k) / (n - k + 1);
+          Dnmd[nmk1] = (ank as f32).sqrt() * (alpha * 0.5).tan() * Dnmd[nmk];
+        }
+        for m in (1..=n).rev() {
+          for k in ((1 - m)..m).rev() {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k + 1;
+            let nm1k = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + (m - 1) * (2 * n + 1) + k;
+            Dnmd[nm1k] = anmk[1][nmk] * Dnmd[nmk1] + anmk[0][nmk] * sc * Dnmd[nmk];
+          }
+        }
+      }
+      for n in 1..(numExpansions as i32) {
+        for m in 0..=n {
+          for k in -m..0 {
+            let ek = -1f32.powi(k);
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
+            Dnmd[nmk as usize] = ek * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+          }
+          for k in 0..=m {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + k * (2 * n + 1) + m;
+            let nmk2 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
+            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk2 as usize] = Dnmd[nmk1 as usize];
+          }
+        }
+      }
 
-  //     for( n=0; n<numExpansions; n++ ) {
-  //       for( m=0; m<=n; m++ ) {
-  //         for( k=-n; k<=n; k++ ) {
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nk = n*(n+1)+k;
-  //           Dnm[i][m][nk] = Dnmd[nmk]*expBeta[k+m+2*numExpansions-2];
-  //         }
-  //       }
-  //     }
+      for n in 0..(numExpansions as i32) {
+        for m in 0..=n {
+          for k in -n..=n {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nk = n * (n + 1) + k;
+            self.Dnm[i][m as usize][nk as usize] =
+              Dnmd[nmk as usize] * expBeta[(k + m + 2 * (numExpansions as i32) - 2) as usize];
+          }
+        }
+      }
 
-  //     alpha = -alpha;
-  //     beta = -beta;
+      alpha = -alpha;
+      beta = -beta;
 
-  //     sc = sin(alpha)/(1+cos(alpha));
-  //     for( n=0; n<4*numExpansions-3; n++ ) {
-  //       expBeta[n] = exp((n-2*numExpansions+2)*beta*I);
-  //     }
+      sc = alpha.sin() / (1f32 + alpha.cos());
+      for n in 0..(4 * numExpansions - 3) {
+        expBeta[n] = ((n - 2 * numExpansions + 2) as f32 * beta * I).exp();
+      }
 
-  //     for( n=0; n<numExpansions; n++ ) {
-  //       nmk = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+n;
-  //       Dnmd[nmk] = pow(cos(alpha*0.5),2*n);
-  //       for( k=n; k>=1-n; k-- ) {
-  //         nmk = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+k;
-  //         nmk1 = (4*n*n*n+6*n*n+5*n)/3+n*(2*n+1)+k-1;
-  //         ank = ((double) n+k)/(n-k+1);
-  //         Dnmd[nmk1] = sqrt(ank)*tan(alpha*0.5)*Dnmd[nmk];
-  //       }
-  //       for( m=n; m>=1; m-- ) {
-  //         for( k=m-1; k>=1-m; k-- ) {
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k+1;
-  //           nm1k = (4*n*n*n+6*n*n+5*n)/3+(m-1)*(2*n+1)+k;
-  //           Dnmd[nm1k] = anmk[1][nmk]*Dnmd[nmk1]+anmk[0][nmk]*sc*Dnmd[nmk];
-  //         }
-  //       }
-  //     }
+      for n in 0..numExpansions {
+        let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + n;
+        Dnmd[nmk] = (alpha * 0.5).cos().powi((2 * n) as i32);
+        for k in ((1 - n)..=n).rev() {
+          let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k;
+          let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k - 1;
+          let ank = (n + k) / (n - k + 1);
+          Dnmd[nmk1] = (ank as f32).sqrt() * (alpha * 0.5).tan() * Dnmd[nmk];
+        }
+        for m in (1..=n).rev() {
+          for k in ((1 - m)..m).rev() {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k + 1;
+            let nm1k = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + (m - 1) * (2 * n + 1) + k;
+            Dnmd[nm1k] = anmk[1][nmk] * Dnmd[nmk1] + anmk[0][nmk] * sc * Dnmd[nmk];
+          }
+        }
+      }
 
-  //     for( n=1; n<numExpansions; n++ ) {
-  //       for( m=0; m<=n; m++ ) {
-  //         for( k=-m; k<=-1; k++ ) {
-  //           ek = pow(-1f32,k);
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3-k*(2*n+1)-m;
-  //           Dnmd[nmk] = ek*Dnmd[nmk];
-  //           Dnmd[nmk1] = pow(-1f32,m+k)*Dnmd[nmk];
-  //         }
-  //         for( k=0; k<=m; k++ ) {
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nmk1 = (4*n*n*n+6*n*n+5*n)/3+k*(2*n+1)+m;
-  //           nmk2 = (4*n*n*n+6*n*n+5*n)/3-k*(2*n+1)-m;
-  //           Dnmd[nmk1] = pow(-1f32,m+k)*Dnmd[nmk];
-  //           Dnmd[nmk2] = Dnmd[nmk1];
-  //         }
-  //       }
-  //     }
+      for n in 1..(numExpansions as i32) {
+        for m in 0..=n {
+          for k in -m..0 {
+            let ek = -1f32.powi(k);
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
+            Dnmd[nmk as usize] = ek * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+          }
+          for k in 0..=m {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + k * (2 * n + 1) + m;
+            let nmk2 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
+            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk2 as usize] = Dnmd[nmk1 as usize];
+          }
+        }
+      }
 
-  //     for( n=0; n<numExpansions; n++ ) {
-  //       for( m=0; m<=n; m++ ) {
-  //         for( k=-n; k<=n; k++ ) {
-  //           nmk = (4*n*n*n+6*n*n+5*n)/3+m*(2*n+1)+k;
-  //           nk = n*(n+1)+k;
-  //           Dnm[i+numRelativeBox][m][nk] = Dnmd[nmk]*expBeta[k+m+2*numExpansions-2];
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   for( j=0; j<numBoxIndexTotal; j++ ) {
-  //     for( i=0; i<numCoefficients; i++ ) {
-  //       Mnm[j][i] = 0;
-  //     }
-  //   }
-  // }
+      for n in 0..(numExpansions as i32) {
+        for m in 0..=n {
+          for k in -n..=n {
+            let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
+            let nk = n * (n + 1) + k;
+            self.Dnm[i + numRelativeBox][m as usize][nk as usize] =
+              Dnmd[nmk as usize] * expBeta[(k + m + 2 * (numExpansions as i32) - 2) as usize];
+          }
+        }
+      }
+    }
+  }
 
   // // Spherical harmonic rotation
   //  pub fn rotation(std::complex<double>* Cnm, std::complex<double>* CnmOut, std::complex<double>** Dnm) {
@@ -824,11 +861,13 @@ impl FMMRustGravity {
   fn p2p(
     &mut self,
     g: f32,
+    softening: f32,
     numBoxIndex: usize,
     numInteraction: &Vec<usize>,
     interactionList: &Vec<Vec<usize>>,
     particleOffset: &[Vec<usize>; 2],
   ) {
+    let softening2 = softening * softening;
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
     for ii in 0..numBoxIndex {
       for ij in 0..numInteraction[ii] {
@@ -842,7 +881,8 @@ impl FMMRustGravity {
             dist.x = self.positions[i * 3] - self.positions[j * 3];
             dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
             dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
-            let invDist = 1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + eps).sqrt();
+            let invDist =
+              1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening2).sqrt();
             let invDistCube = self.masses[j] * invDist * invDist * invDist;
             ai.x -= dist.x * invDistCube;
             ai.y -= dist.y * invDistCube;
@@ -1322,34 +1362,19 @@ impl FMMRustGravity {
     let boxOffsetStart = vec![0; numBoxIndexLeaf];
     let boxOffsetEnd = vec![0; numBoxIndexLeaf];
 
-    let factorial = vec![0f32; 4 * numExpansion2];
-    let Lnm = iter::repeat(vec![Complex::new(0f64, 0f64); numCoefficients])
-      .take(numBoxIndexLeaf)
+    let Lnm = (0..numBoxIndexLeaf)
+      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
-    let LnmOld = iter::repeat(vec![Complex::new(0f64, 0f64); numCoefficients])
-      .take(numBoxIndexLeaf)
+    let LnmOld = (0..numBoxIndexLeaf)
+      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
-    let Mnm = iter::repeat(vec![Complex::new(0f64, 0f64); numCoefficients])
-      .take(numBoxIndexTotal)
+    let Mnm = (0..numBoxIndexTotal)
+      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
-    let Ynm = vec![Complex::new(0f64, 0f64); 4 * numExpansion2];
-
-    let Dnm = iter::repeat(
-      iter::repeat(vec![Complex::new(0f64, 0f64); numExpansion2])
-        .take(numExpansions)
-        .collect::<Vec<_>>(),
-    )
-    .take(2 * numRelativeBox)
-    .collect::<Vec<_>>();
-
-    let Anm = vec![0f32; numExpansion4];
-    let anm = vec![0f32; 4 * numExpansion2];
 
     let numLevel = maxLevel;
 
     levelOffset[numLevel - 1] = 0;
-
-    // kernel.precalc();
     self.morton(maxLevel, rootBoxSize, boxMin);
     let numBoxIndex = self.getBoxData(
       numBoxIndexFull,
@@ -1378,6 +1403,7 @@ impl FMMRustGravity {
 
     self.p2p(
       g,
+      softening,
       numBoxIndex,
       &numInteraction,
       &interactionList,
