@@ -898,9 +898,9 @@ impl FMMRustGravity {
     for ii in 0..numBoxIndex {
       for ij in 0..numInteraction[ii] {
         let jj = interactionList[ii][ij];
-        for i in particleOffset[0][ii]..(particleOffset[1][ii] + 1) {
+        for i in particleOffset[0][ii]..=particleOffset[1][ii] {
           let mut ai = Vec3::new(0f32, 0f32, 0f32);
-          for j in particleOffset[0][jj]..(particleOffset[1][jj] + 1) {
+          for j in particleOffset[0][jj]..=particleOffset[1][jj] {
             if i == j {
               continue;
             }
@@ -1051,317 +1051,388 @@ impl FMMRustGravity {
     }
   }
 
-  // // m2l
-  //  pub fn m2l(numBoxIndex: i32, numLevel: i32) {
-  // let i,j,ii,ib,ix,iy,iz,ij,jj,jb,jx,jy,jz,je,k,jk,jks,n,nk,nks,jkn,jnk; // i32
-  //   vec3<int> boxIndex3D;
-  //   vec3<double> dist;
-  //   double boxSize,rho,rhoj,rhojk,rhojn;
-  //   std::complex<double> LnmVectorA[numCoefficients],MnmVectorA[numCoefficients];
-  //   std::complex<double> LnmVectorB[numCoefficients],MnmVectorB[numCoefficients];
-  //   std::complex<double> cnm,LnmScalar;
+  // m2l
+  fn m2l(
+    &mut self,
+    numBoxIndex: usize,
+    numLevel: usize,
+    rootBoxSize: f32,
+    numInteraction: &Vec<usize>,
+    interactionList: &Vec<Vec<usize>>,
+    levelOffset: &Vec<usize>,
+    boxIndexFull: &Vec<usize>,
+    Lnm: &mut Vec<Vec<Complex>>,
+    Mnm: &mut Vec<Vec<Complex>>,
+  ) {
+    // let i,j,ii,ib,ix,iy,iz,ij,jj,jb,jx,jy,jz,je,k,jk,jks,n,nk,nks,jkn,jnk; // i32
+    //   vec3<int> boxIndex3D;
+    //   vec3<double> dist;
+    //   double boxSize,rho,rhoj,rhojk,rhojn;
+    //   std::complex<double> LnmVectorA[numCoefficients],MnmVectorA[numCoefficients];
+    //   std::complex<double> LnmVectorB[numCoefficients],MnmVectorB[numCoefficients];
+    //   std::complex<double> cnm,LnmScalar;
+    let mut LnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut MnmVectorB = vec![Complex::new(0f32, 0f32); numCoefficients];
 
-  //   boxSize = rootBoxSize/(1 << numLevel);
-  //   if( numLevel == 2 ) {
-  //     for( i=0; i<numBoxIndex; i++ ) {
-  //       for( j=0; j<numCoefficients; j++ ) {
-  //         Lnm[i][j] = 0;
-  //       }
-  //     }
-  //   }
-  //   for ii in (0..numBoxIndex) {
-  //     ib = ii+levelOffset[numLevel-1];
-  //     tree.unmorton(boxIndexFull[ib],boxIndex3D);
-  //     ix = boxIndex3D.x;
-  //     iy = boxIndex3D.y;
-  //     iz = boxIndex3D.z;
-  //     for( ij=0; ij<numInteraction[ii]; ij++ ) {
-  //       jj = interactionList[ii][ij];
-  //       jb = jj+levelOffset[numLevel-1];
-  //       for( j=0; j<numCoefficients; j++ ) {
-  //         MnmVectorB[j] = Mnm[jb][j];
-  //       }
-  //       tree.unmorton(boxIndexFull[jb],boxIndex3D);
-  //       jx = boxIndex3D.x;
-  //       jy = boxIndex3D.y;
-  //       jz = boxIndex3D.z;
-  //       dist.x = (ix-jx)*boxSize;
-  //       dist.y = (iy-jy)*boxSize;
-  //       dist.z = (iz-jz)*boxSize;
-  //       boxIndex3D.x = (ix-jx)+3;
-  //       boxIndex3D.y = (iy-jy)+3;
-  //       boxIndex3D.z = (iz-jz)+3;
-  //       tree.morton1(boxIndex3D,je,3);
-  //       rho = sqrt(dist.x*dist.x+dist.y*dist.y+dist.z*dist.z)+eps;
-  //       rotation(MnmVectorB,MnmVectorA,Dnm[je]);
-  //       rhoj = 1;
-  //       for( j=0; j<numExpansions; j++ ) {
-  //         rhojk = rhoj;
-  //         rhoj *= rho;
-  //         for( k=0; k<=j; k++ ) {
-  //           jk = j*j+j+k;
-  //           jks = j*(j+1)/2+k;
-  //           LnmScalar = 0;
-  //           rhojn = rhojk;
-  //           rhojk *= rho;
-  //           for( n=abs(k); n<numExpansions; n++ ) {
-  //             rhojn *= rho;
-  //             nk = n*n+n+k;
-  //             nks = n*(n+1)/2+k;
-  //             jkn = jk*numExpansion2+nk;
-  //             jnk = (j+n)*(j+n)+j+n;
-  //             cnm = Anm[jkn]/rhojn*Ynm[jnk];
-  //             LnmScalar += MnmVectorA[nks]*cnm;
-  //           }
-  //           LnmVectorA[jks] = LnmScalar;
-  //         }
-  //       }
-  //       rotation(LnmVectorA,LnmVectorB,Dnm[je+numRelativeBox]);
-  //       for( j=0; j<numCoefficients; j++ ) {
-  //         Lnm[ii][j] += LnmVectorB[j];
-  //       }
-  //     }
-  //   }
-  //   for jj in (0..numBoxIndex) {
-  //     jb = jj+levelOffset[numLevel-1];
-  //     for( j=0; j<numCoefficients; j++ ) {
-  //       Mnm[jb][j] = 0;
-  //     }
-  //   }
-  // }
+    let boxSize = rootBoxSize / (1 << numLevel) as f32;
+    let mut dist = Vec3::new(0f32, 0f32, 0f32);
+    if numLevel == 2 {
+      for i in 0..numBoxIndex {
+        for j in 0..numCoefficients {
+          Lnm[i][j] = Complex::new(0f32, 0f32);
+        }
+      }
+    }
+    for ii in 0..numBoxIndex {
+      let ib = ii + levelOffset[numLevel - 1];
+      let boxIndex3D = self.unmorton(boxIndexFull[ib]);
+      let ix = boxIndex3D.x;
+      let iy = boxIndex3D.y;
+      let iz = boxIndex3D.z;
+      for ij in 0..numInteraction[ii] {
+        let jj = interactionList[ii][ij];
+        let jb = jj + levelOffset[numLevel - 1];
+        for j in 0..numCoefficients {
+          MnmVectorB[j] = Mnm[jb][j];
+        }
+        let mut boxIndex3D = self.unmorton(boxIndexFull[jb]);
+        let jx = boxIndex3D.x;
+        let jy = boxIndex3D.y;
+        let jz = boxIndex3D.z;
+        dist.x = (ix - jx) as f32 * boxSize;
+        dist.y = (iy - jy) as f32 * boxSize;
+        dist.z = (iz - jz) as f32 * boxSize;
+        boxIndex3D.x = (ix - jx) + 3;
+        boxIndex3D.y = (iy - jy) + 3;
+        boxIndex3D.z = (iz - jz) + 3;
+        let je = self.morton1(&mut boxIndex3D, 3);
+        let rho = (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z).sqrt() + eps;
+        let MnmVectorA = self.rotation(&MnmVectorB, &self.Dnm[je]);
+        let mut rhoj = 1f32;
+        for j in 0..numExpansions {
+          let mut rhojk = rhoj;
+          rhoj *= rho;
+          for k in 0..=j {
+            let jk = j * j + j + k;
+            let jks = j * (j + 1) / 2 + k;
+            let mut LnmScalar = Complex::new(0f32, 0f32);
+            let mut rhojn = rhojk;
+            rhojk *= rho;
+            for n in k..numExpansions {
+              // abs ?
+              rhojn *= rho;
+              let nk = n * n + n + k;
+              let nks = n * (n + 1) / 2 + k;
+              let jkn = jk * numExpansion2 + nk;
+              let jnk = (j + n) * (j + n) + j + n;
+              let cnm = self.Anm[jkn] / rhojn * self.Ynm[jnk];
+              LnmScalar += MnmVectorA[nks] * cnm;
+            }
+            LnmVectorA[jks] = LnmScalar;
+          }
+        }
+        let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je + numRelativeBox]);
+        for j in 0..numCoefficients {
+          Lnm[ii][j] += LnmVectorB[j];
+        }
+      }
+    }
+    for jj in 0..numBoxIndex {
+      let jb = jj + levelOffset[numLevel - 1];
+      for j in 0..numCoefficients {
+        Mnm[jb][j] = Complex::new(0f32, 0f32);
+      }
+    }
+  }
 
-  // // l2l
-  //  pub fn l2l(numBoxIndex: i32, numLevel: i32) {
-  // let numBoxIndexOld,ii,ib,i,nfip,nfic,je,j,k,jk,jks,n,jnk,nk,nks; // i32
-  //   vec3<int> boxIndex3D;
-  //   double boxSize,rho;
-  //   std::complex<double> cnm,LnmScalar;
-  //   std::complex<double> LnmVectorA[numCoefficients],LnmVectorB[numCoefficients];
+  // l2l
+  fn l2l(
+    &mut self,
+    numBoxIndex: usize,
+    numBoxIndexFull: usize,
+    numLevel: usize,
+    rootBoxSize: f32,
+    levelOffset: &Vec<usize>,
+    boxIndexFull: &Vec<usize>,
+    LnmOld: &mut Vec<Vec<Complex>>,
+    Lnm: &mut Vec<Vec<Complex>>,
+  ) {
+    // let numBoxIndexOld,ii,ib,i,nfip,nfic,je,j,k,jk,jks,n,jnk,nk,nks; // i32
+    //   vec3<int> boxIndex3D;
+    //   double boxSize,rho;
+    //   std::complex<double> cnm,LnmScalar;
+    //   std::complex<double> LnmVectorA[numCoefficients],LnmVectorB[numCoefficients];
+    let mut LnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
 
-  //   boxSize = rootBoxSize/(1 << numLevel);
-  //   numBoxIndexOld = numBoxIndex;
-  //   if( numBoxIndexOld < 8 ) numBoxIndexOld = 8;
-  //   for( ii=0; ii<numBoxIndexOld; ii++ ) {
-  //     for( i=0; i<numCoefficients; i++ ) {
-  //       LnmOld[ii][i] = Lnm[ii][i];
-  //     }
-  //   }
+    let boxSize = rootBoxSize / (1 << numLevel) as f32;
+    let mut numBoxIndexOld = numBoxIndex;
+    if numBoxIndexOld < 8 {
+      numBoxIndexOld = 8;
+    }
+    for ii in 0..numBoxIndexOld {
+      for i in 0..numCoefficients {
+        LnmOld[ii][i] = Lnm[ii][i];
+      }
+    }
 
-  // let nbc,neo[numBoxIndexFull]; // i32
-  //   nbc = -1;
-  //   numBoxIndexOld = 0;
-  //   for( i=0; i<numBoxIndexFull; i++ ) neo[i] = -1;
-  //   for ii in (0..numBoxIndex) {
-  //     ib = ii+levelOffset[numLevel-1];
-  //     if( nbc != boxIndexFull[ib]/8 ) {
-  //       nbc = boxIndexFull[ib]/8;
-  //       neo[nbc] = numBoxIndexOld;
-  //       numBoxIndexOld++;
-  //     }
-  //   }
+    // let nbc,neo[numBoxIndexFull]; // i32
+    let mut neo = vec![usize::MAX; numBoxIndexFull];
+    let mut nbc = usize::MAX;
+    numBoxIndexOld = 0;
+    for ii in 0..numBoxIndex {
+      let ib = ii + levelOffset[numLevel - 1];
+      if nbc != boxIndexFull[ib] / 8 {
+        nbc = boxIndexFull[ib] / 8;
+        neo[nbc] = numBoxIndexOld;
+        numBoxIndexOld += 1;
+      }
+    }
 
-  //   for ii in (0..numBoxIndex) {
-  //     ib = ii+levelOffset[numLevel-1];
-  //     nfip = boxIndexFull[ib]/8;
-  //     nfic = boxIndexFull[ib]%8;
-  //     tree.unmorton(nfic,boxIndex3D);
-  //     boxIndex3D.x = boxIndex3D.x*2+2;
-  //     boxIndex3D.y = boxIndex3D.y*2+2;
-  //     boxIndex3D.z = boxIndex3D.z*2+2;
-  //     tree.morton1(boxIndex3D,je,3);
-  //     rho = boxSize*sqrt(3f32)/2;
-  //     ib = neo[nfip];
-  //     for( i=0; i<numCoefficients; i++ ) {
-  //       LnmVectorA[i] = LnmOld[ib][i];
-  //     }
-  //     rotation(LnmVectorA,LnmVectorB,Dnm[je]);
-  //     for( j=0; j<numExpansions; j++ ) {
-  //       for( k=0; k<=j; k++ ) {
-  //         jk = j*j+j+k;
-  //         jks = j*(j+1)/2+k;
-  //         LnmScalar = 0;
-  //         for( n=j; n<numExpansions; n++ ) {
-  //           jnk = (n-j)*(n-j)+n-j;
-  //           nk = n*n+n+k;
-  //           nks = n*(n+1)/2+k;
-  //           cnm = anm[jnk]*anm[jk]/anm[nk]*pow(rho,n-j)*Ynm[jnk];
-  //           LnmScalar += LnmVectorB[nks]*cnm;
-  //         }
-  //         LnmVectorA[jks] = LnmScalar;
-  //       }
-  //     }
-  //     rotation(LnmVectorA,LnmVectorB,Dnm[je+numRelativeBox]);
-  //     for( i=0; i<numCoefficients; i++ ) {
-  //       Lnm[ii][i] = LnmVectorB[i];
-  //     }
-  //   }
-  // }
+    for ii in 0..numBoxIndex {
+      let mut ib = ii + levelOffset[numLevel - 1];
+      let nfip = boxIndexFull[ib] / 8;
+      let nfic = boxIndexFull[ib] % 8;
+      let mut boxIndex3D = self.unmorton(nfic);
+      boxIndex3D.x = boxIndex3D.x * 2 + 2;
+      boxIndex3D.y = boxIndex3D.y * 2 + 2;
+      boxIndex3D.z = boxIndex3D.z * 2 + 2;
+      let je = self.morton1(&mut boxIndex3D, 3);
+      let rho = boxSize * (3f32).sqrt() / 2f32;
+      ib = neo[nfip];
+      for i in 0..numCoefficients {
+        LnmVectorA[i] = LnmOld[ib][i];
+      }
+      let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je]);
+      for j in 0..numExpansions {
+        for k in 0..=j {
+          let jk = j * j + j + k;
+          let jks = j * (j + 1) / 2 + k;
+          let mut LnmScalar = Complex::new(0f32, 0f32);
+          for n in j..numExpansions {
+            let jnk = (n - j) * (n - j) + n - j;
+            let nk = n * n + n + k;
+            let nks = n * (n + 1) / 2 + k;
+            let cnm = self.anm[jnk] * self.anm[jk] / self.anm[nk]
+              * rho.powi(n as i32 - j as i32)
+              * self.Ynm[jnk];
+            LnmScalar += LnmVectorB[nks] * cnm;
+          }
+          LnmVectorA[jks] = LnmScalar;
+        }
+      }
+      let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je + numRelativeBox]);
+      for i in 0..numCoefficients {
+        Lnm[ii][i] = LnmVectorB[i];
+      }
+    }
+  }
 
-  // // l2p
-  //  pub fn l2p(numBoxIndex: i32) {
-  // let ii,i,n,nm,nms,m; // i32
-  //   vec3<int> boxIndex3D;
-  //   vec3<float> boxCenter;
-  //   vec3<double> accel,dist;
-  //   double boxSize,r,theta,phi,accelR,accelTheta,accelPhi;
-  //   double xx,yy,s2,fact,pn,p,p1,p2,rn;
-  //   double YnmReal[numExpansion2],YnmRealTheta[numExpansion2];
-  //   std::complex<double> LnmVector[numCoefficients];
-  //   std::complex<double> rr,rtheta,rphi,I(0f32,1f32),eim;
+  // l2p
+  fn l2p(
+    &mut self,
+    g: f32,
+    numBoxIndex: usize,
+    numLevel: usize,
+    rootBoxSize: f32,
+    boxMin: &Vec3<f32>,
+    boxIndexFull: &Vec<usize>,
+    particleOffset: &[Vec<usize>; 2],
+    Lnm: &Vec<Vec<Complex>>,
+  ) {
+    // let ii,i,n,nm,nms,m; // i32
+    // vec3<int> boxIndex3D;
+    // vec3<float> boxCenter;
+    // vec3<double> accel,dist;
+    // double boxSize,r,theta,phi,accelR,accelTheta,accelPhi;
+    // double xx,yy,s2,fact,pn,p,p1,p2,rn;
+    // double YnmReal[numExpansion2],YnmRealTheta[numExpansion2];
+    // std::complex<double> LnmVector[numCoefficients];
+    // std::complex<double> rr,rtheta,rphi,I(0f32,1f32),eim;
+    let I = Complex::new(0f32, 1f32);
+    let mut LnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut YnmReal = vec![0f32; numExpansion2];
+    let mut YnmRealTheta = vec![0f32; numExpansion2];
+    let mut dist = Vec3::new(0f32, 0f32, 0f32);
+    let mut accel = Vec3::new(0f32, 0f32, 0f32);
+    let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
 
-  //   boxSize = rootBoxSize/(1 << maxLevel);
-  //   for ii in (0..numBoxIndex) {
-  //     tree.unmorton(boxIndexFull[ii],boxIndex3D);
-  //     boxCenter.x = boxMin.x+(boxIndex3D.x+0.5)*boxSize;
-  //     boxCenter.y = boxMin.y+(boxIndex3D.y+0.5)*boxSize;
-  //     boxCenter.z = boxMin.z+(boxIndex3D.z+0.5)*boxSize;
-  //     for( i=0; i<numCoefficients; i++ ) LnmVector[i] = Lnm[ii][i];
-  //     for( i=particleOffset[0][ii]; i<=particleOffset[1][ii]; i++ ) {
-  //       dist.x = bodyPos[i].x-boxCenter.x;
-  //       dist.y = bodyPos[i].y-boxCenter.y;
-  //       dist.z = bodyPos[i].z-boxCenter.z;
-  //       cart2sph(r,theta,phi,dist.x,dist.y,dist.z);
-  //       xx = cos(theta);
-  //       yy = sin(theta);
-  //       s2 = sqrt((1-xx)*(1+xx));
-  //       fact = 1;
-  //       pn = 1;
-  //       for( m=0; m<numExpansions; m++ ) {
-  //         p = pn;
-  //         nm = m*m+2*m;
-  //         YnmReal[nm] = factorial[nm]*p;
-  //         p1 = p;
-  //         p = xx*(2*m+1)*p;
-  //         YnmRealTheta[nm] = factorial[nm]*(p-(m+1)*xx*p1)/yy;
-  //         for( n=m+1; n<numExpansions; n++ ) {
-  //           nm = n*n+n+m;
-  //           YnmReal[nm] = factorial[nm]*p;
-  //           p2 = p1;
-  //           p1 = p;
-  //           p = (xx*(2*n+1)*p1-(n+m)*p2)/(n-m+1);
-  //           YnmRealTheta[nm] = factorial[nm]*((n-m+1)*p-(n+1)*xx*p1)/yy;
-  //         }
-  //         pn = -pn*fact*s2;
-  //         fact += 2;
-  //       }
-  //       accelR = 0;
-  //       accelTheta = 0;
-  //       accelPhi = 0;
-  //       rn = 1;
-  //       for( n=0; n<numExpansions; n++ ) {
-  //         nm = n*n+n;
-  //         nms = n*(n+1)/2;
-  //         rr = n*rn/r*YnmReal[nm];
-  //         rtheta = rn*YnmRealTheta[nm];
-  //         accelR += real(rr*LnmVector[nms]);
-  //         accelTheta += real(rtheta*LnmVector[nms]);
-  //         for( m=1; m<=n; m++ ) {
-  //           nm = n*n+n+m;
-  //           nms = n*(n+1)/2+m;
-  //           eim = exp(m*phi*I);
-  //           rr = n*rn/r*YnmReal[nm]*eim;
-  //           rtheta = rn*YnmRealTheta[nm]*eim;
-  //           rphi = m*rn*YnmReal[nm]*eim*I;
-  //           accelR += 2*real(rr*LnmVector[nms]);
-  //           accelTheta += 2*real(rtheta*LnmVector[nms]);
-  //           accelPhi += 2*real(rphi*LnmVector[nms]);
-  //         }
-  //         rn *= r;
-  //       }
-  //       accel.x = sin(theta)*cos(phi)*accelR+cos(theta)*cos(phi)/r*accelTheta-sin(phi)/r/sin(theta)*accelPhi;
-  //       accel.y = sin(theta)*sin(phi)*accelR+cos(theta)*sin(phi)/r*accelTheta+cos(phi)/r/sin(theta)*accelPhi;
-  //       accel.z = cos(theta)*accelR-sin(theta)/r*accelTheta;
-  //       bodyAccel[i].x += inv4PI*accel.x;
-  //       bodyAccel[i].y += inv4PI*accel.y;
-  //       bodyAccel[i].z += inv4PI*accel.z;
-  //     }
-  //   }
-  // }
+    let boxSize = rootBoxSize / (1 << numLevel) as f32;
+    for ii in 0..numBoxIndex {
+      let boxIndex3D = self.unmorton(boxIndexFull[ii]);
+      boxCenter.x = boxMin.x + (boxIndex3D.x as f32 + 0.5) * boxSize;
+      boxCenter.y = boxMin.y + (boxIndex3D.y as f32 + 0.5) * boxSize;
+      boxCenter.z = boxMin.z + (boxIndex3D.z as f32 + 0.5) * boxSize;
+      for i in 0..numCoefficients {
+        LnmVector[i] = Lnm[ii][i];
+      }
+      for i in particleOffset[0][ii]..=particleOffset[1][ii] {
+        dist.x = self.positions[i * 3] - boxCenter.x;
+        dist.y = self.positions[i * 3 + 1] - boxCenter.y;
+        dist.z = self.positions[i * 3 + 2] - boxCenter.z;
+        let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z);
+        let xx = theta.cos();
+        let yy = theta.sin();
+        let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
+        let mut fact = 1f32;
+        let mut pn = 1f32;
+        for m in 0..numExpansions {
+          let mut p = pn;
+          let nm = m * m + 2 * m;
+          YnmReal[nm] = self.factorial[nm] * p;
+          let mut p1 = p;
+          p = xx * (2 * m + 1) as f32 * p;
+          YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f32 * xx * p1) / yy;
+          for n in (m + 1)..numExpansions {
+            let nm = n * n + n + m;
+            YnmReal[nm] = self.factorial[nm] * p;
+            let p2 = p1;
+            p1 = p;
+            p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+            YnmRealTheta[nm] =
+              self.factorial[nm] * ((n - m + 1) as f32 * p - (n + 1) as f32 * xx * p1) / yy;
+          }
+          pn = -pn * fact * s2;
+          fact += 2f32;
+        }
+        let mut accelR = 0f32;
+        let mut accelTheta = 0f32;
+        let mut accelPhi = 0f32;
+        let mut rn = 1f32;
+        for n in 0..numExpansions {
+          let nm = n * n + n;
+          let nms = n * (n + 1) / 2;
+          let rr = n as f32 * rn / r * YnmReal[nm];
+          let rtheta = rn * YnmRealTheta[nm];
+          accelR += (rr * LnmVector[nms]).re;
+          accelTheta += (rtheta * LnmVector[nms]).re;
+          for m in 1..=n {
+            let nm = n * n + n + m;
+            let nms = n * (n + 1) / 2 + m;
+            let eim = (m as f32 * phi * I).exp();
+            let rr = n as f32 * rn / r * YnmReal[nm] * eim;
+            let rtheta = rn * YnmRealTheta[nm] * eim;
+            let rphi = m as f32 * rn * YnmReal[nm] * eim * I;
+            accelR += 2f32 * (rr * LnmVector[nms]).re;
+            accelTheta += 2f32 * (rtheta * LnmVector[nms]).re;
+            accelPhi += 2f32 * (rphi * LnmVector[nms]).re;
+          }
+          rn *= r;
+        }
+        accel.x = theta.sin() * phi.cos() * accelR + theta.cos() * phi.cos() / r * accelTheta
+          - phi.sin() / r / theta.sin() * accelPhi;
+        accel.y = theta.sin() * phi.sin() * accelR
+          + theta.cos() * phi.sin() / r * accelTheta
+          + phi.cos() / r / theta.sin() * accelPhi;
+        accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
+        self.accelerations[i * 3] += g * accel.x;
+        self.accelerations[i * 3 + 1] += g * accel.y;
+        self.accelerations[i * 3 + 2] += g * accel.z;
+      }
+    }
+  }
 
-  // // m2p
-  //  pub fn m2p(numBoxIndex: i32, numLevel: i32) {
-  // let ii,i,ij,jj,jb,j,n,nm,nms,m; // i32
-  //   vec3<int> boxIndex3D;
-  //   vec3<float> boxCenter;
-  //   vec3<double> accel,dist;
-  //   double boxSize,r,theta,phi,rn,accelR,accelTheta,accelPhi;
-  //   double xx,yy,s2,fact,pn,p,p1,p2;
-  //   double YnmReal[numExpansion2],YnmRealTheta[numExpansion2];
-  //   std::complex<double> MnmVector[numCoefficients];
-  //   std::complex<double> rr,rtheta,rphi,I(0f32,1f32),eim;
+  // m2p
+  fn m2p(
+    &mut self,
+    g: f32,
+    numBoxIndex: usize,
+    numLevel: usize,
+    rootBoxSize: f32,
+    boxMin: &Vec3<f32>,
+    numInteraction: &Vec<usize>,
+    interactionList: &Vec<Vec<usize>>,
+    levelOffset: &Vec<usize>,
+    boxIndexFull: &Vec<usize>,
+    particleOffset: &[Vec<usize>; 2],
+    Mnm: &Vec<Vec<Complex>>,
+  ) {
+    let I = Complex::new(0f32, 1f32);
+    let mut MnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut YnmReal = vec![0f32; numExpansion2];
+    let mut YnmRealTheta = vec![0f32; numExpansion2];
+    let mut dist = Vec3::new(0f32, 0f32, 0f32);
+    let mut accel = Vec3::new(0f32, 0f32, 0f32);
+    let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
 
-  //   boxSize = rootBoxSize/(1 << numLevel);
-  //   for ii in (0..numBoxIndex) {
-  //     for( i=particleOffset[0][ii]; i<=particleOffset[1][ii]; i++ ) {
-  //       for( ij=0; ij<numInteraction[ii]; ij++ ) {
-  //         jj = interactionList[ii][ij];
-  //         jb = jj+levelOffset[numLevel-1];
-  //         for( j=0; j<numCoefficients; j++ ) MnmVector[j] = Mnm[jb][j];
-  //         tree.unmorton(boxIndexFull[jb],boxIndex3D);
-  //         boxCenter.x = boxMin.x+(boxIndex3D.x+0.5)*boxSize;
-  //         boxCenter.y = boxMin.y+(boxIndex3D.y+0.5)*boxSize;
-  //         boxCenter.z = boxMin.z+(boxIndex3D.z+0.5)*boxSize;
-  //         dist.x = bodyPos[i].x-boxCenter.x;
-  //         dist.y = bodyPos[i].y-boxCenter.y;
-  //         dist.z = bodyPos[i].z-boxCenter.z;
-  //         cart2sph(r,theta,phi,dist.x,dist.y,dist.z);
-  //         xx = cos(theta);
-  //         yy = sin(theta);
-  //         s2 = sqrt((1-xx)*(1+xx));
-  //         fact = 1;
-  //         pn = 1;
-  //         for( m=0; m<numExpansions; m++ ) {
-  //           p = pn;
-  //           nm = m*m+2*m;
-  //           YnmReal[nm] = factorial[nm]*p;
-  //           p1 = p;
-  //           p = xx*(2*m+1)*p;
-  //           YnmRealTheta[nm] = factorial[nm]*(p-(m+1)*xx*p1)/yy;
-  //           for( n=m+1; n<numExpansions; n++ ) {
-  //             nm = n*n+n+m;
-  //             YnmReal[nm] = factorial[nm]*p;
-  //             p2 = p1;
-  //             p1 = p;
-  //             p = (xx*(2*n+1)*p1-(n+m)*p2)/(n-m+1);
-  //             YnmRealTheta[nm] = factorial[nm]*((n-m+1)*p-(n+1)*xx*p1)/yy;
-  //           }
-  //           pn = -pn*fact*s2;
-  //           fact += 2;
-  //         }
-  //         accelR = 0;
-  //         accelTheta = 0;
-  //         accelPhi = 0;
-  //         rn = 1/r;
-  //         for( n=0; n<numExpansions; n++ ) {
-  //           rn /= r;
-  //           nm = n*n+n;
-  //           nms = n*(n+1)/2;
-  //           rr = -(n+1)*rn*YnmReal[nm];
-  //           rtheta = rn*r*YnmRealTheta[nm];
-  //           accelR += real(rr*MnmVector[nms]);
-  //           accelTheta += real(rtheta*MnmVector[nms]);
-  //           for( m=1; m<=n; m++ ) {
-  //             nm = n*n+n+m;
-  //             nms = n*(n+1)/2+m;
-  //             eim = exp(m*phi*I);
-  //             rr = -(n+1)*rn*YnmReal[nm]*eim;
-  //             rtheta = rn*r*YnmRealTheta[nm]*eim;
-  //             rphi = m*rn*r*YnmReal[nm]*eim*I;
-  //             accelR += 2*real(rr*MnmVector[nms]);
-  //             accelTheta += 2*real(rtheta*MnmVector[nms]);
-  //             accelPhi += 2*real(rphi*MnmVector[nms]);
-  //           }
-  //         }
-  //         accel.x = sin(theta)*cos(phi)*accelR+cos(theta)*cos(phi)/r*accelTheta-sin(phi)/r/sin(theta)*accelPhi;
-  //         accel.y = sin(theta)*sin(phi)*accelR+cos(theta)*sin(phi)/r*accelTheta+cos(phi)/r/sin(theta)*accelPhi;
-  //         accel.z = cos(theta)*accelR-sin(theta)/r*accelTheta;
-  //         bodyAccel[i].x += inv4PI*accel.x;
-  //         bodyAccel[i].y += inv4PI*accel.y;
-  //         bodyAccel[i].z += inv4PI*accel.z;
-  //       }
-  //     }
-  //   }
-  // }
+    let boxSize = rootBoxSize / (1 << numLevel) as f32;
+    for ii in 0..numBoxIndex {
+      for i in particleOffset[0][ii]..=particleOffset[1][ii] {
+        for ij in 0..numInteraction[ii] {
+          let jj = interactionList[ii][ij];
+          let jb = jj + levelOffset[numLevel - 1];
+          for j in 0..numCoefficients {
+            MnmVector[j] = Mnm[jb][j];
+          }
+          let boxIndex3D = self.unmorton(boxIndexFull[jb]);
+          boxCenter.x = boxMin.x + (boxIndex3D.x as f32 + 0.5) * boxSize;
+          boxCenter.y = boxMin.y + (boxIndex3D.y as f32 + 0.5) * boxSize;
+          boxCenter.z = boxMin.z + (boxIndex3D.z as f32 + 0.5) * boxSize;
+          dist.x = self.positions[i * 3] - boxCenter.x;
+          dist.y = self.positions[i * 3 + 1] - boxCenter.y;
+          dist.z = self.positions[i * 3 + 2] - boxCenter.z;
+          let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z);
+          let xx = theta.cos();
+          let yy = theta.sin();
+          let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
+          let mut fact = 1f32;
+          let mut pn = 1f32;
+          for m in 0..numExpansions {
+            let mut p = pn;
+            let nm = m * m + 2 * m;
+            YnmReal[nm] = self.factorial[nm] * p;
+            let mut p1 = p;
+            p = xx * (2 * m + 1) as f32 * p;
+            YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f32 * xx * p1) / yy;
+            for n in (m + 1)..numExpansions {
+              let nm = n * n + n + m;
+              YnmReal[nm] = self.factorial[nm] * p;
+              let p2 = p1;
+              p1 = p;
+              p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+              YnmRealTheta[nm] =
+                self.factorial[nm] * ((n - m + 1) as f32 * p - (n + 1) as f32 * xx * p1) / yy;
+            }
+            pn = -pn * fact * s2;
+            fact += 2f32;
+          }
+          let mut accelR = 0f32;
+          let mut accelTheta = 0f32;
+          let mut accelPhi = 0f32;
+          let mut rn = 1f32 / r;
+          for n in 0..numExpansions {
+            rn /= r;
+            let nm = n * n + n;
+            let nms = n * (n + 1) / 2;
+            let rr = -((n + 1) as f32) * rn * YnmReal[nm];
+            let rtheta = rn * r * YnmRealTheta[nm];
+            accelR += (rr * MnmVector[nms]).re;
+            accelTheta += (rtheta * MnmVector[nms]).re;
+            for m in 1..=n {
+              let nm = n * n + n + m;
+              let nms = n * (n + 1) / 2 + m;
+              let eim = (m as f32 * phi * I).exp();
+              let rr = -((n + 1) as f32) * rn * YnmReal[nm] * eim;
+              let rtheta = rn * r * YnmRealTheta[nm] * eim;
+              let rphi = m as f32 * rn * r * YnmReal[nm] * eim * I;
+              accelR += 2f32 * (rr * MnmVector[nms]).re;
+              accelTheta += 2f32 * (rtheta * MnmVector[nms]).re;
+              accelPhi += 2f32 * (rphi * MnmVector[nms]).re;
+            }
+          }
+
+          accel.x = theta.sin() * phi.cos() * accelR + theta.cos() * phi.cos() / r * accelTheta
+            - phi.sin() / r / theta.sin() * accelPhi;
+          accel.y = theta.sin() * phi.sin() * accelR
+            + theta.cos() * phi.sin() / r * accelTheta
+            + phi.cos() / r / theta.sin() * accelPhi;
+          accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
+          self.accelerations[i * 3] += g * accel.x;
+          self.accelerations[i * 3 + 1] += g * accel.y;
+          self.accelerations[i * 3 + 2] += g * accel.z;
+        }
+      }
+    }
+  }
 
   pub fn frog_leap(&mut self, dt: f32) {
     let half_dt = dt * 0.5f32;
@@ -1401,10 +1472,10 @@ impl FMMRustGravity {
     let boxOffsetStart = vec![0; numBoxIndexLeaf];
     let boxOffsetEnd = vec![0; numBoxIndexLeaf];
 
-    let Lnm = (0..numBoxIndexLeaf)
+    let mut Lnm = (0..numBoxIndexLeaf)
       .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
-    let LnmOld = (0..numBoxIndexLeaf)
+    let mut LnmOld = (0..numBoxIndexLeaf)
       .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
       .collect::<Vec<_>>();
     let mut Mnm = (0..numBoxIndexTotal)
@@ -1475,16 +1546,19 @@ impl FMMRustGravity {
             &boxIndexMask,
             &boxIndexFull,
           );
-          // self.m2p(
-          //   numBoxIndex,
-          //   numLevel + 1,
-          //   rootBoxSize,
-          //   &boxMin,
-          //   maxLevel,
-          //   &boxIndexFull,
-          //   &particleOffset,
-          //   &mut Mnm,
-          // );
+          self.m2p(
+            g,
+            numBoxIndex,
+            numLevel + 1,
+            rootBoxSize,
+            &boxMin,
+            &numInteraction,
+            &interactionList,
+            &levelOffset,
+            &boxIndexFull,
+            &particleOffset,
+            &mut Mnm,
+          );
         }
 
         // M2M
@@ -1533,16 +1607,47 @@ impl FMMRustGravity {
 
     if treeOrFMM == 0 {
       // M2P at level 2
-      // self.m2p(numBoxIndex, numLevel);
+      self.m2p(
+        g,
+        numBoxIndex,
+        numLevel,
+        rootBoxSize,
+        &boxMin,
+        &numInteraction,
+        &interactionList,
+        &levelOffset,
+        &boxIndexFull,
+        &particleOffset,
+        &mut Mnm,
+      );
     } else {
       // M2L at level 2
-      // self.m2l(numBoxIndex, numLevel);
+      self.m2l(
+        numBoxIndex,
+        numLevel,
+        rootBoxSize,
+        &numInteraction,
+        &interactionList,
+        &levelOffset,
+        &boxIndexFull,
+        &mut Lnm,
+        &mut Mnm,
+      );
 
       // L2L
       if maxLevel > 2 {
         for numLevel in 3..=maxLevel {
           numBoxIndex = levelOffset[numLevel - 2] - levelOffset[numLevel - 1];
-          // self.l2l(numBoxIndex, numLevel);
+          self.l2l(
+            numBoxIndex,
+            numBoxIndexFull,
+            numLevel,
+            rootBoxSize,
+            &levelOffset,
+            &boxIndexFull,
+            &mut LnmOld,
+            &mut Lnm,
+          );
           self.getBoxIndexMask(
             numBoxIndex,
             numBoxIndexFull,
@@ -1562,12 +1667,31 @@ impl FMMRustGravity {
             &boxIndexMask,
             &boxIndexFull,
           );
-          // self.m2l(numBoxIndex, numLevel);
+          self.m2l(
+            numBoxIndex,
+            numLevel,
+            rootBoxSize,
+            &numInteraction,
+            &interactionList,
+            &levelOffset,
+            &boxIndexFull,
+            &mut Lnm,
+            &mut Mnm,
+          );
         }
         numLevel = maxLevel;
       }
       // L2P
-      // self.l2p(numBoxIndex);
+      self.l2p(
+        g,
+        numBoxIndex,
+        numLevel,
+        rootBoxSize,
+        &boxMin,
+        &boxIndexFull,
+        &particleOffset,
+        &mut Lnm,
+      );
     }
     self.unsortParticles(permutation);
     self.len
