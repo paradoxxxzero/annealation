@@ -53,7 +53,6 @@ pub struct FMMRustGravity {
   masses: Vec<f32>,
   temperatures: Vec<f32>,
   len: usize,
-
   variant: &'static str,
 
   mortonIndex: Vec<usize>,
@@ -572,13 +571,13 @@ impl FMMRustGravity {
         let ixp = (ix + 2) / 2;
         let iyp = (iy + 2) / 2;
         let izp = (iz + 2) / 2;
-        for jxp in (ixp - 1)..(ixp + 2) {
-          for jyp in (iyp - 1)..(iyp + 2) {
-            for jzp in (izp - 1)..(izp + 2) {
+        for jxp in (ixp - 1)..=(ixp + 1) {
+          for jyp in (iyp - 1)..=(iyp + 1) {
+            for jzp in (izp - 1)..=(izp + 1) {
               // TODO: Check usize overflow
-              for jx in (jxmin.max(2 * jxp.max(1) - 2))..(jxmax.min(2 * jxp - 1) + 1) {
-                for jy in (jymin.max(2 * jyp.max(1) - 2))..(jymax.min(2 * jyp - 1) + 1) {
-                  for jz in (jzmin.max(2 * jzp.max(1) - 2))..(jzmax.min(2 * jzp - 1) + 1) {
+              for jx in (jxmin.max(2 * jxp.max(1) - 2))..=(jxmax.min(2 * jxp.max(1) - 1)) {
+                for jy in (jymin.max(2 * jyp.max(1) - 2))..=(jymax.min(2 * jyp.max(1) - 1)) {
+                  for jz in (jzmin.max(2 * jzp.max(1) - 2))..=(jzmax.min(2 * jzp.max(1) - 1)) {
                     if jx < ix - 1
                       || ix + 1 < jx
                       || jy < iy - 1
@@ -591,6 +590,7 @@ impl FMMRustGravity {
                       boxIndex3D.z = jz;
                       let boxIndex = self.morton1(&mut boxIndex3D, numLevel);
                       let jj = boxIndexMask[boxIndex];
+
                       if jj != usize::MAX {
                         interactionList[ii][numInteraction[ii]] = jj;
                         numInteraction[ii] += 1;

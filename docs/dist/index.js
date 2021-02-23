@@ -30746,7 +30746,7 @@ var presets_default = {
     },
     RegularCube: {
       0: {
-        backend: "rust_fmm",
+        backend: "rust_p2p_simd",
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -30758,7 +30758,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "regularCube",
-        number: 1250,
+        number: 2e3,
         range: 1e3,
         speed: 0,
         mass: 1,
@@ -31186,6 +31186,14 @@ function takeObject(idx) {
   dropObject(idx);
   return ret;
 }
+function addHeapObject(obj) {
+  if (heap_next === heap.length)
+    heap.push(heap.length + 1);
+  const idx = heap_next;
+  heap_next = heap[idx];
+  heap[idx] = obj;
+  return idx;
+}
 var cachedTextDecoder = new TextDecoder("utf-8", {ignoreBOM: true, fatal: true});
 cachedTextDecoder.decode();
 var cachegetUint8Memory0 = null;
@@ -31197,18 +31205,6 @@ function getUint8Memory0() {
 }
 function getStringFromWasm0(ptr, len) {
   return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
-}
-function wasm_memory() {
-  var ret = wasm.wasm_memory();
-  return takeObject(ret);
 }
 var WASM_VECTOR_LEN = 0;
 var cachedTextEncoder = new TextEncoder("utf-8");
@@ -31258,6 +31254,10 @@ function getInt32Memory0() {
     cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
   }
   return cachegetInt32Memory0;
+}
+function wasm_memory() {
+  var ret = wasm.wasm_memory();
+  return takeObject(ret);
 }
 var FMMRustGravity = class {
   static __wrap(ptr) {
@@ -31320,19 +31320,19 @@ var P2PRustGravity = class {
     return P2PRustGravity.__wrap(ret);
   }
   positions_ptr() {
-    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
-    var ret = wasm.p2prustgravity_speeds_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap(dt) {
@@ -31344,6 +31344,48 @@ var P2PRustGravity = class {
   }
   frog_drop(dt) {
     wasm.p2prustgravity_frog_drop(this.ptr, dt);
+  }
+};
+var P2PRustSimdGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(P2PRustSimdGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_p2prustsimdgravity_free(ptr);
+  }
+  static new(len) {
+    var ret = wasm.p2prustgravity_new(len);
+    return P2PRustSimdGravity.__wrap(ret);
+  }
+  positions_ptr() {
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
+    return ret;
+  }
+  speeds_ptr() {
+    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap(dt) {
+    wasm.p2prustsimdgravity_frog_leap(this.ptr, dt);
+  }
+  simulate(g, softening, collisions, threshold, escape_distance) {
+    var ret = wasm.p2prustsimdgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
+    return ret >>> 0;
+  }
+  frog_drop(dt) {
+    wasm.p2prustsimdgravity_frog_drop(this.ptr, dt);
   }
 };
 async function load2(module, imports) {
@@ -31397,12 +31439,12 @@ async function init(input) {
   imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
     takeObject(arg0);
   };
-  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
-    throw new Error(getStringFromWasm0(arg0, arg1));
-  };
   imports.wbg.__wbindgen_memory = function() {
     var ret = wasm.memory;
     return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
+    throw new Error(getStringFromWasm0(arg0, arg1));
   };
   if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
     input = fetch(input);
@@ -31820,6 +31862,7 @@ var gravity;
 var backends = [
   "js_p2p",
   "rust_p2p",
+  "rust_p2p_simd",
   "js_fmm",
   "rust_fmm",
   "rust_tree",
@@ -31922,6 +31965,8 @@ function init2() {
   } else if (backend.startsWith("rust")) {
     if (backend === "rust_p2p") {
       gravity = P2PRustGravity.new(orbs.length);
+    } else if (backend === "rust_p2p_simd") {
+      gravity = P2PRustSimdGravity.new(orbs.length, 1);
     } else if (backend === "rust_fmm") {
       gravity = FMMRustGravity.new(orbs.length, 1);
       gravity.precalc(softening);

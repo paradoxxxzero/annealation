@@ -5,7 +5,7 @@ authors = ["Florian Mounier"]
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [features]
 default = ["console_error_panic_hook"]
@@ -31,6 +31,8 @@ num-complex = "0.3.1"
 wasm-bindgen-test = "0.3.20"
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
 opt-level = 3
 lto = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

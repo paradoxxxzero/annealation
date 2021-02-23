@@ -23,7 +23,12 @@ import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import wasmInit, { P2PRustGravity, FMMRustGravity, wasm_memory } from 'wasm'
+import wasmInit, {
+  P2PRustGravity,
+  FMMRustGravity,
+  P2PRustSimdGravity,
+  wasm_memory,
+} from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
@@ -41,6 +46,7 @@ let particles, gravity
 const backends = [
   'js_p2p',
   'rust_p2p',
+  'rust_p2p_simd',
   'js_fmm',
   'rust_fmm',
   'rust_tree',
@@ -189,6 +195,8 @@ function init() {
   } else if (backend.startsWith('rust')) {
     if (backend === 'rust_p2p') {
       gravity = P2PRustGravity.new(orbs.length)
+    } else if (backend === 'rust_p2p_simd') {
+      gravity = P2PRustSimdGravity.new(orbs.length, 1)
     } else if (backend === 'rust_fmm') {
       gravity = FMMRustGravity.new(orbs.length, 1)
       gravity.precalc(softening)

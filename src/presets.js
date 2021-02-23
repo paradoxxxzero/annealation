@@ -33,7 +33,7 @@ export default {
     },
     RegularCube: {
       0: {
-        backend: 'rust_fmm',
+        backend: 'rust_p2p_simd',
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -45,7 +45,7 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'regularCube',
-        number: 1250,
+        number: 2000,
         range: 1000,
         speed: 0,
         mass: 1,
