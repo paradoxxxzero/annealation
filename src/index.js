@@ -38,7 +38,14 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = ['js_p2p', 'rust_p2p', 'js_fmm', 'rust_fmm', 'js_none']
+const backends = [
+  'js_p2p',
+  'rust_p2p',
+  'js_fmm',
+  'rust_fmm',
+  'rust_tree',
+  'js_none',
+]
 
 const stats = new Stats()
 
@@ -159,6 +166,7 @@ function render() {
 function init() {
   const {
     backend,
+    softening,
     configuration,
     range,
     scale,
@@ -178,12 +186,15 @@ function init() {
   } else if (backend === 'js_fmm') {
     gravity = new FMMGravity(orbs, range, resolution)
     ;({ positions, masses, temperatures } = gravity)
-  } else if (backend === 'rust_p2p' || backend === 'rust_fmm') {
+  } else if (backend.startsWith('rust')) {
     if (backend === 'rust_p2p') {
       gravity = P2PRustGravity.new(orbs.length)
     } else if (backend === 'rust_fmm') {
-      gravity = FMMRustGravity.new(orbs.length)
-      gravity.precalc()
+      gravity = FMMRustGravity.new(orbs.length, 1)
+      gravity.precalc(softening)
+    } else if (backend === 'rust_tree') {
+      gravity = FMMRustGravity.new(orbs.length, 0)
+      gravity.precalc(softening)
     }
     const { buffer } = wasm_memory()
     positions = new Float32Array(

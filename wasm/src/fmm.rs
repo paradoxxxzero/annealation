@@ -1,7 +1,14 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, non_upper_case_globals)]
+/*
+ Vastly inspired from cpp code by Rio Yokota   rioyokota@gmail.com
+   June 2010
+
+  Reference : GPU Gems Vol.4 "Treecode and fast multipole method for N-body simulation with CUDA"
+*/
 use crate::utils::init_hook;
-use num_complex::Complex32 as Complex;
+use num_complex::Complex64 as Complex;
 use std::f32;
+use std::f64;
 use std::usize;
 use wasm_bindgen::prelude::*;
 
@@ -31,20 +38,12 @@ impl<T> Vec3<T> {
 }
 
 const numExpansions: usize = 10; // order of expansion in FMM
-const maxP2PInteraction: usize = 27; // max of P2P interacting boxes
 const maxM2LInteraction: usize = 189; // max of M2L interacting boxes
 const numRelativeBox: usize = 512; // max of relative box positioning
-const targetBufferSize: usize = 200000; // max of GPU target buffer
-const sourceBufferSize: usize = 100000; // max of GPU source buffer
-const threadsPerBlockTypeA: usize = 128; // size of GPU thread block P2P
-const threadsPerBlockTypeB: usize = 64; // size of GPU thread block M2L
-
-const eps: f32 = 1e-6; // single precision epsilon
 
 const numExpansion2: usize = numExpansions * numExpansions;
 const numExpansion4: usize = numExpansion2 * numExpansion2;
 const numCoefficients: usize = numExpansions * (numExpansions + 1) / 2;
-const DnmSize: usize = (4 * numExpansion2 * numExpansions - numExpansions) / 3;
 
 #[wasm_bindgen]
 pub struct FMMRustGravity {
@@ -55,6 +54,8 @@ pub struct FMMRustGravity {
   temperatures: Vec<f32>,
   len: usize,
 
+  variant: &'static str,
+
   mortonIndex: Vec<usize>,
   sortValue: Vec<usize>,
   sortIndex: Vec<usize>,
@@ -62,17 +63,17 @@ pub struct FMMRustGravity {
   sortIndexBuffer: Vec<usize>,
   sortPositionBuffer: Vec<f32>,
   sortMassBuffer: Vec<f32>,
-  factorial: Vec<f32>,
+  factorial: Vec<f64>,
 
-  Anm: Vec<f32>,
-  anm: Vec<f32>,
+  Anm: Vec<f64>,
+  anm: Vec<f64>,
   Dnm: Vec<Vec<Vec<Complex>>>,
   Ynm: Vec<Complex>,
 }
 
 #[wasm_bindgen]
 impl FMMRustGravity {
-  pub fn new(len: usize) -> FMMRustGravity {
+  pub fn new(len: usize, variantIndex: usize) -> FMMRustGravity {
     init_hook();
 
     let positions = vec![0f32; 3 * len];
@@ -81,6 +82,8 @@ impl FMMRustGravity {
     let masses = vec![0f32; len];
     let temperatures = vec![0f32; len];
 
+    let variant = ["tree", "ffm"][variantIndex];
+
     let mortonIndex = vec![0; len];
     let sortValue = vec![0; len];
     let sortIndex = vec![0; len];
@@ -88,17 +91,17 @@ impl FMMRustGravity {
     let sortIndexBuffer = vec![0; len];
     let sortPositionBuffer = vec![0f32; 3 * len];
     let sortMassBuffer = vec![0f32; len];
-    let factorial = vec![0f32; 4 * numExpansion2];
-    let Anm = vec![0f32; numExpansion4];
-    let anm = vec![0f32; 4 * numExpansion2];
+    let factorial = vec![0f64; 4 * numExpansion2];
+    let Anm = vec![0f64; numExpansion4];
+    let anm = vec![0f64; 4 * numExpansion2];
     let Dnm = (0..(2 * numRelativeBox))
       .map(|_| {
         (0..numExpansions)
-          .map(|_| vec![Complex::new(0f32, 0f32); numExpansion2])
+          .map(|_| vec![Complex::new(0f64, 0f64); numExpansion2])
           .collect::<Vec<_>>()
       })
       .collect::<Vec<_>>();
-    let Ynm = vec![Complex::new(0f32, 0f32); 4 * numExpansion2];
+    let Ynm = vec![Complex::new(0f64, 0f64); 4 * numExpansion2];
 
     FMMRustGravity {
       positions,
@@ -107,6 +110,8 @@ impl FMMRustGravity {
       masses,
       temperatures,
       len,
+
+      variant,
 
       // Do something about that:
       mortonIndex,
@@ -422,7 +427,6 @@ impl FMMRustGravity {
     numBoxIndex: usize,
     numBoxIndexFull: usize,
     numLevel: usize,
-    treeOrFMM: usize,
     levelOffset: &mut Vec<usize>,
     boxIndexMask: &mut Vec<usize>,
     boxIndexFull: &mut Vec<usize>,
@@ -442,7 +446,7 @@ impl FMMRustGravity {
         currentIndex = boxIndexFull[boxIndex] / 8;
         boxIndexMask[currentIndex] = newNumBoxIndex;
         boxIndexFull[newNumBoxIndex + levelOffset[numLevel - 1]] = currentIndex;
-        if treeOrFMM == 0 {
+        if self.variant == "tree" {
           particleOffset[0][newNumBoxIndex] = particleOffset[0][i];
           if newNumBoxIndex > 0 {
             particleOffset[1][newNumBoxIndex - 1] = particleOffset[0][i] - 1;
@@ -451,7 +455,7 @@ impl FMMRustGravity {
         newNumBoxIndex += 1;
       }
     }
-    if treeOrFMM == 0 {
+    if self.variant == "tree" {
       particleOffset[1][numBoxIndex - 1] = particleOffset[1][numBoxIndexOld - 1];
     }
     newNumBoxIndex
@@ -603,25 +607,25 @@ impl FMMRustGravity {
     (numInteraction, interactionList)
   }
 
-  fn cart2sph(&self, dx: f32, dy: f32, dz: f32) -> (f32, f32, f32) {
-    let r = (dx * dx + dy * dy + dz * dz).sqrt() + eps;
-    let theta = (dz / r).acos();
+  fn cart2sph(&self, dx: f32, dy: f32, dz: f32, softening: f32) -> (f64, f64, f64) {
+    let r = ((dx * dx + dy * dy + dz * dz).sqrt() + softening) as f64;
+    let theta = (dz as f64 / r).acos();
     let phi;
 
-    if dx.abs() + dy.abs() < eps {
-      phi = 0f32;
-    } else if dx.abs() < eps {
-      phi = dy / dy.abs() * f32::consts::PI * 0.5;
+    if ((dx.abs() + dy.abs()) as f64) < softening as f64 {
+      phi = 0f64;
+    } else if (dx.abs() as f64) < softening as f64 {
+      phi = dy as f64 / (dy as f64).abs() * f64::consts::PI * 0.5;
     } else if dx > 0f32 {
-      phi = (dy / dx).atan();
+      phi = (dy as f64 / dx as f64).atan();
     } else {
-      phi = (dy / dx).atan() + f32::consts::PI;
+      phi = (dy as f64 / dx as f64).atan() + f64::consts::PI;
     }
     (r, theta, phi)
   }
 
   // direct summation kernel
-  fn direct(&mut self, g: f32) {
+  fn direct(&mut self, g: f32, softening: f32) {
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
     for i in 0..self.len {
       let mut ai = Vec3::new(0f32, 0f32, 0f32);
@@ -632,7 +636,8 @@ impl FMMRustGravity {
         dist.x = self.positions[i * 3] - self.positions[j * 3];
         dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
         dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
-        let invDist = 1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + eps).sqrt();
+        let invDist =
+          1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening).sqrt();
         let invDistCube = self.masses[j] * invDist * invDist * invDist;
         ai.x -= dist.x * invDistCube;
         ai.y -= dist.y * invDistCube;
@@ -645,42 +650,30 @@ impl FMMRustGravity {
   }
 
   // precalculate M2L translation matrix and Wigner rotation matrix
-
-  pub fn precalc(&mut self) {
-    // let n,m,nm,nabsm,j,k,nk,npn,nmn,npm,nmm,nmk,i,nmk1,nm1k,nmk2; // i32
-    //   vec3<int> boxIndex3D;
-    //   vec3<double> dist;
-    //   double anmk[2][numExpansion4];
-    //   double Dnmd[numExpansion4];
-    //   double fnma,fnpa,pn,p,p1,p2,anmd,anmkd,rho,alpha,beta,sc,ank,ek;
-    //   std::complex<double> expBeta[numExpansion2],I(0f32,1f32);
-
-    // let jk,jkn,jnk; // i32
-    //   double fnmm,fnpm,fad;
-
+  pub fn precalc(&mut self, softening: f32) {
     for n in 0..(2 * numExpansions as i32) {
       for m in -n..=n {
         let nm = (n * n + n + m) as usize;
         let nabsm = m.abs();
-        let mut fnmm = 1f32;
+        let mut fnmm = 1f64;
         for i in 1..=(n - m) {
-          fnmm *= i as f32;
+          fnmm *= i as f64;
         }
-        let mut fnpm = 1f32;
+        let mut fnpm = 1f64;
         for i in 1..=(n + m) {
-          fnpm *= i as f32;
+          fnpm *= i as f64;
         }
-        let mut fnma = 1f32;
+        let mut fnma = 1f64;
         for i in 1..=(n - nabsm) {
-          fnma *= i as f32;
+          fnma *= i as f64;
         }
-        let mut fnpa = 1f32;
+        let mut fnpa = 1f64;
         for i in 1..=(n + nabsm) {
-          fnpa *= i as f32;
+          fnpa *= i as f64;
         }
         self.factorial[nm] = (fnma / fnpa).sqrt();
         let fad = (fnmm * fnpm).sqrt();
-        self.anm[nm] = -1f32.powi(n) / fad;
+        self.anm[nm] = -1f64.powi(n) / fad;
       }
     }
 
@@ -692,13 +685,13 @@ impl FMMRustGravity {
           let jkn = jk * (numExpansion2 as i32) + nk;
           let jnk = (j + n) * (j + n) + j + n;
           self.Anm[jkn as usize] =
-            -1f32.powi(j + k) * self.anm[nk as usize] * self.anm[jk as usize]
+            -1f64.powi(j + k) * self.anm[nk as usize] * self.anm[jk as usize]
               / self.anm[jnk as usize];
         }
       }
     }
 
-    let mut pn = 1f32;
+    let mut pn = 1f64;
     let mut p;
     let mut p1;
     let mut p2;
@@ -706,37 +699,37 @@ impl FMMRustGravity {
       p = pn;
       let npn = m * m + 2 * m;
       let nmn = m * m;
-      self.Ynm[npn] = Complex::new(self.factorial[npn] * p, 0f32);
+      self.Ynm[npn] = Complex::new(self.factorial[npn] * p, 0f64);
       self.Ynm[nmn] = self.Ynm[npn].conj();
       p1 = p;
-      p = (2 * m + 1) as f32 * p;
+      p = (2 * m + 1) as f64 * p;
       for n in (m + 1)..(2 * numExpansions) {
         let npm = n * n + n + m;
         let nmm = n * n + n - m;
-        self.Ynm[npn] = Complex::new(self.factorial[npm] * p, 0f32);
+        self.Ynm[npn] = Complex::new(self.factorial[npm] * p, 0f64);
         self.Ynm[nmm] = self.Ynm[npm].conj();
         p2 = p1;
         p1 = p;
-        p = ((2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+        p = ((2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
       }
-      pn = 0f32;
+      pn = 0f64;
     }
 
-    let mut anmk = [vec![0f32; numExpansion4], vec![0f32; numExpansion4]];
+    let mut anmk = [vec![0f64; numExpansion4], vec![0f64; numExpansion4]];
     for n in 0..numExpansions {
       for m in 1..=n {
-        let anmd = (n * (n + 1) - m * (m - 1)) as f32;
+        let anmd = (n * (n + 1) - m * (m - 1)) as f64;
         for k in (1 - m)..m {
           let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
-          let anmkd = ((n * (n + 1) - k * (k + 1)) / (n * (n + 1) - m * (m - 1))) as f32;
-          anmk[0][nmk] = -((m + k) as f32) / anmd.sqrt();
+          let anmkd = ((n * (n + 1) - k * (k + 1)) / (n * (n + 1) - m * (m - 1))) as f64;
+          anmk[0][nmk] = -((m + k) as f64) / anmd.sqrt();
           anmk[1][nmk] = anmkd.sqrt();
         }
       }
     }
-    let I = Complex::new(0f32, 1f32);
-    let mut expBeta = vec![Complex::new(0f32, 0f32); numExpansion2];
-    let mut Dnmd = vec![0f32; numExpansion4];
+    let I = Complex::new(0f64, 1f64);
+    let mut expBeta = vec![Complex::new(0f64, 0f64); numExpansion2];
+    let mut Dnmd = vec![0f64; numExpansion4];
 
     for i in 0..numRelativeBox {
       let boxIndex3D = self.unmorton(i);
@@ -745,21 +738,21 @@ impl FMMRustGravity {
         (boxIndex3D.y - 3) as f32,
         (boxIndex3D.z - 3) as f32,
       );
-      let (_, mut alpha, mut beta) = self.cart2sph(dist.x, dist.y, dist.z);
+      let (_, mut alpha, mut beta) = self.cart2sph(dist.x, dist.y, dist.z, softening);
 
-      let mut sc = alpha.sin() / (1f32 + alpha.cos());
+      let mut sc = alpha.sin() / (1f64 + alpha.cos());
       for n in 0..(4 * numExpansions - 3) {
-        expBeta[n] = ((n - 2 * numExpansions + 2) as f32 * beta * I).exp();
+        expBeta[n] = ((n - 2 * numExpansions + 2) as f64 * beta * I).exp();
       }
 
       for n in 0..numExpansions {
         let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + n;
-        Dnmd[nmk] = (alpha * 0.5).cos().powi((2 * n) as i32);
+        Dnmd[nmk] = (alpha * 0.5f64).cos().powi((2 * n) as i32);
         for k in ((1 - n)..(n + 1)).rev() {
           let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k;
           let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k - 1;
           let ank = (n + k) / (n - k + 1);
-          Dnmd[nmk1] = (ank as f32).sqrt() * (alpha * 0.5).tan() * Dnmd[nmk];
+          Dnmd[nmk1] = (ank as f64).sqrt() * (alpha * 0.5f64).tan() * Dnmd[nmk];
         }
         for m in (1..=n).rev() {
           for k in ((1 - m)..m).rev() {
@@ -773,17 +766,17 @@ impl FMMRustGravity {
       for n in 1..(numExpansions as i32) {
         for m in 0..=n {
           for k in -m..0 {
-            let ek = -1f32.powi(k);
+            let ek = -1f64.powi(k);
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
             Dnmd[nmk as usize] = ek * Dnmd[nmk as usize];
-            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f64.powi(m + k) * Dnmd[nmk as usize];
           }
           for k in 0..=m {
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + k * (2 * n + 1) + m;
             let nmk2 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
-            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f64.powi(m + k) * Dnmd[nmk as usize];
             Dnmd[nmk2 as usize] = Dnmd[nmk1 as usize];
           }
         }
@@ -803,9 +796,9 @@ impl FMMRustGravity {
       alpha = -alpha;
       beta = -beta;
 
-      sc = alpha.sin() / (1f32 + alpha.cos());
+      sc = alpha.sin() / (1f64 + alpha.cos());
       for n in 0..(4 * numExpansions - 3) {
-        expBeta[n] = ((n - 2 * numExpansions + 2) as f32 * beta * I).exp();
+        expBeta[n] = ((n - 2 * numExpansions + 2) as f64 * beta * I).exp();
       }
 
       for n in 0..numExpansions {
@@ -815,7 +808,7 @@ impl FMMRustGravity {
           let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k;
           let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + n * (2 * n + 1) + k - 1;
           let ank = (n + k) / (n - k + 1);
-          Dnmd[nmk1] = (ank as f32).sqrt() * (alpha * 0.5).tan() * Dnmd[nmk];
+          Dnmd[nmk1] = (ank as f64).sqrt() * (alpha * 0.5).tan() * Dnmd[nmk];
         }
         for m in (1..=n).rev() {
           for k in ((1 - m)..m).rev() {
@@ -830,17 +823,17 @@ impl FMMRustGravity {
       for n in 1..(numExpansions as i32) {
         for m in 0..=n {
           for k in -m..0 {
-            let ek = -1f32.powi(k);
+            let ek = -1f64.powi(k);
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
             Dnmd[nmk as usize] = ek * Dnmd[nmk as usize];
-            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f64.powi(m + k) * Dnmd[nmk as usize];
           }
           for k in 0..=m {
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nmk1 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + k * (2 * n + 1) + m;
             let nmk2 = (4 * n * n * n + 6 * n * n + 5 * n) / 3 - k * (2 * n + 1) - m;
-            Dnmd[nmk1 as usize] = -1f32.powi(m + k) * Dnmd[nmk as usize];
+            Dnmd[nmk1 as usize] = -1f64.powi(m + k) * Dnmd[nmk as usize];
             Dnmd[nmk2 as usize] = Dnmd[nmk1 as usize];
           }
         }
@@ -861,12 +854,12 @@ impl FMMRustGravity {
 
   // Spherical harmonic rotation
   fn rotation(&self, Cnm: &Vec<Complex>, Dnm: &Vec<Vec<Complex>>) -> Vec<Complex> {
-    let mut CnmOut = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut CnmOut = vec![Complex::new(0f64, 0f64); numCoefficients];
 
     for n in 0..(numExpansions as i32) {
       for m in 0..=n {
         let nms = n * (n + 1) / 2 + m;
-        let mut CnmScalar = Complex::new(0f32, 0f32);
+        let mut CnmScalar = Complex::new(0f64, 0f64);
         for k in -n..=-1 {
           let nk = n * (n + 1) + k;
           let nks = n * (n + 1) / 2 - k;
@@ -925,6 +918,7 @@ impl FMMRustGravity {
   // p2m
   fn p2m(
     &self,
+    softening: f32,
     numBoxIndex: usize,
     rootBoxSize: f32,
     boxMin: &Vec3<f32>,
@@ -933,8 +927,8 @@ impl FMMRustGravity {
     particleOffset: &[Vec<usize>; 2],
     Mnm: &mut Vec<Vec<Complex>>,
   ) {
-    let I = Complex::new(0f32, 1f32);
-    let mut YnmReal = vec![0f32; numExpansion2];
+    let I = Complex::new(0f64, 1f64);
+    let mut YnmReal = vec![0f64; numExpansion2];
     let boxSize = rootBoxSize / (1 << maxLevel) as f32;
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
     let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
@@ -943,26 +937,26 @@ impl FMMRustGravity {
       boxCenter.x = boxMin.x + (boxIndex3D.x as f32 + 0.5) * boxSize;
       boxCenter.y = boxMin.y + (boxIndex3D.y as f32 + 0.5) * boxSize;
       boxCenter.z = boxMin.z + (boxIndex3D.z as f32 + 0.5) * boxSize;
-      let mut MnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
+      let mut MnmVector = vec![Complex::new(0f64, 0f64); numCoefficients];
       for j in 0..numCoefficients {
-        MnmVector[j] = Complex::new(0f32, 0f32);
+        MnmVector[j] = Complex::new(0f64, 0f64);
       }
       for j in particleOffset[0][jj]..particleOffset[1][jj] {
         dist.x = self.positions[j * 3] - boxCenter.x;
         dist.y = self.positions[j * 3 + 1] - boxCenter.y;
         dist.z = self.positions[j * 3 + 2] - boxCenter.z;
-        let (rho, alpha, beta) = self.cart2sph(dist.x, dist.y, dist.z);
+        let (rho, alpha, beta) = self.cart2sph(dist.x, dist.y, dist.z, softening);
         let xx = alpha.cos();
-        let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
-        let mut fact = 1f32;
-        let mut pn = 1f32;
-        let mut rhom = 1f32;
+        let s2 = ((1f64 - xx) * (1f64 + xx)).sqrt();
+        let mut fact = 1f64;
+        let mut pn = 1f64;
+        let mut rhom = 1f64;
         for m in 0..numExpansions {
           let mut p = pn;
           let mut nm = m * m + 2 * m;
           YnmReal[nm] = rhom * self.factorial[nm] * p;
           let mut p1 = p;
-          p = xx * (2 * m + 1) as f32 * p;
+          p = xx * (2 * m + 1) as f64 * p;
           rhom *= rho;
           let mut rhon = rhom;
           for n in (m + 1)..numExpansions {
@@ -970,18 +964,18 @@ impl FMMRustGravity {
             YnmReal[nm] = rhon * self.factorial[nm] * p;
             let p2 = p1;
             p1 = p;
-            p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+            p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
             rhon *= rho;
           }
           pn = -pn * fact * s2;
-          fact += 2f32;
+          fact += 2f64;
         }
         for n in 0..numExpansions {
           for m in 0..=n {
             let nm = n * n + n + m;
             let nms = n * (n + 1) / 2 + m;
-            let eim = (-(m as f32) * beta * I).exp();
-            MnmVector[nms] += Complex::new(self.masses[j], 0f32) * YnmReal[nm] * eim;
+            let eim = (-(m as f64) * beta * I).exp();
+            MnmVector[nms] += Complex::new(self.masses[j] as f64, 0f64) * YnmReal[nm] * eim;
           }
         }
       }
@@ -1003,13 +997,13 @@ impl FMMRustGravity {
     boxIndexFull: &mut Vec<usize>,
     Mnm: &mut Vec<Vec<Complex>>,
   ) {
-    let mut MnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut MnmVectorA = vec![Complex::new(0f64, 0f64); numCoefficients];
 
     let boxSize = rootBoxSize / (1 << numLevel) as f32;
     for ii in 0..numBoxIndex {
       let ib = ii + levelOffset[numLevel - 1];
       for j in 0..numCoefficients {
-        Mnm[ib][j] = Complex::new(0f32, 0f32);
+        Mnm[ib][j] = Complex::new(0f64, 0f64);
       }
     }
     for jj in 0..numBoxIndexOld {
@@ -1022,7 +1016,7 @@ impl FMMRustGravity {
       boxIndex3D.y = 4 - boxIndex3D.y * 2;
       boxIndex3D.z = 4 - boxIndex3D.z * 2;
       let je = self.morton1(&mut boxIndex3D, 3);
-      let rho = boxSize * (3f32).sqrt() / 4f32;
+      let rho = boxSize as f64 * (3f64).sqrt() / 4f64;
       for j in 0..numCoefficients {
         MnmVectorA[j] = Mnm[jb][j];
       }
@@ -1031,12 +1025,12 @@ impl FMMRustGravity {
         for k in 0..=j {
           let jk = j * j + j + k;
           let jks = j * (j + 1) / 2 + k;
-          let mut MnmScalar = Complex::new(0f32, 0f32);
+          let mut MnmScalar = Complex::new(0f64, 0f64);
           for n in 0..=j - k {
             let jnk = (j - n) * (j - n) + j - n + k;
             let jnks = (j - n) * (j - n + 1) / 2 + k;
             let nm = n * n + n;
-            let cnm = -1f32.powi(n as i32) * self.anm[nm] * self.anm[jnk] / self.anm[jk]
+            let cnm = -1f64.powi(n as i32) * self.anm[nm] * self.anm[jnk] / self.anm[jk]
               * rho.powi(n as i32)
               * self.Ynm[nm];
             MnmScalar += MnmVectorB[jnks] * cnm;
@@ -1054,6 +1048,7 @@ impl FMMRustGravity {
   // m2l
   fn m2l(
     &mut self,
+    softening: f32,
     numBoxIndex: usize,
     numLevel: usize,
     rootBoxSize: f32,
@@ -1064,22 +1059,15 @@ impl FMMRustGravity {
     Lnm: &mut Vec<Vec<Complex>>,
     Mnm: &mut Vec<Vec<Complex>>,
   ) {
-    // let i,j,ii,ib,ix,iy,iz,ij,jj,jb,jx,jy,jz,je,k,jk,jks,n,nk,nks,jkn,jnk; // i32
-    //   vec3<int> boxIndex3D;
-    //   vec3<double> dist;
-    //   double boxSize,rho,rhoj,rhojk,rhojn;
-    //   std::complex<double> LnmVectorA[numCoefficients],MnmVectorA[numCoefficients];
-    //   std::complex<double> LnmVectorB[numCoefficients],MnmVectorB[numCoefficients];
-    //   std::complex<double> cnm,LnmScalar;
-    let mut LnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
-    let mut MnmVectorB = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut LnmVectorA = vec![Complex::new(0f64, 0f64); numCoefficients];
+    let mut MnmVectorB = vec![Complex::new(0f64, 0f64); numCoefficients];
 
     let boxSize = rootBoxSize / (1 << numLevel) as f32;
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
     if numLevel == 2 {
       for i in 0..numBoxIndex {
         for j in 0..numCoefficients {
-          Lnm[i][j] = Complex::new(0f32, 0f32);
+          Lnm[i][j] = Complex::new(0f64, 0f64);
         }
       }
     }
@@ -1106,16 +1094,16 @@ impl FMMRustGravity {
         boxIndex3D.y = (iy - jy) + 3;
         boxIndex3D.z = (iz - jz) + 3;
         let je = self.morton1(&mut boxIndex3D, 3);
-        let rho = (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z).sqrt() + eps;
+        let rho = ((dist.x * dist.x + dist.y * dist.y + dist.z * dist.z).sqrt() + softening) as f64;
         let MnmVectorA = self.rotation(&MnmVectorB, &self.Dnm[je]);
-        let mut rhoj = 1f32;
+        let mut rhoj = 1f64;
         for j in 0..numExpansions {
           let mut rhojk = rhoj;
           rhoj *= rho;
           for k in 0..=j {
             let jk = j * j + j + k;
             let jks = j * (j + 1) / 2 + k;
-            let mut LnmScalar = Complex::new(0f32, 0f32);
+            let mut LnmScalar = Complex::new(0f64, 0f64);
             let mut rhojn = rhojk;
             rhojk *= rho;
             for n in k..numExpansions {
@@ -1140,7 +1128,7 @@ impl FMMRustGravity {
     for jj in 0..numBoxIndex {
       let jb = jj + levelOffset[numLevel - 1];
       for j in 0..numCoefficients {
-        Mnm[jb][j] = Complex::new(0f32, 0f32);
+        Mnm[jb][j] = Complex::new(0f64, 0f64);
       }
     }
   }
@@ -1157,12 +1145,7 @@ impl FMMRustGravity {
     LnmOld: &mut Vec<Vec<Complex>>,
     Lnm: &mut Vec<Vec<Complex>>,
   ) {
-    // let numBoxIndexOld,ii,ib,i,nfip,nfic,je,j,k,jk,jks,n,jnk,nk,nks; // i32
-    //   vec3<int> boxIndex3D;
-    //   double boxSize,rho;
-    //   std::complex<double> cnm,LnmScalar;
-    //   std::complex<double> LnmVectorA[numCoefficients],LnmVectorB[numCoefficients];
-    let mut LnmVectorA = vec![Complex::new(0f32, 0f32); numCoefficients];
+    let mut LnmVectorA = vec![Complex::new(0f64, 0f64); numCoefficients];
 
     let boxSize = rootBoxSize / (1 << numLevel) as f32;
     let mut numBoxIndexOld = numBoxIndex;
@@ -1197,7 +1180,7 @@ impl FMMRustGravity {
       boxIndex3D.y = boxIndex3D.y * 2 + 2;
       boxIndex3D.z = boxIndex3D.z * 2 + 2;
       let je = self.morton1(&mut boxIndex3D, 3);
-      let rho = boxSize * (3f32).sqrt() / 2f32;
+      let rho = boxSize as f64 * (3f64).sqrt() / 2f64;
       ib = neo[nfip];
       for i in 0..numCoefficients {
         LnmVectorA[i] = LnmOld[ib][i];
@@ -1207,7 +1190,7 @@ impl FMMRustGravity {
         for k in 0..=j {
           let jk = j * j + j + k;
           let jks = j * (j + 1) / 2 + k;
-          let mut LnmScalar = Complex::new(0f32, 0f32);
+          let mut LnmScalar = Complex::new(0f64, 0f64);
           for n in j..numExpansions {
             let jnk = (n - j) * (n - j) + n - j;
             let nk = n * n + n + k;
@@ -1231,6 +1214,7 @@ impl FMMRustGravity {
   fn l2p(
     &mut self,
     g: f32,
+    softening: f32,
     numBoxIndex: usize,
     numLevel: usize,
     rootBoxSize: f32,
@@ -1239,21 +1223,12 @@ impl FMMRustGravity {
     particleOffset: &[Vec<usize>; 2],
     Lnm: &Vec<Vec<Complex>>,
   ) {
-    // let ii,i,n,nm,nms,m; // i32
-    // vec3<int> boxIndex3D;
-    // vec3<float> boxCenter;
-    // vec3<double> accel,dist;
-    // double boxSize,r,theta,phi,accelR,accelTheta,accelPhi;
-    // double xx,yy,s2,fact,pn,p,p1,p2,rn;
-    // double YnmReal[numExpansion2],YnmRealTheta[numExpansion2];
-    // std::complex<double> LnmVector[numCoefficients];
-    // std::complex<double> rr,rtheta,rphi,I(0f32,1f32),eim;
-    let I = Complex::new(0f32, 1f32);
-    let mut LnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
-    let mut YnmReal = vec![0f32; numExpansion2];
-    let mut YnmRealTheta = vec![0f32; numExpansion2];
+    let I = Complex::new(0f64, 1f64);
+    let mut LnmVector = vec![Complex::new(0f64, 0f64); numCoefficients];
+    let mut YnmReal = vec![0f64; numExpansion2];
+    let mut YnmRealTheta = vec![0f64; numExpansion2];
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
-    let mut accel = Vec3::new(0f32, 0f32, 0f32);
+    let mut accel = Vec3::new(0f64, 0f64, 0f64);
     let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
 
     let boxSize = rootBoxSize / (1 << numLevel) as f32;
@@ -1269,52 +1244,52 @@ impl FMMRustGravity {
         dist.x = self.positions[i * 3] - boxCenter.x;
         dist.y = self.positions[i * 3 + 1] - boxCenter.y;
         dist.z = self.positions[i * 3 + 2] - boxCenter.z;
-        let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z);
+        let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z, softening);
         let xx = theta.cos();
         let yy = theta.sin();
-        let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
-        let mut fact = 1f32;
-        let mut pn = 1f32;
+        let s2 = ((1f64 - xx) * (1f64 + xx)).sqrt();
+        let mut fact = 1f64;
+        let mut pn = 1f64;
         for m in 0..numExpansions {
           let mut p = pn;
           let nm = m * m + 2 * m;
           YnmReal[nm] = self.factorial[nm] * p;
           let mut p1 = p;
-          p = xx * (2 * m + 1) as f32 * p;
-          YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f32 * xx * p1) / yy;
+          p = xx * (2 * m + 1) as f64 * p;
+          YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
           for n in (m + 1)..numExpansions {
             let nm = n * n + n + m;
             YnmReal[nm] = self.factorial[nm] * p;
             let p2 = p1;
             p1 = p;
-            p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+            p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
             YnmRealTheta[nm] =
-              self.factorial[nm] * ((n - m + 1) as f32 * p - (n + 1) as f32 * xx * p1) / yy;
+              self.factorial[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
           }
           pn = -pn * fact * s2;
-          fact += 2f32;
+          fact += 2f64;
         }
-        let mut accelR = 0f32;
-        let mut accelTheta = 0f32;
-        let mut accelPhi = 0f32;
-        let mut rn = 1f32;
+        let mut accelR = 0f64;
+        let mut accelTheta = 0f64;
+        let mut accelPhi = 0f64;
+        let mut rn = 1f64;
         for n in 0..numExpansions {
           let nm = n * n + n;
           let nms = n * (n + 1) / 2;
-          let rr = n as f32 * rn / r * YnmReal[nm];
+          let rr = n as f64 * rn / r * YnmReal[nm];
           let rtheta = rn * YnmRealTheta[nm];
           accelR += (rr * LnmVector[nms]).re;
           accelTheta += (rtheta * LnmVector[nms]).re;
           for m in 1..=n {
             let nm = n * n + n + m;
             let nms = n * (n + 1) / 2 + m;
-            let eim = (m as f32 * phi * I).exp();
-            let rr = n as f32 * rn / r * YnmReal[nm] * eim;
+            let eim = (m as f64 * phi * I).exp();
+            let rr = n as f64 * rn / r * YnmReal[nm] * eim;
             let rtheta = rn * YnmRealTheta[nm] * eim;
-            let rphi = m as f32 * rn * YnmReal[nm] * eim * I;
-            accelR += 2f32 * (rr * LnmVector[nms]).re;
-            accelTheta += 2f32 * (rtheta * LnmVector[nms]).re;
-            accelPhi += 2f32 * (rphi * LnmVector[nms]).re;
+            let rphi = m as f64 * rn * YnmReal[nm] * eim * I;
+            accelR += 2f64 * (rr * LnmVector[nms]).re;
+            accelTheta += 2f64 * (rtheta * LnmVector[nms]).re;
+            accelPhi += 2f64 * (rphi * LnmVector[nms]).re;
           }
           rn *= r;
         }
@@ -1324,9 +1299,9 @@ impl FMMRustGravity {
           + theta.cos() * phi.sin() / r * accelTheta
           + phi.cos() / r / theta.sin() * accelPhi;
         accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
-        self.accelerations[i * 3] += g * accel.x;
-        self.accelerations[i * 3 + 1] += g * accel.y;
-        self.accelerations[i * 3 + 2] += g * accel.z;
+        self.accelerations[i * 3] += g * accel.x as f32;
+        self.accelerations[i * 3 + 1] += g * accel.y as f32;
+        self.accelerations[i * 3 + 2] += g * accel.z as f32;
       }
     }
   }
@@ -1335,6 +1310,7 @@ impl FMMRustGravity {
   fn m2p(
     &mut self,
     g: f32,
+    softening: f32,
     numBoxIndex: usize,
     numLevel: usize,
     rootBoxSize: f32,
@@ -1346,12 +1322,12 @@ impl FMMRustGravity {
     particleOffset: &[Vec<usize>; 2],
     Mnm: &Vec<Vec<Complex>>,
   ) {
-    let I = Complex::new(0f32, 1f32);
-    let mut MnmVector = vec![Complex::new(0f32, 0f32); numCoefficients];
-    let mut YnmReal = vec![0f32; numExpansion2];
-    let mut YnmRealTheta = vec![0f32; numExpansion2];
+    let I = Complex::new(0f64, 1f64);
+    let mut MnmVector = vec![Complex::new(0f64, 0f64); numCoefficients];
+    let mut YnmReal = vec![0f64; numExpansion2];
+    let mut YnmRealTheta = vec![0f64; numExpansion2];
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
-    let mut accel = Vec3::new(0f32, 0f32, 0f32);
+    let mut accel = Vec3::new(0f64, 0f64, 0f64);
     let mut boxCenter = Vec3::new(0f32, 0f32, 0f32);
 
     let boxSize = rootBoxSize / (1 << numLevel) as f32;
@@ -1370,53 +1346,55 @@ impl FMMRustGravity {
           dist.x = self.positions[i * 3] - boxCenter.x;
           dist.y = self.positions[i * 3 + 1] - boxCenter.y;
           dist.z = self.positions[i * 3 + 2] - boxCenter.z;
-          let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z);
+
+          let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z, softening);
+
           let xx = theta.cos();
           let yy = theta.sin();
-          let s2 = ((1f32 - xx) * (1f32 + xx)).sqrt();
-          let mut fact = 1f32;
-          let mut pn = 1f32;
+          let s2 = ((1f64 - xx) * (1f64 + xx)).sqrt();
+          let mut fact = 1f64;
+          let mut pn = 1f64;
           for m in 0..numExpansions {
             let mut p = pn;
             let nm = m * m + 2 * m;
             YnmReal[nm] = self.factorial[nm] * p;
             let mut p1 = p;
-            p = xx * (2 * m + 1) as f32 * p;
-            YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f32 * xx * p1) / yy;
+            p = xx * (2 * m + 1) as f64 * p;
+            YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
             for n in (m + 1)..numExpansions {
               let nm = n * n + n + m;
               YnmReal[nm] = self.factorial[nm] * p;
               let p2 = p1;
               p1 = p;
-              p = (xx * (2 * n + 1) as f32 * p1 - (n + m) as f32 * p2) / (n - m + 1) as f32;
+              p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
               YnmRealTheta[nm] =
-                self.factorial[nm] * ((n - m + 1) as f32 * p - (n + 1) as f32 * xx * p1) / yy;
+                self.factorial[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
             }
             pn = -pn * fact * s2;
-            fact += 2f32;
+            fact += 2f64;
           }
-          let mut accelR = 0f32;
-          let mut accelTheta = 0f32;
-          let mut accelPhi = 0f32;
-          let mut rn = 1f32 / r;
+          let mut accelR = 0f64;
+          let mut accelTheta = 0f64;
+          let mut accelPhi = 0f64;
+          let mut rn = 1f64 / r;
           for n in 0..numExpansions {
             rn /= r;
             let nm = n * n + n;
             let nms = n * (n + 1) / 2;
-            let rr = -((n + 1) as f32) * rn * YnmReal[nm];
+            let rr = -((n + 1) as f64) * rn * YnmReal[nm];
             let rtheta = rn * r * YnmRealTheta[nm];
             accelR += (rr * MnmVector[nms]).re;
             accelTheta += (rtheta * MnmVector[nms]).re;
             for m in 1..=n {
               let nm = n * n + n + m;
               let nms = n * (n + 1) / 2 + m;
-              let eim = (m as f32 * phi * I).exp();
-              let rr = -((n + 1) as f32) * rn * YnmReal[nm] * eim;
+              let eim = (m as f64 * phi * I).exp();
+              let rr = -((n + 1) as f64) * rn * YnmReal[nm] * eim;
               let rtheta = rn * r * YnmRealTheta[nm] * eim;
-              let rphi = m as f32 * rn * r * YnmReal[nm] * eim * I;
-              accelR += 2f32 * (rr * MnmVector[nms]).re;
-              accelTheta += 2f32 * (rtheta * MnmVector[nms]).re;
-              accelPhi += 2f32 * (rphi * MnmVector[nms]).re;
+              let rphi = m as f64 * rn * r * YnmReal[nm] * eim * I;
+              accelR += 2f64 * (rr * MnmVector[nms]).re;
+              accelTheta += 2f64 * (rtheta * MnmVector[nms]).re;
+              accelPhi += 2f64 * (rphi * MnmVector[nms]).re;
             }
           }
 
@@ -1426,9 +1404,10 @@ impl FMMRustGravity {
             + theta.cos() * phi.sin() / r * accelTheta
             + phi.cos() / r / theta.sin() * accelPhi;
           accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
-          self.accelerations[i * 3] += g * accel.x;
-          self.accelerations[i * 3 + 1] += g * accel.y;
-          self.accelerations[i * 3 + 2] += g * accel.z;
+
+          self.accelerations[i * 3] += g * accel.x as f32;
+          self.accelerations[i * 3 + 1] += g * accel.y as f32;
+          self.accelerations[i * 3 + 2] += g * accel.z as f32;
         }
       }
     }
@@ -1453,7 +1432,6 @@ impl FMMRustGravity {
     escape_distance: f32,
   ) -> usize {
     // self.direct(g);
-    let treeOrFMM = 1; // or 1
 
     let (boxMin, rootBoxSize) = self.setDomainSize();
     let (maxLevel, numBoxIndexFull) = self.setOptimumLevel();
@@ -1469,17 +1447,15 @@ impl FMMRustGravity {
     let mut boxIndexMask = vec![0; numBoxIndexFull];
     let mut boxIndexFull = vec![0; numBoxIndexTotal];
     let mut levelOffset = vec![0; maxLevel];
-    let boxOffsetStart = vec![0; numBoxIndexLeaf];
-    let boxOffsetEnd = vec![0; numBoxIndexLeaf];
 
     let mut Lnm = (0..numBoxIndexLeaf)
-      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
       .collect::<Vec<_>>();
     let mut LnmOld = (0..numBoxIndexLeaf)
-      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
       .collect::<Vec<_>>();
     let mut Mnm = (0..numBoxIndexTotal)
-      .map(|_| vec![Complex::new(0f32, 0f32); numCoefficients])
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
       .collect::<Vec<_>>();
 
     let mut numLevel = maxLevel;
@@ -1524,6 +1500,7 @@ impl FMMRustGravity {
 
     // P2M
     self.p2m(
+      softening,
       numBoxIndex,
       rootBoxSize,
       &boxMin,
@@ -1535,7 +1512,7 @@ impl FMMRustGravity {
 
     if maxLevel > 2 {
       for numLevel in (2..maxLevel).rev() {
-        if treeOrFMM == 0 {
+        if self.variant == "tree" {
           // M2P at lower levels
           let (numInteraction, interactionList) = self.getInteractionList(
             numBoxIndex,
@@ -1548,6 +1525,7 @@ impl FMMRustGravity {
           );
           self.m2p(
             g,
+            softening,
             numBoxIndex,
             numLevel + 1,
             rootBoxSize,
@@ -1567,7 +1545,6 @@ impl FMMRustGravity {
           numBoxIndex,
           numBoxIndexFull,
           numLevel,
-          treeOrFMM,
           &mut levelOffset,
           &mut boxIndexMask,
           &mut boxIndexFull,
@@ -1605,10 +1582,11 @@ impl FMMRustGravity {
       &boxIndexFull,
     );
 
-    if treeOrFMM == 0 {
+    if self.variant == "tree" {
       // M2P at level 2
       self.m2p(
         g,
+        softening,
         numBoxIndex,
         numLevel,
         rootBoxSize,
@@ -1623,6 +1601,7 @@ impl FMMRustGravity {
     } else {
       // M2L at level 2
       self.m2l(
+        softening,
         numBoxIndex,
         numLevel,
         rootBoxSize,
@@ -1668,6 +1647,7 @@ impl FMMRustGravity {
             &boxIndexFull,
           );
           self.m2l(
+            softening,
             numBoxIndex,
             numLevel,
             rootBoxSize,
@@ -1684,6 +1664,7 @@ impl FMMRustGravity {
       // L2P
       self.l2p(
         g,
+        softening,
         numBoxIndex,
         numLevel,
         rootBoxSize,
