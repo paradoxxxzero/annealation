@@ -28796,6 +28796,7 @@ __export(configurations_exports, {
   fountain: () => fountain,
   harmonicSphere: () => harmonicSphere,
   plane: () => plane,
+  regularCube: () => regularCube,
   solarSystem: () => solarSystem,
   sphere: () => sphere,
   teapot: () => teapot
@@ -30390,6 +30391,25 @@ var cube = ({number, range, speed, mass, blackHoleMass}) => {
     };
   });
 };
+var regularCube = ({number, range, speed, mass, blackHoleMass}) => {
+  const n = ~~Math.cbrt(number);
+  return new Array(n).fill().map((_, i) => new Array(n).fill().map((_2, j) => new Array(n).fill().map((_3, k) => {
+    const pos = new Vector3(i / n - 1 / 2, j / n - 1 / 2, k / n - 1 / 2);
+    return {
+      mass,
+      temperature: 15e3 * (0.75 - pos.lengthSq()) - 3e3,
+      position: pos.multiplyScalar(range),
+      speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
+    };
+  }))).flat(3).concat(blackHoleMass ? [
+    {
+      temperature: 0,
+      mass: blackHoleMass,
+      position: new Vector3(),
+      speed: new Vector3()
+    }
+  ] : []);
+};
 var sphere = ({
   number,
   range,
@@ -30719,6 +30739,36 @@ var presets_default = {
         simulationSpeed: 0.5,
         softening: 10,
         collisions: true,
+        collisionThreshold: 25,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    RegularCube: {
+      0: {
+        backend: "rust_fmm",
+        resolution: 7,
+        autoRotate: true,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "regularCube",
+        number: 1250,
+        range: 1e3,
+        speed: 0,
+        mass: 1,
+        blackHoleMass: 0,
+        scale: 50,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.5,
+        softening: 10,
+        collisions: false,
         collisionThreshold: 25,
         escapeDistance: 1e4,
         blackHoleMassThreshold: 1e4
@@ -31209,46 +31259,91 @@ function getInt32Memory0() {
   }
   return cachegetInt32Memory0;
 }
-var Annealation = class {
+var FMMRustGravity = class {
   static __wrap(ptr) {
-    const obj = Object.create(Annealation.prototype);
+    const obj = Object.create(FMMRustGravity.prototype);
     obj.ptr = ptr;
     return obj;
   }
   free() {
     const ptr = this.ptr;
     this.ptr = 0;
-    wasm.__wbg_annealation_free(ptr);
+    wasm.__wbg_fmmrustgravity_free(ptr);
   }
-  static new(len) {
-    var ret = wasm.annealation_new(len);
-    return Annealation.__wrap(ret);
+  static new(len, variantIndex) {
+    var ret = wasm.fmmrustgravity_new(len, variantIndex);
+    return FMMRustGravity.__wrap(ret);
   }
   positions_ptr() {
-    var ret = wasm.annealation_positions_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
-    var ret = wasm.annealation_speeds_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.annealation_masses_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.annealation_temperatures_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
+  precalc(softening) {
+    wasm.fmmrustgravity_precalc(this.ptr, softening);
+  }
   frog_leap(dt) {
-    wasm.annealation_frog_leap(this.ptr, dt);
+    wasm.fmmrustgravity_frog_leap(this.ptr, dt);
   }
   simulate(g, softening, collisions, threshold, escape_distance) {
-    var ret = wasm.annealation_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
+    var ret = wasm.fmmrustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
     return ret >>> 0;
   }
   frog_drop(dt) {
-    wasm.annealation_frog_drop(this.ptr, dt);
+    wasm.fmmrustgravity_frog_drop(this.ptr, dt);
+  }
+};
+var P2PRustGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(P2PRustGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_p2prustgravity_free(ptr);
+  }
+  static new(len) {
+    var ret = wasm.p2prustgravity_new(len);
+    return P2PRustGravity.__wrap(ret);
+  }
+  positions_ptr() {
+    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
+    return ret;
+  }
+  speeds_ptr() {
+    var ret = wasm.p2prustgravity_speeds_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap(dt) {
+    wasm.p2prustgravity_frog_leap(this.ptr, dt);
+  }
+  simulate(g, softening, collisions, threshold, escape_distance) {
+    var ret = wasm.p2prustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
+    return ret >>> 0;
+  }
+  frog_drop(dt) {
+    wasm.p2prustgravity_frog_drop(this.ptr, dt);
   }
 };
 async function load2(module, imports) {
@@ -31722,7 +31817,14 @@ var colorModes = {
 };
 var particles;
 var gravity;
-var backends = ["js_p2p", "rust_p2p", "js_fmm", "js_none"];
+var backends = [
+  "js_p2p",
+  "rust_p2p",
+  "js_fmm",
+  "rust_fmm",
+  "rust_tree",
+  "js_none"
+];
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31798,6 +31900,7 @@ function render() {
 function init2() {
   const {
     backend,
+    softening,
     configuration,
     range,
     scale,
@@ -31806,18 +31909,30 @@ function init2() {
     resolution
   } = params;
   const orbs = configurations_exports[configuration](params);
+  let positions, masses, temperatures;
   if (backend === "js_p2p") {
     gravity = new p2p_default(orbs);
+    ({positions, masses, temperatures} = gravity);
   } else if (backend === "js_none") {
     gravity = new none_default(orbs);
+    ({positions, masses, temperatures} = gravity);
   } else if (backend === "js_fmm") {
     gravity = new fmm_default(orbs, range, resolution);
-  } else if (backend === "rust_p2p") {
-    gravity = Annealation.new(orbs.length);
+    ({positions, masses, temperatures} = gravity);
+  } else if (backend.startsWith("rust")) {
+    if (backend === "rust_p2p") {
+      gravity = P2PRustGravity.new(orbs.length);
+    } else if (backend === "rust_fmm") {
+      gravity = FMMRustGravity.new(orbs.length, 1);
+      gravity.precalc(softening);
+    } else if (backend === "rust_tree") {
+      gravity = FMMRustGravity.new(orbs.length, 0);
+      gravity.precalc(softening);
+    }
     const {buffer} = wasm_memory();
-    gravity.positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
-    gravity.masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
-    gravity.temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
+    positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
+    masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
+    temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
     const speeds = new Float32Array(buffer, gravity.speeds_ptr(), 3 * orbs.length);
     orbs.forEach(({speed}, i) => {
       speeds[i * 3] = speed.x;
@@ -31826,17 +31941,17 @@ function init2() {
     });
   }
   orbs.forEach(({position, mass, temperature}, i) => {
-    gravity.positions[i * 3] = position.x;
-    gravity.positions[i * 3 + 1] = position.y;
-    gravity.positions[i * 3 + 2] = position.z;
-    gravity.masses[i] = mass;
-    gravity.temperatures[i] = temperature;
+    positions[i * 3] = position.x;
+    positions[i * 3 + 1] = position.y;
+    positions[i * 3 + 2] = position.z;
+    masses[i] = mass;
+    temperatures[i] = temperature;
   });
   const geometry = new BufferGeometry();
   geometry.setDrawRange(0, orbs.length);
-  geometry.setAttribute("position", new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage));
-  geometry.setAttribute("mass", new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage));
-  geometry.setAttribute("temperature", new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("mass", new BufferAttribute(masses, 1).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("temperature", new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage));
   geometry.setDrawRange(0, orbs.length);
   const material = new ShaderMaterial({
     vertexShader: vertexShader_default,

@@ -139,7 +139,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 11947,
+      "bytes": 12979,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -160,7 +160,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 10070,
+      "bytes": 10817,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -185,7 +185,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 7340,
+      "bytes": 9308,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -225,7 +225,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 9935,
+      "bytes": 10418,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -353,7 +353,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 11294
+          "bytesInOutput": 12054
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -365,7 +365,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 9951
+          "bytesInOutput": 10691
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -374,7 +374,7 @@
           "bytesInOutput": 186
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 6101
+          "bytesInOutput": 7337
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
@@ -389,10 +389,10 @@
           "bytesInOutput": 2898
         },
         "dist/index.js": {
-          "bytesInOutput": 8230
+          "bytesInOutput": 8692
         }
       },
-      "bytes": 1183306
+      "bytes": 1186504
     }
   }
 }
