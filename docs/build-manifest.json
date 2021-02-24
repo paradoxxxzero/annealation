@@ -305,6 +305,7 @@
   "outputs": {
     "../~~bundle~~/index.css": {
       "imports": [],
+      "entryPoint": "index.css",
       "inputs": {
         "index.css": {
           "bytesInOutput": 42
@@ -315,6 +316,7 @@
     "../~~bundle~~/dist/index.js": {
       "imports": [],
       "exports": [],
+      "entryPoint": "dist/index.js",
       "inputs": {
         "_snowpack/pkg/dat.gui.js": {
           "bytesInOutput": 85977
@@ -392,7 +394,7 @@
           "bytesInOutput": 8692
         }
       },
-      "bytes": 1186504
+      "bytes": 1186397
     }
   }
 }
