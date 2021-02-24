@@ -14,6 +14,11 @@ default = ["console_error_panic_hook"]
 wasm-bindgen = "0.2.70"
 console_error_panic_hook = { version = "0.1.6", optional = true }
 num-complex = "0.3.1"
+rayon = "1.5.0"
+rayon-core = "1.9.0"
+futures-channel-preview = "0.3.0-alpha.18"
+wasm-bindgen-futures = "0.4.20"
+js-sys = "0.3.47"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.20"
@@ -43,3 +48,18 @@ wasm-opt = ['-O4']
 debug-js-glue = false
 demangle-name-section = true
 dwarf-debug-info = false
+
+
+[dependencies.web-sys]
+version = "0.3.23"
+features = [
+  'CanvasRenderingContext2d',
+  'ErrorEvent',
+  'Event',
+  'ImageData',
+  'Navigator',
+  'Window',
+  'Worker',
+  'DedicatedWorkerGlobalScope',
+  'MessageEvent',
+]

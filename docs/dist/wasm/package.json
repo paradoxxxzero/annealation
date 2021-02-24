@@ -8,6 +8,5 @@
     "index_bg.wasm",
     "index.js"
   ],
-  "module": "index.js",
-  "sideEffects": false
+  "browser": "index.js"
 }

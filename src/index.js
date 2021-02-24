@@ -23,7 +23,13 @@ import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import wasmInit, { P2PRustGravity, FMMRustGravity, wasm_memory } from 'wasm'
+// import wasmInit, {
+//   P2PRustGravity,
+//   P2PRustThreadGravity,
+//   FMMRustGravity,
+//   WorkerPool,
+//   wasm_memory,
+// } from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
@@ -41,6 +47,7 @@ let particles, gravity
 const backends = [
   'js_p2p',
   'rust_p2p',
+  'rust_p2p_thread',
   'js_fmm',
   'rust_fmm',
   'rust_tree',
@@ -137,6 +144,7 @@ function animate() {
 
 function render() {
   const {
+    backend,
     simulationSpeed: dt,
     gravitationalConstant: G,
     collisions,
@@ -150,7 +158,9 @@ function render() {
     softening,
     collisions,
     collisionThreshold,
-    escapeDistance
+    escapeDistance,
+    backend === 'rust_p2p_thread' ? pool : undefined,
+    backend === 'rust_p2p_thread' ? navigator.hardwareConcurrency : undefined
   )
   gravity.frog_drop(dt)
   if (newLen !== particles.geometry.drawRange.count) {
@@ -188,15 +198,17 @@ function init() {
     ;({ positions, masses, temperatures } = gravity)
   } else if (backend.startsWith('rust')) {
     if (backend === 'rust_p2p') {
-      gravity = P2PRustGravity.new(orbs.length)
+      gravity = wasm_bindgen.P2PRustGravity.new(orbs.length)
+    } else if (backend === 'rust_p2p_thread') {
+      gravity = wasm_bindgen.P2PRustThreadGravity.new(orbs.length)
     } else if (backend === 'rust_fmm') {
-      gravity = FMMRustGravity.new(orbs.length, 1)
+      gravity = wasm_bindgen.FMMRustGravity.new(orbs.length, 1)
       gravity.precalc(softening)
     } else if (backend === 'rust_tree') {
-      gravity = FMMRustGravity.new(orbs.length, 0)
+      gravity = wasm_bindgen.FMMRustGravity.new(orbs.length, 0)
       gravity.precalc(softening)
     }
-    const { buffer } = wasm_memory()
+    const { buffer } = wasm_bindgen.wasm_memory()
     positions = new Float32Array(
       buffer,
       gravity.positions_ptr(),
@@ -346,9 +358,9 @@ function initGUI() {
     restart()
   })
 }
-const wasmPromise = wasmInit()
-
-wasmPromise.then(() => {
+let pool
+const wasmPromise = wasm_bindgen('./dist/wasm/index_bg.wasm').then(() => {
+  pool = new wasm_bindgen.WorkerPool(navigator.hardwareConcurrency)
   init()
   initGUI()
   raf = requestAnimationFrame(animate)

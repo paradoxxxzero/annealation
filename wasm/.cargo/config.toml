@@ -1,0 +1,5 @@
+[build]
+target-feature = ["+atomics","+bulk-memory"]
+
+[unstable]
+build-std = ["std", "panic_abort"]

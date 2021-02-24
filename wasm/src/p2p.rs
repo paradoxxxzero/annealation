@@ -89,7 +89,7 @@ impl P2PRustGravity {
                     }
                 }
 
-                let fact = g / (distance * distance * distance);
+                let fact = 1f32 / (distance * distance * distance);
                 let f1 = fact * self.masses[j];
                 let f2 = -fact * self.masses[i];
 
@@ -99,6 +99,11 @@ impl P2PRustGravity {
                 }
             }
         }
+
+        for i in 0..(3 * self.len) {
+            self.accelerations[i] *= g;
+        }
+
         for i in 0..self.len {
             if self.positions[i * 3] * self.positions[i * 3]
                 + self.positions[i * 3 + 1] * self.positions[i * 3 + 1]

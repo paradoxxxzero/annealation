@@ -4,6 +4,10 @@
       "bytes": 42,
       "imports": []
     },
+    "dist/wasm/index.js": {
+      "bytes": 17755,
+      "imports": []
+    },
     "_snowpack/pkg/dat.gui.js": {
       "bytes": 86125,
       "imports": []
@@ -180,19 +184,6 @@
         }
       ]
     },
-    "_snowpack/env.js": {
-      "bytes": 97,
-      "imports": []
-    },
-    "dist/wasm/index.js": {
-      "bytes": 9309,
-      "imports": [
-        {
-          "path": "_snowpack/env.js",
-          "kind": "import-statement"
-        }
-      ]
-    },
     "_snowpack/pkg/statsjs.js": {
       "bytes": 2572,
       "imports": []
@@ -225,7 +216,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 10418,
+      "bytes": 10892,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -280,10 +271,6 @@
           "kind": "import-statement"
         },
         {
-          "path": "dist/wasm/index.js",
-          "kind": "import-statement"
-        },
-        {
           "path": "_snowpack/pkg/statsjs.js",
           "kind": "import-statement"
         },
@@ -312,6 +299,17 @@
         }
       },
       "bytes": 58
+    },
+    "../~~bundle~~/dist/wasm/index.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "dist/wasm/index.js",
+      "inputs": {
+        "dist/wasm/index.js": {
+          "bytesInOutput": 14762
+        }
+      },
+      "bytes": 14784
     },
     "../~~bundle~~/dist/index.js": {
       "imports": [],
@@ -372,12 +370,6 @@
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
         },
-        "_snowpack/env.js": {
-          "bytesInOutput": 186
-        },
-        "dist/wasm/index.js": {
-          "bytesInOutput": 7337
-        },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
@@ -391,10 +383,10 @@
           "bytesInOutput": 2898
         },
         "dist/index.js": {
-          "bytesInOutput": 8692
+          "bytesInOutput": 9093
         }
       },
-      "bytes": 1186397
+      "bytes": 1179231
     }
   }
 }

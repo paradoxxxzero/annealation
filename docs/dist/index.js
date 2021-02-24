@@ -763,7 +763,7 @@ var dom = {
         break;
       }
       case "KeyboardEvents": {
-        var init3 = evt.initKeyboardEvent || evt.initKeyEvent;
+        var init2 = evt.initKeyboardEvent || evt.initKeyEvent;
         Common.defaults(params2, {
           cancelable: true,
           ctrlKey: false,
@@ -773,7 +773,7 @@ var dom = {
           keyCode: void 0,
           charCode: void 0
         });
-        init3(eventType, params2.bubbles || false, params2.cancelable, window, params2.ctrlKey, params2.altKey, params2.shiftKey, params2.metaKey, params2.keyCode, params2.charCode);
+        init2(eventType, params2.bubbles || false, params2.cancelable, window, params2.ctrlKey, params2.altKey, params2.shiftKey, params2.metaKey, params2.keyCode, params2.charCode);
         break;
       }
       default: {
@@ -2071,9 +2071,9 @@ Common.extend(GUI.prototype, {
     }
   },
   listen: function listen(controller) {
-    var init3 = this.__listening.length === 0;
+    var init2 = this.__listening.length === 0;
     this.__listening.push(controller);
-    if (init3) {
+    if (init2) {
       updateDisplays(this.__listening);
     }
   },
@@ -12834,7 +12834,7 @@ function WebGLRenderList(properties) {
   const opaque = [];
   const transparent = [];
   const defaultProgram = {id: -1};
-  function init3() {
+  function init2() {
     renderItemsIndex = 0;
     opaque.length = 0;
     transparent.length = 0;
@@ -12899,7 +12899,7 @@ function WebGLRenderList(properties) {
   return {
     opaque,
     transparent,
-    init: init3,
+    init: init2,
     push,
     unshift,
     finish,
@@ -13281,7 +13281,7 @@ function WebGLRenderState(extensions, capabilities) {
   const lights = new WebGLLights(extensions, capabilities);
   const lightsArray = [];
   const shadowsArray = [];
-  function init3() {
+  function init2() {
     lightsArray.length = 0;
     shadowsArray.length = 0;
   }
@@ -13303,7 +13303,7 @@ function WebGLRenderState(extensions, capabilities) {
     lights
   };
   return {
-    init: init3,
+    init: init2,
     state,
     setupLights,
     setupLightsView,
@@ -21178,7 +21178,7 @@ ArcCurve.prototype.constructor = ArcCurve;
 ArcCurve.prototype.isArcCurve = true;
 function CubicPoly() {
   let c0 = 0, c1 = 0, c2 = 0, c3 = 0;
-  function init3(x0, x1, t0, t1) {
+  function init2(x0, x1, t0, t1) {
     c0 = x0;
     c1 = t0;
     c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
@@ -21186,14 +21186,14 @@ function CubicPoly() {
   }
   return {
     initCatmullRom: function(x0, x1, x2, x3, tension) {
-      init3(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
+      init2(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
     },
     initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
       let t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
       let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
       t1 *= dt1;
       t2 *= dt1;
-      init3(x1, x2, t1, t2);
+      init2(x1, x2, t1, t2);
     },
     calc: function(t) {
       const t2 = t * t;
@@ -31153,265 +31153,6 @@ var presets_default = {
   }
 };
 
-// _snowpack/env.js
-var env_exports = {};
-__export(env_exports, {
-  MODE: () => MODE,
-  NODE_ENV: () => NODE_ENV,
-  SSR: () => SSR
-});
-var MODE = "production";
-var NODE_ENV = "production";
-var SSR = false;
-
-// dist/wasm/index.js
-import.meta.env = env_exports;
-var wasm;
-var heap = new Array(32).fill(void 0);
-heap.push(void 0, null, true, false);
-function getObject(idx) {
-  return heap[idx];
-}
-var heap_next = heap.length;
-function dropObject(idx) {
-  if (idx < 36)
-    return;
-  heap[idx] = heap_next;
-  heap_next = idx;
-}
-function takeObject(idx) {
-  const ret = getObject(idx);
-  dropObject(idx);
-  return ret;
-}
-function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
-}
-var cachedTextDecoder = new TextDecoder("utf-8", {ignoreBOM: true, fatal: true});
-cachedTextDecoder.decode();
-var cachegetUint8Memory0 = null;
-function getUint8Memory0() {
-  if (cachegetUint8Memory0 === null || cachegetUint8Memory0.buffer !== wasm.memory.buffer) {
-    cachegetUint8Memory0 = new Uint8Array(wasm.memory.buffer);
-  }
-  return cachegetUint8Memory0;
-}
-function getStringFromWasm0(ptr, len) {
-  return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-var WASM_VECTOR_LEN = 0;
-var cachedTextEncoder = new TextEncoder("utf-8");
-var encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function(arg, view) {
-  return cachedTextEncoder.encodeInto(arg, view);
-} : function(arg, view) {
-  const buf = cachedTextEncoder.encode(arg);
-  view.set(buf);
-  return {
-    read: arg.length,
-    written: buf.length
-  };
-};
-function passStringToWasm0(arg, malloc, realloc) {
-  if (realloc === void 0) {
-    const buf = cachedTextEncoder.encode(arg);
-    const ptr2 = malloc(buf.length);
-    getUint8Memory0().subarray(ptr2, ptr2 + buf.length).set(buf);
-    WASM_VECTOR_LEN = buf.length;
-    return ptr2;
-  }
-  let len = arg.length;
-  let ptr = malloc(len);
-  const mem = getUint8Memory0();
-  let offset = 0;
-  for (; offset < len; offset++) {
-    const code = arg.charCodeAt(offset);
-    if (code > 127)
-      break;
-    mem[ptr + offset] = code;
-  }
-  if (offset !== len) {
-    if (offset !== 0) {
-      arg = arg.slice(offset);
-    }
-    ptr = realloc(ptr, len, len = offset + arg.length * 3);
-    const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
-    const ret = encodeString(arg, view);
-    offset += ret.written;
-  }
-  WASM_VECTOR_LEN = offset;
-  return ptr;
-}
-var cachegetInt32Memory0 = null;
-function getInt32Memory0() {
-  if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
-    cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
-  }
-  return cachegetInt32Memory0;
-}
-function wasm_memory() {
-  var ret = wasm.wasm_memory();
-  return takeObject(ret);
-}
-var FMMRustGravity = class {
-  static __wrap(ptr) {
-    const obj = Object.create(FMMRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  free() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    wasm.__wbg_fmmrustgravity_free(ptr);
-  }
-  static new(len, variantIndex) {
-    var ret = wasm.fmmrustgravity_new(len, variantIndex);
-    return FMMRustGravity.__wrap(ret);
-  }
-  positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
-    return ret;
-  }
-  speeds_ptr() {
-    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
-    return ret;
-  }
-  masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
-    return ret;
-  }
-  temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
-    return ret;
-  }
-  precalc(softening) {
-    wasm.fmmrustgravity_precalc(this.ptr, softening);
-  }
-  frog_leap(dt) {
-    wasm.fmmrustgravity_frog_leap(this.ptr, dt);
-  }
-  simulate(g, softening, collisions, threshold, escape_distance) {
-    var ret = wasm.fmmrustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
-    return ret >>> 0;
-  }
-  frog_drop(dt) {
-    wasm.fmmrustgravity_frog_drop(this.ptr, dt);
-  }
-};
-var P2PRustGravity = class {
-  static __wrap(ptr) {
-    const obj = Object.create(P2PRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  free() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    wasm.__wbg_p2prustgravity_free(ptr);
-  }
-  static new(len) {
-    var ret = wasm.p2prustgravity_new(len);
-    return P2PRustGravity.__wrap(ret);
-  }
-  positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
-    return ret;
-  }
-  speeds_ptr() {
-    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
-    return ret;
-  }
-  masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
-    return ret;
-  }
-  temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
-    return ret;
-  }
-  frog_leap(dt) {
-    wasm.p2prustgravity_frog_leap(this.ptr, dt);
-  }
-  simulate(g, softening, collisions, threshold, escape_distance) {
-    var ret = wasm.p2prustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
-    return ret >>> 0;
-  }
-  frog_drop(dt) {
-    wasm.p2prustgravity_frog_drop(this.ptr, dt);
-  }
-};
-async function load2(module, imports) {
-  if (typeof Response === "function" && module instanceof Response) {
-    if (typeof WebAssembly.instantiateStreaming === "function") {
-      try {
-        return await WebAssembly.instantiateStreaming(module, imports);
-      } catch (e) {
-        if (module.headers.get("Content-Type") != "application/wasm") {
-          console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
-        } else {
-          throw e;
-        }
-      }
-    }
-    const bytes = await module.arrayBuffer();
-    return await WebAssembly.instantiate(bytes, imports);
-  } else {
-    const instance = await WebAssembly.instantiate(module, imports);
-    if (instance instanceof WebAssembly.Instance) {
-      return {instance, module};
-    } else {
-      return instance;
-    }
-  }
-}
-async function init(input) {
-  if (typeof input === "undefined") {
-    input = import.meta.url.replace(/index.js$/, "wasm/index_bg.wasm");
-  }
-  const imports = {};
-  imports.wbg = {};
-  imports.wbg.__wbg_new_59cb74e423758ede = function() {
-    var ret = new Error();
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbg_stack_558ba5917b466edd = function(arg0, arg1) {
-    var ret = getObject(arg1).stack;
-    var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    var len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-  imports.wbg.__wbg_error_4bb6c2a97407129a = function(arg0, arg1) {
-    try {
-      console.error(getStringFromWasm0(arg0, arg1));
-    } finally {
-      wasm.__wbindgen_free(arg0, arg1);
-    }
-  };
-  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-    takeObject(arg0);
-  };
-  imports.wbg.__wbindgen_memory = function() {
-    var ret = wasm.memory;
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
-    throw new Error(getStringFromWasm0(arg0, arg1));
-  };
-  if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
-    input = fetch(input);
-  }
-  const {instance, module} = await load2(await input, imports);
-  wasm = instance.exports;
-  init.__wbindgen_wasm_module = module;
-  return wasm;
-}
-var wasm_default = init;
-
 // _snowpack/pkg/statsjs.js
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function createCommonjsModule(fn, basedir, module) {
@@ -31818,6 +31559,7 @@ var gravity;
 var backends = [
   "js_p2p",
   "rust_p2p",
+  "rust_p2p_thread",
   "js_fmm",
   "rust_fmm",
   "rust_tree",
@@ -31876,6 +31618,7 @@ function animate() {
 }
 function render() {
   const {
+    backend,
     simulationSpeed: dt,
     gravitationalConstant: G,
     collisions,
@@ -31884,7 +31627,7 @@ function render() {
     escapeDistance
   } = params;
   gravity.frog_leap(dt);
-  const newLen = gravity.simulate(G, softening, collisions, collisionThreshold, escapeDistance);
+  const newLen = gravity.simulate(G, softening, collisions, collisionThreshold, escapeDistance, backend === "rust_p2p_thread" ? pool : void 0, backend === "rust_p2p_thread" ? navigator.hardwareConcurrency : void 0);
   gravity.frog_drop(dt);
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen);
@@ -31895,7 +31638,7 @@ function render() {
   controls.update();
   composer.render();
 }
-function init2() {
+function init() {
   const {
     backend,
     softening,
@@ -31919,15 +31662,17 @@ function init2() {
     ({positions, masses, temperatures} = gravity);
   } else if (backend.startsWith("rust")) {
     if (backend === "rust_p2p") {
-      gravity = P2PRustGravity.new(orbs.length);
+      gravity = wasm_bindgen.P2PRustGravity.new(orbs.length);
+    } else if (backend === "rust_p2p_thread") {
+      gravity = wasm_bindgen.P2PRustThreadGravity.new(orbs.length);
     } else if (backend === "rust_fmm") {
-      gravity = FMMRustGravity.new(orbs.length, 1);
+      gravity = wasm_bindgen.FMMRustGravity.new(orbs.length, 1);
       gravity.precalc(softening);
     } else if (backend === "rust_tree") {
-      gravity = FMMRustGravity.new(orbs.length, 0);
+      gravity = wasm_bindgen.FMMRustGravity.new(orbs.length, 0);
       gravity.precalc(softening);
     }
-    const {buffer} = wasm_memory();
+    const {buffer} = wasm_bindgen.wasm_memory();
     positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
     masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
     temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
@@ -31967,7 +31712,7 @@ function restart() {
   cancelAnimationFrame(raf);
   scene.clear();
   gravity.free();
-  init2();
+  init();
   raf = requestAnimationFrame(animate);
 }
 function initGUI() {
@@ -32022,9 +31767,10 @@ function initGUI() {
     restart();
   });
 }
-var wasmPromise = wasm_default();
-wasmPromise.then(() => {
-  init2();
+var pool;
+var wasmPromise = wasm_bindgen("./dist/wasm/index_bg.wasm").then(() => {
+  pool = new wasm_bindgen.WorkerPool(navigator.hardwareConcurrency);
+  init();
   initGUI();
   raf = requestAnimationFrame(animate);
 });
