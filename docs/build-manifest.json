@@ -185,7 +185,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 9308,
+      "bytes": 9309,
       "imports": [
         {
           "path": "_snowpack/env.js",

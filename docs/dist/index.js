@@ -31184,6 +31184,14 @@ function takeObject(idx) {
   dropObject(idx);
   return ret;
 }
+function addHeapObject(obj) {
+  if (heap_next === heap.length)
+    heap.push(heap.length + 1);
+  const idx = heap_next;
+  heap_next = heap[idx];
+  heap[idx] = obj;
+  return idx;
+}
 var cachedTextDecoder = new TextDecoder("utf-8", {ignoreBOM: true, fatal: true});
 cachedTextDecoder.decode();
 var cachegetUint8Memory0 = null;
@@ -31195,18 +31203,6 @@ function getUint8Memory0() {
 }
 function getStringFromWasm0(ptr, len) {
   return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
-}
-function wasm_memory() {
-  var ret = wasm.wasm_memory();
-  return takeObject(ret);
 }
 var WASM_VECTOR_LEN = 0;
 var cachedTextEncoder = new TextEncoder("utf-8");
@@ -31256,6 +31252,10 @@ function getInt32Memory0() {
     cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
   }
   return cachegetInt32Memory0;
+}
+function wasm_memory() {
+  var ret = wasm.wasm_memory();
+  return takeObject(ret);
 }
 var FMMRustGravity = class {
   static __wrap(ptr) {
@@ -31318,19 +31318,19 @@ var P2PRustGravity = class {
     return P2PRustGravity.__wrap(ret);
   }
   positions_ptr() {
-    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
-    var ret = wasm.p2prustgravity_speeds_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap(dt) {
@@ -31395,12 +31395,12 @@ async function init(input) {
   imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
     takeObject(arg0);
   };
-  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
-    throw new Error(getStringFromWasm0(arg0, arg1));
-  };
   imports.wbg.__wbindgen_memory = function() {
     var ret = wasm.memory;
     return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
+    throw new Error(getStringFromWasm0(arg0, arg1));
   };
   if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
     input = fetch(input);
