@@ -31887,7 +31887,7 @@ var P2PThreadedGravity = class extends none_default {
     this.accelerations = new Float32Array(this.accelerationsBuffer);
     this.massesBuffer = new SAB(this.len * 4);
     this.masses = new Float32Array(this.massesBuffer);
-    this.pool = new Array(~~params2.resolution).fill().map(() => new Worker(new URL("../../worker/p2p-thread.js", import.meta.url)));
+    this.pool = new Array(~~params2.resolution).fill().map(() => new Worker(new URL("./gravity/worker/p2p-thread.js", import.meta.url)));
     if (hasSAB) {
       this.pool.forEach((worker) => {
         worker.postMessage([
