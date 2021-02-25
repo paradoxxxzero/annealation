@@ -1,3 +1,4 @@
+use crate::none::Gravity;
 use crate::{Orb, Params};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
@@ -11,6 +12,30 @@ pub struct P2PRustGravity {
     masses: Vec<f32>,
     temperatures: Vec<f32>,
     len: usize,
+}
+
+impl Gravity for P2PRustGravity {
+    fn get_len(&self) -> usize {
+        self.len
+    }
+    fn get_params(&self) -> &Params {
+        &self.params
+    }
+    fn get_accelerations(&mut self) -> &mut Vec<f32> {
+        &mut self.accelerations
+    }
+    fn get_speeds(&mut self) -> &mut Vec<f32> {
+        &mut self.speeds
+    }
+    fn get_positions(&mut self) -> &mut Vec<f32> {
+        &mut self.positions
+    }
+    fn get_masses(&mut self) -> &mut Vec<f32> {
+        &mut self.masses
+    }
+    fn get_temperatures(&mut self) -> &mut Vec<f32> {
+        &mut self.temperatures
+    }
 }
 
 #[wasm_bindgen]
@@ -63,18 +88,9 @@ impl P2PRustGravity {
     pub fn temperatures_ptr(&self) -> *const f32 {
         self.temperatures.as_ptr()
     }
-
     pub fn frog_leap(&mut self) {
-        let dt = self.params.simulationSpeed;
-        let half_dt = dt * 0.5f32;
-        for i in 0..self.len {
-            for k in 0..3 {
-                self.speeds[i * 3 + k] += self.accelerations[i * 3 + k] * half_dt;
-                self.positions[i * 3 + k] += self.speeds[i * 3 + k] * dt;
-            }
-        }
+        self.leap();
     }
-
     pub fn simulate(&mut self) -> usize {
         let gravitationalConstant = self.params.gravitationalConstant;
         let softening = self.params.softening;
@@ -119,64 +135,17 @@ impl P2PRustGravity {
                 }
             }
         }
-        for i in 0..self.len {
-            if self.positions[i * 3] * self.positions[i * 3]
-                + self.positions[i * 3 + 1] * self.positions[i * 3 + 1]
-                + self.positions[i * 3 + 2] * self.positions[i * 3 + 2]
-                > escapeDistance * escapeDistance
-            {
-                skip.push(i);
-            }
+        self.solve_escapes(&mut skip);
+        if collided.len() > 0 {
+            self.solve_collisions(&collided)
         }
         if skip.len() > 0 {
-            for &item in collided.iter() {
-                let (i, j) = item;
-                let mass_ratio = 1. / (self.masses[i] + self.masses[j]);
-                for k in 0..3 {
-                    self.positions[i * 3 + k] = mass_ratio
-                        * (self.positions[i * 3 + k] * self.masses[i]
-                            + self.positions[j * 3 + k] * self.masses[j]);
-                    self.speeds[i * 3 + k] = mass_ratio
-                        * (self.speeds[i * 3 + k] * self.masses[i]
-                            + self.speeds[j * 3 + k] * self.masses[j]);
-                }
-                self.temperatures[i] = mass_ratio
-                    * (self.temperatures[i] * self.masses[i]
-                        + self.temperatures[j] * self.masses[j]);
-                self.masses[i] += self.masses[j];
-            }
-            let mut i = 0;
-            let mut shift = 0;
-            while i + shift < self.len {
-                if skip.contains(&(i + shift)) {
-                    shift += 1;
-                    continue;
-                }
-                if shift == 0 {
-                    i += 1;
-                    continue;
-                }
-                for k in 0..3 {
-                    self.positions[i * 3 + k] = self.positions[(i + shift) * 3 + k];
-                    self.speeds[i * 3 + k] = self.speeds[(i + shift) * 3 + k];
-                    self.accelerations[i * 3 + k] = self.accelerations[(i + shift) * 3 + k];
-                }
-                self.temperatures[i] = self.temperatures[(i + shift)];
-                self.masses[i] = self.masses[i + shift];
-                i += 1;
-            }
-            self.len -= shift;
+            self.len = self.crunch_orbs(&skip)
         }
+
         self.len
     }
-
     pub fn frog_drop(&mut self) {
-        let dt = self.params.simulationSpeed;
-        let half_dt = dt * 0.5f32;
-        for i in 0..self.len {
-            for k in 0..3 {
-                self.speeds[i * 3 + k] += self.accelerations[i * 3 + k] * half_dt;
-            }
-        }
+        self.drop();
     }
 }

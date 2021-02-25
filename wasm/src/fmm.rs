@@ -5,146 +5,78 @@
 
   Reference : GPU Gems Vol.4 "Treecode and fast multipole method for N-body simulation with CUDA"
 */
+use crate::none::Gravity;
+use crate::{Orb, Params};
+use js_sys::Array;
+
 use num_complex::Complex64 as Complex;
 use std::f32;
 use std::f64;
 use std::usize;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-  #[wasm_bindgen(js_namespace = console)]
-  fn log(s: &str);
-}
+// Spherical harmonic rotation
+fn rotation(Cnm: &Vec<Complex>, Dnm: &Vec<Vec<Complex>>) -> Vec<Complex> {
+  let mut CnmOut = vec![Complex::new(0f64, 0f64); numCoefficients];
 
-#[allow(unused_macros)]
-macro_rules! console_log {
-  // Note that this is using the `log` function imported above during
-  // `bare_bones`
-  ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
-#[derive(PartialEq, Copy, Clone)]
-pub struct Vec3<T> {
-  pub x: T,
-  pub y: T,
-  pub z: T,
-}
-impl<T> Vec3<T> {
-  pub fn new(x: T, y: T, z: T) -> Vec3<T> {
-    Vec3 { x, y, z }
-  }
-}
-
-const numExpansions: usize = 10; // order of expansion in FMM
-const maxM2LInteraction: usize = 189; // max of M2L interacting boxes
-const numRelativeBox: usize = 512; // max of relative box positioning
-
-const numExpansion2: usize = numExpansions * numExpansions;
-const numExpansion4: usize = numExpansion2 * numExpansion2;
-const numCoefficients: usize = numExpansions * (numExpansions + 1) / 2;
-
-#[wasm_bindgen]
-pub struct FMMRustGravity {
-  positions: Vec<f32>,
-  speeds: Vec<f32>,
-  accelerations: Vec<f32>,
-  masses: Vec<f32>,
-  temperatures: Vec<f32>,
-  len: usize,
-
-  variant: &'static str,
-
-  mortonIndex: Vec<usize>,
-  sortValue: Vec<usize>,
-  sortIndex: Vec<usize>,
-  sortValueBuffer: Vec<usize>,
-  sortIndexBuffer: Vec<usize>,
-  sortPositionBuffer: Vec<f32>,
-  sortMassBuffer: Vec<f32>,
-  factorial: Vec<f64>,
-
-  Anm: Vec<f64>,
-  anm: Vec<f64>,
-  Dnm: Vec<Vec<Vec<Complex>>>,
-  Ynm: Vec<Complex>,
-}
-
-#[wasm_bindgen]
-impl FMMRustGravity {
-  pub fn new(len: usize, variantIndex: usize) -> FMMRustGravity {
-    console_error_panic_hook::set_once();
-
-    let positions = vec![0f32; 3 * len];
-    let speeds = vec![0f32; 3 * len];
-    let accelerations = vec![0f32; 3 * len];
-    let masses = vec![0f32; len];
-    let temperatures = vec![0f32; len];
-
-    let variant = ["tree", "ffm"][variantIndex];
-
-    let mortonIndex = vec![0; len];
-    let sortValue = vec![0; len];
-    let sortIndex = vec![0; len];
-    let sortValueBuffer = vec![0; len];
-    let sortIndexBuffer = vec![0; len];
-    let sortPositionBuffer = vec![0f32; 3 * len];
-    let sortMassBuffer = vec![0f32; len];
-    let factorial = vec![0f64; 4 * numExpansion2];
-    let Anm = vec![0f64; numExpansion4];
-    let anm = vec![0f64; 4 * numExpansion2];
-    let Dnm = (0..(2 * numRelativeBox))
-      .map(|_| {
-        (0..numExpansions)
-          .map(|_| vec![Complex::new(0f64, 0f64); numExpansion2])
-          .collect::<Vec<_>>()
-      })
-      .collect::<Vec<_>>();
-    let Ynm = vec![Complex::new(0f64, 0f64); 4 * numExpansion2];
-
-    FMMRustGravity {
-      positions,
-      speeds,
-      accelerations,
-      masses,
-      temperatures,
-      len,
-
-      variant,
-
-      // Do something about that:
-      mortonIndex,
-      sortValue,
-      sortIndex,
-      sortValueBuffer,
-      sortIndexBuffer,
-      sortPositionBuffer,
-      sortMassBuffer,
-      factorial,
-
-      // precalc
-      Anm,
-      anm,
-      Dnm,
-      Ynm,
+  for n in 0..(numExpansions as i32) {
+    for m in 0..=n {
+      let nms = n * (n + 1) / 2 + m;
+      let mut CnmScalar = Complex::new(0f64, 0f64);
+      for k in -n..=-1 {
+        let nk = n * (n + 1) + k;
+        let nks = n * (n + 1) / 2 - k;
+        CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize].conj();
+      }
+      for k in 0..=n {
+        let nk = n * (n + 1) + k;
+        let nks = n * (n + 1) / 2 + k;
+        CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize];
+      }
+      CnmOut[nms as usize] = CnmScalar;
     }
   }
+  CnmOut
+}
 
-  pub fn positions_ptr(&self) -> *const f32 {
-    self.positions.as_ptr()
+fn cart2sph(dx: f32, dy: f32, dz: f32, softening: f32) -> (f64, f64, f64) {
+  let r = ((dx * dx + dy * dy + dz * dz).sqrt() + softening) as f64;
+  let theta = (dz as f64 / r).acos();
+  let phi;
+
+  if ((dx.abs() + dy.abs()) as f64) < softening as f64 {
+    phi = 0f64;
+  } else if (dx.abs() as f64) < softening as f64 {
+    phi = dy as f64 / (dy as f64).abs() * f64::consts::PI * 0.5;
+  } else if dx > 0f32 {
+    phi = (dy as f64 / dx as f64).atan();
+  } else {
+    phi = (dy as f64 / dx as f64).atan() + f64::consts::PI;
   }
-  pub fn speeds_ptr(&self) -> *const f32 {
-    self.speeds.as_ptr()
-  }
-  pub fn masses_ptr(&self) -> *const f32 {
-    self.masses.as_ptr()
-  }
-  pub fn temperatures_ptr(&self) -> *const f32 {
-    self.temperatures.as_ptr()
-  }
+  (r, theta, phi)
+}
+
+pub trait FMM {
+  fn get_len(&self) -> usize;
+  fn get_params(&self) -> &Params;
+  fn get_accelerations(&mut self) -> &mut Vec<f32>;
+  fn get_positions(&mut self) -> &mut Vec<f32>;
+  fn get_masses(&mut self) -> &mut Vec<f32>;
+  fn get_mortonIndex(&mut self) -> &mut Vec<usize>;
+  fn get_sortValue(&mut self) -> &mut Vec<usize>;
+  fn get_sortIndex(&mut self) -> &mut Vec<usize>;
+  fn get_sortValueBuffer(&mut self) -> &mut Vec<usize>;
+  fn get_sortIndexBuffer(&mut self) -> &mut Vec<usize>;
+  fn get_sortPositionBuffer(&mut self) -> &mut Vec<f32>;
+  fn get_sortMassBuffer(&mut self) -> &mut Vec<f32>;
+  fn get_factorial(&mut self) -> &mut Vec<f64>;
+  fn get_Anm(&mut self) -> &mut Vec<f64>;
+  fn get_anm(&mut self) -> &mut Vec<f64>;
+  fn get_Dnm(&mut self) -> &mut Vec<Vec<Vec<Complex>>>;
+  fn get_Ynm(&mut self) -> &mut Vec<Complex>;
 
   // Calculate range of FMM domain from particle positions
-  fn setDomainSize(&self) -> (Vec3<f32>, f32) {
+  fn setDomainSize(&mut self) -> (Vec3<f32>, f32) {
     // Initialize the minimum and maximum values
     let mut xmin = 1000000f32;
     let mut xmax = -1000000f32;
@@ -153,13 +85,13 @@ impl FMMRustGravity {
     let mut zmin = 1000000f32;
     let mut zmax = -1000000f32;
     // Calculate the minimum and maximum of particle positions
-    for i in 0..self.len {
-      xmin = xmin.min(self.positions[i * 3]);
-      xmax = xmax.max(self.positions[i * 3]);
-      ymin = ymin.min(self.positions[i * 3 + 1]);
-      ymax = ymax.max(self.positions[i * 3 + 1]);
-      zmin = zmin.min(self.positions[i * 3 + 2]);
-      zmax = zmax.max(self.positions[i * 3 + 2]);
+    for i in 0..self.get_len() {
+      xmin = xmin.min(self.get_positions()[i * 3]);
+      xmax = xmax.max(self.get_positions()[i * 3]);
+      ymin = ymin.min(self.get_positions()[i * 3 + 1]);
+      ymax = ymax.max(self.get_positions()[i * 3 + 1]);
+      zmin = zmin.min(self.get_positions()[i * 3 + 2]);
+      zmax = zmax.max(self.get_positions()[i * 3 + 2]);
     }
 
     let boxMin = Vec3::new(xmin, ymin, zmin);
@@ -174,31 +106,38 @@ impl FMMRustGravity {
   }
 
   // Calculate leaf level optimally from tabulated theshold values of self.len
-  fn setOptimumLevel(&self) -> (usize, usize) {
-    //  let level_switch = [2e4,1.7e5,1.3e6,1e7,7e7,5e8]; // cpu-tree
-    //  let level_switch = [1.3e4,1e5,7e5,5e6,3e7,1.5e8]; // cpu-fmm
-    //  let level_switch = [1e5,5e5,5e6,3e7,2e8,1.5e9]; // gpu-tree
+  fn setOptimumLevel(&mut self) -> (usize, usize) {
     let level_switch = [
-      1e5 as usize,
-      7e5 as usize,
-      7e6 as usize,
-      5e7 as usize,
-      3e8 as usize,
-      2e9 as usize,
-    ]; // gpu-fmm  // f32
+      2e4 as usize,
+      1.7e5 as usize,
+      1.3e6 as usize,
+      1e7 as usize,
+      7e7 as usize,
+      5e8 as usize,
+    ]; // cpu-tree
+       //  let level_switch = [1.3e4,1e5,7e5,5e6,3e7,1.5e8]; // cpu-fmm
+       //  let level_switch = [1e5,5e5,5e6,3e7,2e8,1.5e9]; // gpu-tree
+       // let level_switch = [
+       //   1e5 as usize,
+       //   7e5 as usize,
+       //   7e6 as usize,
+       //   5e7 as usize,
+       //   3e8 as usize,
+       //   2e9 as usize,
+       // ]; // gpu-fmm  // f32
 
     let mut maxLevel = 1;
-    if self.len < level_switch[0] {
+    if self.get_len() < level_switch[0] {
       maxLevel += 1;
-    } else if self.len < level_switch[1] {
+    } else if self.get_len() < level_switch[1] {
       maxLevel += 2;
-    } else if self.len < level_switch[2] {
+    } else if self.get_len() < level_switch[2] {
       maxLevel += 3;
-    } else if self.len < level_switch[3] {
+    } else if self.get_len() < level_switch[3] {
       maxLevel += 4;
-    } else if self.len < level_switch[4] {
+    } else if self.get_len() < level_switch[4] {
       maxLevel += 5;
-    } else if self.len < level_switch[5] {
+    } else if self.get_len() < level_switch[5] {
       maxLevel += 6;
     } else {
       maxLevel += 7;
@@ -212,10 +151,10 @@ impl FMMRustGravity {
     let boxSize = rootBoxSize / (1 << maxLevel) as f32;
     let mut boxIndex;
 
-    for j in 0..self.len {
-      let mut nx = ((self.positions[j * 3] - boxMin.x) / boxSize) as usize;
-      let mut ny = ((self.positions[j * 3 + 1] - boxMin.y) / boxSize) as usize;
-      let mut nz = ((self.positions[j * 3 + 2] - boxMin.z) / boxSize) as usize;
+    for j in 0..self.get_len() {
+      let mut nx = ((self.get_positions()[j * 3] - boxMin.x) / boxSize) as usize;
+      let mut ny = ((self.get_positions()[j * 3 + 1] - boxMin.y) / boxSize) as usize;
+      let mut nz = ((self.get_positions()[j * 3 + 2] - boxMin.z) / boxSize) as usize;
       if nx >= (1 << maxLevel) {
         nx -= 1;
       };
@@ -236,12 +175,12 @@ impl FMMRustGravity {
         boxIndex += nz % 2 << (3 * i + 2);
         nz >>= 1;
       }
-      self.mortonIndex[j] = boxIndex;
+      self.get_mortonIndex()[j] = boxIndex;
     }
   }
 
   // Generate Morton index for a box center to use in M2L translation
-  fn morton1(&self, boxIndex3D: &mut Vec3<usize>, numLevel: usize) -> usize {
+  fn morton1(&self, boxIndex3D: &mut Vec3<i32>, numLevel: usize) -> usize {
     let mut boxIndex = 0;
     for i in 0..numLevel {
       let nx = boxIndex3D.x % 2;
@@ -256,11 +195,11 @@ impl FMMRustGravity {
       boxIndex3D.z >>= 1;
       boxIndex += nz * (1 << (3 * i + 2));
     }
-    boxIndex
+    boxIndex as usize
   }
 
   // Returns 3D box index from Morton index
-  fn unmorton(&self, boxIndex: usize) -> Vec3<usize> {
+  fn unmorton(&self, boxIndex: usize) -> Vec3<i32> {
     let mut mortonIndex3D = [0, 0, 0];
     let mut boxIndex3D = Vec3::new(0, 0, 0);
     let mut n = boxIndex;
@@ -275,30 +214,33 @@ impl FMMRustGravity {
         i += 1;
       }
     }
-    boxIndex3D.x = mortonIndex3D[1];
-    boxIndex3D.y = mortonIndex3D[2];
-    boxIndex3D.z = mortonIndex3D[0];
+    boxIndex3D.x = mortonIndex3D[1] as i32;
+    boxIndex3D.y = mortonIndex3D[2] as i32;
+    boxIndex3D.z = mortonIndex3D[0] as i32;
     boxIndex3D
   }
 
   // Prepare for binning particles by first sorting the Morton index
   fn sort(&mut self, numBoxIndexFull: usize) {
     for i in 0..numBoxIndexFull {
-      self.sortIndexBuffer[i] = 0;
+      self.get_sortIndexBuffer()[i] = 0;
     }
-    for i in 0..self.len {
-      self.sortIndexBuffer[self.sortValue[i]] += 1;
+    for i in 0..self.get_len() {
+      let sortValue = self.get_sortValue()[i];
+      self.get_sortIndexBuffer()[sortValue] += 1;
     }
     for i in 1..numBoxIndexFull {
-      self.sortIndexBuffer[i] += self.sortIndexBuffer[i - 1];
+      self.get_sortIndexBuffer()[i] += self.get_sortIndexBuffer()[i - 1];
     }
-    for i in (0..self.len).rev() {
-      self.sortIndexBuffer[self.sortValue[i]] -= 1;
-      self.sortValueBuffer[self.sortIndexBuffer[self.sortValue[i]]] = self.sortValue[i];
-      self.sortIndex[self.sortIndexBuffer[self.sortValue[i]]] = i;
+    for i in (0..self.get_len()).rev() {
+      let sortValue = self.get_sortValue()[i];
+      self.get_sortIndexBuffer()[sortValue] -= 1;
+      let buffValue = self.get_sortIndexBuffer()[sortValue];
+      self.get_sortValueBuffer()[buffValue] = self.get_sortValue()[i];
+      self.get_sortIndex()[buffValue] = i;
     }
-    for i in 0..self.len {
-      self.sortValue[i] = self.sortValueBuffer[i];
+    for i in 0..self.get_len() {
+      self.get_sortValue()[i] = self.get_sortValueBuffer()[i];
     }
   }
 
@@ -306,28 +248,28 @@ impl FMMRustGravity {
   fn sortParticles(&mut self, numBoxIndexFull: usize) -> Vec<usize> {
     //TODO this is bad
 
-    let mut permutation = vec![0; self.len];
+    let mut permutation = vec![0; self.get_len()];
 
-    for i in 0..self.len {
-      self.sortValue[i] = self.mortonIndex[i];
-      self.sortIndex[i] = i;
+    for i in 0..self.get_len() {
+      self.get_sortValue()[i] = self.get_mortonIndex()[i];
+      self.get_sortIndex()[i] = i;
     }
     self.sort(numBoxIndexFull);
-    for i in 0..self.len {
-      permutation[i] = self.sortIndex[i];
+    for i in 0..self.get_len() {
+      permutation[i] = self.get_sortIndex()[i];
     }
 
-    for i in 0..self.len {
-      self.sortPositionBuffer[i * 3] = self.positions[permutation[i] * 3];
-      self.sortPositionBuffer[i * 3 + 1] = self.positions[permutation[i] * 3 + 1];
-      self.sortPositionBuffer[i * 3 + 2] = self.positions[permutation[i] * 3 + 2];
-      self.sortMassBuffer[i] = self.masses[permutation[i]];
+    for i in 0..self.get_len() {
+      self.get_sortPositionBuffer()[i * 3] = self.get_positions()[permutation[i] * 3];
+      self.get_sortPositionBuffer()[i * 3 + 1] = self.get_positions()[permutation[i] * 3 + 1];
+      self.get_sortPositionBuffer()[i * 3 + 2] = self.get_positions()[permutation[i] * 3 + 2];
+      self.get_sortMassBuffer()[i] = self.get_masses()[permutation[i]];
     }
-    for i in 0..self.len {
-      self.positions[i * 3] = self.sortPositionBuffer[i * 3];
-      self.positions[i * 3 + 1] = self.sortPositionBuffer[i * 3 + 1];
-      self.positions[i * 3 + 2] = self.sortPositionBuffer[i * 3 + 2];
-      self.masses[i] = self.sortMassBuffer[i];
+    for i in 0..self.get_len() {
+      self.get_positions()[i * 3] = self.get_sortPositionBuffer()[i * 3];
+      self.get_positions()[i * 3 + 1] = self.get_sortPositionBuffer()[i * 3 + 1];
+      self.get_positions()[i * 3 + 2] = self.get_sortPositionBuffer()[i * 3 + 2];
+      self.get_masses()[i] = self.get_sortMassBuffer()[i];
     }
 
     permutation
@@ -335,45 +277,45 @@ impl FMMRustGravity {
 
   // Unsorting particles upon exit (optional)
   fn unsortParticles(&mut self, permutation: Vec<usize>) {
-    for i in 0..self.len {
-      self.sortPositionBuffer[permutation[i] * 3] = self.accelerations[i * 3];
-      self.sortPositionBuffer[permutation[i] * 3 + 1] = self.accelerations[i * 3 + 1];
-      self.sortPositionBuffer[permutation[i] * 3 + 2] = self.accelerations[i * 3 + 2];
+    for i in 0..self.get_len() {
+      self.get_sortPositionBuffer()[permutation[i] * 3] = self.get_accelerations()[i * 3];
+      self.get_sortPositionBuffer()[permutation[i] * 3 + 1] = self.get_accelerations()[i * 3 + 1];
+      self.get_sortPositionBuffer()[permutation[i] * 3 + 2] = self.get_accelerations()[i * 3 + 2];
     }
-    for i in 0..self.len {
-      self.accelerations[i * 3] = self.sortPositionBuffer[i * 3];
-      self.accelerations[i * 3 + 1] = self.sortPositionBuffer[i * 3 + 1];
-      self.accelerations[i * 3 + 2] = self.sortPositionBuffer[i * 3 + 2];
+    for i in 0..self.get_len() {
+      self.get_accelerations()[i * 3] = self.get_sortPositionBuffer()[i * 3];
+      self.get_accelerations()[i * 3 + 1] = self.get_sortPositionBuffer()[i * 3 + 1];
+      self.get_accelerations()[i * 3 + 2] = self.get_sortPositionBuffer()[i * 3 + 2];
     }
-    for i in 0..self.len {
-      self.sortPositionBuffer[permutation[i] * 3] = self.positions[i * 3];
-      self.sortPositionBuffer[permutation[i] * 3 + 1] = self.positions[i * 3 + 1];
-      self.sortPositionBuffer[permutation[i] * 3 + 2] = self.positions[i * 3 + 2];
-      self.sortMassBuffer[permutation[i]] = self.masses[i];
+    for i in 0..self.get_len() {
+      self.get_sortPositionBuffer()[permutation[i] * 3] = self.get_positions()[i * 3];
+      self.get_sortPositionBuffer()[permutation[i] * 3 + 1] = self.get_positions()[i * 3 + 1];
+      self.get_sortPositionBuffer()[permutation[i] * 3 + 2] = self.get_positions()[i * 3 + 2];
+      self.get_sortMassBuffer()[permutation[i]] = self.get_masses()[i];
     }
-    for i in 0..self.len {
-      self.positions[i * 3] = self.sortPositionBuffer[i * 3];
-      self.positions[i * 3 + 1] = self.sortPositionBuffer[i * 3 + 1];
-      self.positions[i * 3 + 2] = self.sortPositionBuffer[i * 3 + 2];
-      self.masses[i] = self.sortMassBuffer[i];
+    for i in 0..self.get_len() {
+      self.get_positions()[i * 3] = self.get_sortPositionBuffer()[i * 3];
+      self.get_positions()[i * 3 + 1] = self.get_sortPositionBuffer()[i * 3 + 1];
+      self.get_positions()[i * 3 + 2] = self.get_sortPositionBuffer()[i * 3 + 2];
+      self.get_masses()[i] = self.get_sortMassBuffer()[i];
     }
   }
 
   // Estimate storage requirements adaptively to skip empty boxes
   fn countNonEmptyBoxes(&mut self, maxLevel: usize, numBoxIndexFull: usize) -> (usize, usize) {
-    for i in 0..self.len {
-      self.sortValue[i] = self.mortonIndex[i];
-      self.sortIndex[i] = i;
+    for i in 0..self.get_len() {
+      self.get_sortValue()[i] = self.get_mortonIndex()[i];
+      self.get_sortIndex()[i] = i;
     }
     self.sort(numBoxIndexFull);
 
     // Count non-empty boxes at leaf level
     let mut numBoxIndexLeaf = 0; // counter
     let mut currentIndex = usize::MAX;
-    for i in 0..self.len {
-      if self.sortValue[i] != currentIndex {
+    for i in 0..self.get_len() {
+      if self.get_sortValue()[i] != currentIndex {
         numBoxIndexLeaf += 1;
-        currentIndex = self.sortValue[i];
+        currentIndex = self.get_sortValue()[i];
       }
     }
 
@@ -381,10 +323,10 @@ impl FMMRustGravity {
     let mut numBoxIndexTotal = numBoxIndexLeaf;
     for numLevel in (2..maxLevel).rev() {
       currentIndex = usize::MAX;
-      for i in 0..self.len {
-        if self.sortValue[i] / (1 << 3 * (maxLevel - numLevel)) != currentIndex {
+      for i in 0..self.get_len() {
+        if self.get_sortValue()[i] / (1 << 3 * (maxLevel - numLevel)) != currentIndex {
           numBoxIndexTotal += 1;
-          currentIndex = self.sortValue[i] / (1 << 3 * (maxLevel - numLevel));
+          currentIndex = self.get_sortValue()[i] / (1 << 3 * (maxLevel - numLevel));
         }
       }
     }
@@ -393,7 +335,7 @@ impl FMMRustGravity {
 
   // Obtain two-way link list between non-empty and full box indices, and offset of particle index
   fn getBoxData(
-    &self,
+    &mut self,
     numBoxIndexFull: usize,
     boxIndexMask: &mut Vec<usize>,
     boxIndexFull: &mut Vec<usize>,
@@ -404,19 +346,19 @@ impl FMMRustGravity {
     for i in 0..numBoxIndexFull {
       boxIndexMask[i] = usize::MAX;
     }
-    for i in 0..self.len {
-      if self.mortonIndex[i] != currentIndex {
-        boxIndexMask[self.mortonIndex[i]] = numBoxIndex;
-        boxIndexFull[numBoxIndex] = self.mortonIndex[i];
+    for i in 0..self.get_len() {
+      if self.get_mortonIndex()[i] != currentIndex {
+        boxIndexMask[self.get_mortonIndex()[i]] = numBoxIndex;
+        boxIndexFull[numBoxIndex] = self.get_mortonIndex()[i];
         particleOffset[0][numBoxIndex] = i;
         if numBoxIndex > 0 {
           particleOffset[1][numBoxIndex - 1] = i - 1;
         }
-        currentIndex = self.mortonIndex[i];
+        currentIndex = self.get_mortonIndex()[i];
         numBoxIndex += 1;
       }
     }
-    particleOffset[1][numBoxIndex - 1] = self.len - 1;
+    particleOffset[1][numBoxIndex - 1] = self.get_len() - 1;
     numBoxIndex
   }
 
@@ -430,6 +372,7 @@ impl FMMRustGravity {
     boxIndexMask: &mut Vec<usize>,
     boxIndexFull: &mut Vec<usize>,
     particleOffset: &mut [Vec<usize>; 2],
+    tree: bool,
   ) -> usize {
     // let i,numBoxIndexOld,currentIndex,boxIndex; // i32
     levelOffset[numLevel - 1] = levelOffset[numLevel] + numBoxIndex;
@@ -445,7 +388,7 @@ impl FMMRustGravity {
         currentIndex = boxIndexFull[boxIndex] / 8;
         boxIndexMask[currentIndex] = newNumBoxIndex;
         boxIndexFull[newNumBoxIndex + levelOffset[numLevel - 1]] = currentIndex;
-        if self.variant == "tree" {
+        if tree {
           particleOffset[0][newNumBoxIndex] = particleOffset[0][i];
           if newNumBoxIndex > 0 {
             particleOffset[1][newNumBoxIndex - 1] = particleOffset[0][i] - 1;
@@ -454,7 +397,7 @@ impl FMMRustGravity {
         newNumBoxIndex += 1;
       }
     }
-    if self.variant == "tree" {
+    if tree {
       particleOffset[1][numBoxIndex - 1] = particleOffset[1][numBoxIndexOld - 1];
     }
     newNumBoxIndex
@@ -521,9 +464,9 @@ impl FMMRustGravity {
         let ix = boxIndex3D.x;
         let iy = boxIndex3D.y;
         let iz = boxIndex3D.z;
-        for jx in jxmin.max(ix.max(1) - 1)..(jxmax.min(ix + 1) + 1) {
-          for jy in jymin.max(iy.max(1) - 1)..(jymax.min(iy + 1) + 1) {
-            for jz in jzmin.max(iz.max(1) - 1)..(jzmax.min(iz + 1) + 1) {
+        for jx in jxmin.max(ix - 1)..(jxmax.min(ix + 1) + 1) {
+          for jy in jymin.max(iy - 1)..(jymax.min(iy + 1) + 1) {
+            for jz in jzmin.max(iz - 1)..(jzmax.min(iz + 1) + 1) {
               boxIndex3D.x = jx;
               boxIndex3D.y = jy;
               boxIndex3D.z = jz;
@@ -543,31 +486,32 @@ impl FMMRustGravity {
         let ib = ii + levelOffset[numLevel - 1];
         numInteraction[ii] = 0;
         let mut boxIndex3D = self.unmorton(boxIndexFull[ib]);
-        let ix = boxIndex3D.x;
-        let iy = boxIndex3D.y;
-        let iz = boxIndex3D.z;
+        let ix = boxIndex3D.x as i32;
+        let iy = boxIndex3D.y as i32;
+        let iz = boxIndex3D.z as i32;
         for jj in 0..numBoxIndex {
           let jb = jj + levelOffset[numLevel - 1];
           boxIndex3D = self.unmorton(boxIndexFull[jb]);
-          let jx = boxIndex3D.x;
-          let jy = boxIndex3D.y;
-          let jz = boxIndex3D.z;
+          let jx = boxIndex3D.x as i32;
+          let jy = boxIndex3D.y as i32;
+          let jz = boxIndex3D.z as i32;
           if jx < ix - 1 || ix + 1 < jx || jy < iy - 1 || iy + 1 < jy || jz < iz - 1 || iz + 1 < jz
           {
             interactionList[ii][numInteraction[ii]] = jj;
             numInteraction[ii] += 1;
+          } else {
           }
         }
       }
-    // M2L at lower levels
+      // M2L at lower levels
     } else if interactionType == 2 {
       for ii in 0..numBoxIndex {
         let ib = ii + levelOffset[numLevel - 1];
         numInteraction[ii] = 0;
         let mut boxIndex3D = self.unmorton(boxIndexFull[ib]);
-        let ix = boxIndex3D.x;
-        let iy = boxIndex3D.y;
-        let iz = boxIndex3D.z;
+        let ix = boxIndex3D.x as i32;
+        let iy = boxIndex3D.y as i32;
+        let iz = boxIndex3D.z as i32;
         let ixp = (ix + 2) / 2;
         let iyp = (iy + 2) / 2;
         let izp = (iz + 2) / 2;
@@ -575,9 +519,9 @@ impl FMMRustGravity {
           for jyp in (iyp - 1)..(iyp + 2) {
             for jzp in (izp - 1)..(izp + 2) {
               // TODO: Check usize overflow
-              for jx in (jxmin.max(2 * jxp.max(1) - 2))..(jxmax.min(2 * jxp - 1) + 1) {
-                for jy in (jymin.max(2 * jyp.max(1) - 2))..(jymax.min(2 * jyp - 1) + 1) {
-                  for jz in (jzmin.max(2 * jzp.max(1) - 2))..(jzmax.min(2 * jzp - 1) + 1) {
+              for jx in (jxmin.max(2 * jxp - 2))..(jxmax.min(2 * jxp - 1) + 1) {
+                for jy in (jymin.max(2 * jyp - 2))..(jymax.min(2 * jyp - 1) + 1) {
+                  for jz in (jzmin.max(2 * jzp - 2))..(jzmax.min(2 * jzp - 1) + 1) {
                     if jx < ix - 1
                       || ix + 1 < jx
                       || jy < iy - 1
@@ -606,50 +550,33 @@ impl FMMRustGravity {
     (numInteraction, interactionList)
   }
 
-  fn cart2sph(&self, dx: f32, dy: f32, dz: f32, softening: f32) -> (f64, f64, f64) {
-    let r = ((dx * dx + dy * dy + dz * dz).sqrt() + softening) as f64;
-    let theta = (dz as f64 / r).acos();
-    let phi;
-
-    if ((dx.abs() + dy.abs()) as f64) < softening as f64 {
-      phi = 0f64;
-    } else if (dx.abs() as f64) < softening as f64 {
-      phi = dy as f64 / (dy as f64).abs() * f64::consts::PI * 0.5;
-    } else if dx > 0f32 {
-      phi = (dy as f64 / dx as f64).atan();
-    } else {
-      phi = (dy as f64 / dx as f64).atan() + f64::consts::PI;
-    }
-    (r, theta, phi)
-  }
-
   // direct summation kernel
   fn direct(&mut self, g: f32, softening: f32) {
     let mut dist = Vec3::new(0f32, 0f32, 0f32);
-    for i in 0..self.len {
+    for i in 0..self.get_len() {
       let mut ai = Vec3::new(0f32, 0f32, 0f32);
-      for j in 0..self.len {
+      for j in 0..self.get_len() {
         if i == j {
           continue;
         }
-        dist.x = self.positions[i * 3] - self.positions[j * 3];
-        dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
-        dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
+        dist.x = self.get_positions()[i * 3] - self.get_positions()[j * 3];
+        dist.y = self.get_positions()[i * 3 + 1] - self.get_positions()[j * 3 + 1];
+        dist.z = self.get_positions()[i * 3 + 2] - self.get_positions()[j * 3 + 2];
         let invDist =
           1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening).sqrt();
-        let invDistCube = self.masses[j] * invDist * invDist * invDist;
+        let invDistCube = self.get_masses()[j] * invDist * invDist * invDist;
         ai.x -= dist.x * invDistCube;
         ai.y -= dist.y * invDistCube;
         ai.z -= dist.z * invDistCube;
       }
-      self.accelerations[i * 3] = g * ai.x;
-      self.accelerations[i * 3 + 1] = g * ai.y;
-      self.accelerations[i * 3 + 2] = g * ai.z;
+      self.get_accelerations()[i * 3] = g * ai.x;
+      self.get_accelerations()[i * 3 + 1] = g * ai.y;
+      self.get_accelerations()[i * 3 + 2] = g * ai.z;
     }
   }
 
   // precalculate M2L translation matrix and Wigner rotation matrix
-  pub fn precalc(&mut self, softening: f32) {
+  fn precalc(&mut self, softening: f32) {
     for n in 0..(2 * numExpansions as i32) {
       for m in -n..=n {
         let nm = (n * n + n + m) as usize;
@@ -670,9 +597,9 @@ impl FMMRustGravity {
         for i in 1..=(n + nabsm) {
           fnpa *= i as f64;
         }
-        self.factorial[nm] = (fnma / fnpa).sqrt();
+        self.get_factorial()[nm] = (fnma / fnpa).sqrt();
         let fad = (fnmm * fnpm).sqrt();
-        self.anm[nm] = -1f64.powi(n) / fad;
+        self.get_anm()[nm] = -1f64.powi(n) / fad;
       }
     }
 
@@ -683,9 +610,9 @@ impl FMMRustGravity {
           let nk = n * n + n + k;
           let jkn = jk * (numExpansion2 as i32) + nk;
           let jnk = (j + n) * (j + n) + j + n;
-          self.Anm[jkn as usize] =
-            -1f64.powi(j + k) * self.anm[nk as usize] * self.anm[jk as usize]
-              / self.anm[jnk as usize];
+          self.get_Anm()[jkn as usize] =
+            -1f64.powi(j + k) * self.get_anm()[nk as usize] * self.get_anm()[jk as usize]
+              / self.get_anm()[jnk as usize];
         }
       }
     }
@@ -698,15 +625,15 @@ impl FMMRustGravity {
       p = pn;
       let npn = m * m + 2 * m;
       let nmn = m * m;
-      self.Ynm[npn] = Complex::new(self.factorial[npn] * p, 0f64);
-      self.Ynm[nmn] = self.Ynm[npn].conj();
+      self.get_Ynm()[npn] = Complex::new(self.get_factorial()[npn] * p, 0f64);
+      self.get_Ynm()[nmn] = self.get_Ynm()[npn].conj();
       p1 = p;
       p = (2 * m + 1) as f64 * p;
       for n in (m + 1)..(2 * numExpansions) {
         let npm = n * n + n + m;
         let nmm = n * n + n - m;
-        self.Ynm[npn] = Complex::new(self.factorial[npm] * p, 0f64);
-        self.Ynm[nmm] = self.Ynm[npm].conj();
+        self.get_Ynm()[npn] = Complex::new(self.get_factorial()[npm] * p, 0f64);
+        self.get_Ynm()[nmm] = self.get_Ynm()[npm].conj();
         p2 = p1;
         p1 = p;
         p = ((2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
@@ -737,7 +664,7 @@ impl FMMRustGravity {
         (boxIndex3D.y - 3) as f32,
         (boxIndex3D.z - 3) as f32,
       );
-      let (_, mut alpha, mut beta) = self.cart2sph(dist.x, dist.y, dist.z, softening);
+      let (_, mut alpha, mut beta) = cart2sph(dist.x, dist.y, dist.z, softening);
 
       let mut sc = alpha.sin() / (1f64 + alpha.cos());
       for n in 0..(4 * numExpansions - 3) {
@@ -786,7 +713,7 @@ impl FMMRustGravity {
           for k in -n..=n {
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nk = n * (n + 1) + k;
-            self.Dnm[i][m as usize][nk as usize] =
+            self.get_Dnm()[i][m as usize][nk as usize] =
               Dnmd[nmk as usize] * expBeta[(k + m + 2 * (numExpansions as i32) - 2) as usize];
           }
         }
@@ -843,36 +770,12 @@ impl FMMRustGravity {
           for k in -n..=n {
             let nmk = (4 * n * n * n + 6 * n * n + 5 * n) / 3 + m * (2 * n + 1) + k;
             let nk = n * (n + 1) + k;
-            self.Dnm[i + numRelativeBox][m as usize][nk as usize] =
+            self.get_Dnm()[i + numRelativeBox][m as usize][nk as usize] =
               Dnmd[nmk as usize] * expBeta[(k + m + 2 * (numExpansions as i32) - 2) as usize];
           }
         }
       }
     }
-  }
-
-  // Spherical harmonic rotation
-  fn rotation(&self, Cnm: &Vec<Complex>, Dnm: &Vec<Vec<Complex>>) -> Vec<Complex> {
-    let mut CnmOut = vec![Complex::new(0f64, 0f64); numCoefficients];
-
-    for n in 0..(numExpansions as i32) {
-      for m in 0..=n {
-        let nms = n * (n + 1) / 2 + m;
-        let mut CnmScalar = Complex::new(0f64, 0f64);
-        for k in -n..=-1 {
-          let nk = n * (n + 1) + k;
-          let nks = n * (n + 1) / 2 - k;
-          CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize].conj();
-        }
-        for k in 0..=n {
-          let nk = n * (n + 1) + k;
-          let nks = n * (n + 1) / 2 + k;
-          CnmScalar += Dnm[m as usize][nk as usize] * Cnm[nks as usize];
-        }
-        CnmOut[nms as usize] = CnmScalar;
-      }
-    }
-    CnmOut
   }
 
   // // p2p
@@ -896,19 +799,19 @@ impl FMMRustGravity {
             if i == j {
               continue;
             }
-            dist.x = self.positions[i * 3] - self.positions[j * 3];
-            dist.y = self.positions[i * 3 + 1] - self.positions[j * 3 + 1];
-            dist.z = self.positions[i * 3 + 2] - self.positions[j * 3 + 2];
+            dist.x = self.get_positions()[i * 3] - self.get_positions()[j * 3];
+            dist.y = self.get_positions()[i * 3 + 1] - self.get_positions()[j * 3 + 1];
+            dist.z = self.get_positions()[i * 3 + 2] - self.get_positions()[j * 3 + 2];
             let invDist =
               1f32 / (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z + softening2).sqrt();
-            let invDistCube = self.masses[j] * invDist * invDist * invDist;
+            let invDistCube = self.get_masses()[j] * invDist * invDist * invDist;
             ai.x -= dist.x * invDistCube;
             ai.y -= dist.y * invDistCube;
             ai.z -= dist.z * invDistCube;
           }
-          self.accelerations[i * 3] += g * ai.x;
-          self.accelerations[i * 3 + 1] += g * ai.y;
-          self.accelerations[i * 3 + 2] += g * ai.z;
+          self.get_accelerations()[i * 3] += g * ai.x;
+          self.get_accelerations()[i * 3 + 1] += g * ai.y;
+          self.get_accelerations()[i * 3 + 2] += g * ai.z;
         }
       }
     }
@@ -916,7 +819,7 @@ impl FMMRustGravity {
 
   // p2m
   fn p2m(
-    &self,
+    &mut self,
     softening: f32,
     numBoxIndex: usize,
     rootBoxSize: f32,
@@ -941,10 +844,10 @@ impl FMMRustGravity {
         MnmVector[j] = Complex::new(0f64, 0f64);
       }
       for j in particleOffset[0][jj]..particleOffset[1][jj] {
-        dist.x = self.positions[j * 3] - boxCenter.x;
-        dist.y = self.positions[j * 3 + 1] - boxCenter.y;
-        dist.z = self.positions[j * 3 + 2] - boxCenter.z;
-        let (rho, alpha, beta) = self.cart2sph(dist.x, dist.y, dist.z, softening);
+        dist.x = self.get_positions()[j * 3] - boxCenter.x;
+        dist.y = self.get_positions()[j * 3 + 1] - boxCenter.y;
+        dist.z = self.get_positions()[j * 3 + 2] - boxCenter.z;
+        let (rho, alpha, beta) = cart2sph(dist.x, dist.y, dist.z, softening);
         let xx = alpha.cos();
         let s2 = ((1f64 - xx) * (1f64 + xx)).sqrt();
         let mut fact = 1f64;
@@ -953,14 +856,14 @@ impl FMMRustGravity {
         for m in 0..numExpansions {
           let mut p = pn;
           let mut nm = m * m + 2 * m;
-          YnmReal[nm] = rhom * self.factorial[nm] * p;
+          YnmReal[nm] = rhom * self.get_factorial()[nm] * p;
           let mut p1 = p;
           p = xx * (2 * m + 1) as f64 * p;
           rhom *= rho;
           let mut rhon = rhom;
           for n in (m + 1)..numExpansions {
             nm = n * n + n + m;
-            YnmReal[nm] = rhon * self.factorial[nm] * p;
+            YnmReal[nm] = rhon * self.get_factorial()[nm] * p;
             let p2 = p1;
             p1 = p;
             p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
@@ -974,7 +877,7 @@ impl FMMRustGravity {
             let nm = n * n + n + m;
             let nms = n * (n + 1) / 2 + m;
             let eim = (-(m as f64) * beta * I).exp();
-            MnmVector[nms] += Complex::new(self.masses[j] as f64, 0f64) * YnmReal[nm] * eim;
+            MnmVector[nms] += Complex::new(self.get_masses()[j] as f64, 0f64) * YnmReal[nm] * eim;
           }
         }
       }
@@ -986,7 +889,7 @@ impl FMMRustGravity {
 
   // m2m
   fn m2m(
-    &self,
+    &mut self,
     numBoxIndex: usize,
     numBoxIndexOld: usize,
     numLevel: usize,
@@ -1019,7 +922,7 @@ impl FMMRustGravity {
       for j in 0..numCoefficients {
         MnmVectorA[j] = Mnm[jb][j];
       }
-      let MnmVectorB = self.rotation(&MnmVectorA, &self.Dnm[je]);
+      let MnmVectorB = rotation(&MnmVectorA, &self.get_Dnm()[je]);
       for j in 0..numExpansions {
         for k in 0..=j {
           let jk = j * j + j + k;
@@ -1029,15 +932,16 @@ impl FMMRustGravity {
             let jnk = (j - n) * (j - n) + j - n + k;
             let jnks = (j - n) * (j - n + 1) / 2 + k;
             let nm = n * n + n;
-            let cnm = -1f64.powi(n as i32) * self.anm[nm] * self.anm[jnk] / self.anm[jk]
+            let cnm = -1f64.powi(n as i32) * self.get_anm()[nm] * self.get_anm()[jnk]
+              / self.get_anm()[jk]
               * rho.powi(n as i32)
-              * self.Ynm[nm];
+              * self.get_Ynm()[nm];
             MnmScalar += MnmVectorB[jnks] * cnm;
           }
           MnmVectorA[jks] = MnmScalar;
         }
       }
-      let MnmVectorB = self.rotation(&MnmVectorA, &self.Dnm[je + numRelativeBox]);
+      let MnmVectorB = rotation(&MnmVectorA, &self.get_Dnm()[je + numRelativeBox]);
       for j in 0..numCoefficients {
         Mnm[ib][j] += MnmVectorB[j];
       }
@@ -1094,7 +998,7 @@ impl FMMRustGravity {
         boxIndex3D.z = (iz - jz) + 3;
         let je = self.morton1(&mut boxIndex3D, 3);
         let rho = ((dist.x * dist.x + dist.y * dist.y + dist.z * dist.z).sqrt() + softening) as f64;
-        let MnmVectorA = self.rotation(&MnmVectorB, &self.Dnm[je]);
+        let MnmVectorA = rotation(&MnmVectorB, &self.get_Dnm()[je]);
         let mut rhoj = 1f64;
         for j in 0..numExpansions {
           let mut rhojk = rhoj;
@@ -1112,13 +1016,13 @@ impl FMMRustGravity {
               let nks = n * (n + 1) / 2 + k;
               let jkn = jk * numExpansion2 + nk;
               let jnk = (j + n) * (j + n) + j + n;
-              let cnm = self.Anm[jkn] / rhojn * self.Ynm[jnk];
+              let cnm = self.get_Anm()[jkn] / rhojn * self.get_Ynm()[jnk];
               LnmScalar += MnmVectorA[nks] * cnm;
             }
             LnmVectorA[jks] = LnmScalar;
           }
         }
-        let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je + numRelativeBox]);
+        let LnmVectorB = rotation(&LnmVectorA, &self.get_Dnm()[je + numRelativeBox]);
         for j in 0..numCoefficients {
           Lnm[ii][j] += LnmVectorB[j];
         }
@@ -1184,7 +1088,7 @@ impl FMMRustGravity {
       for i in 0..numCoefficients {
         LnmVectorA[i] = LnmOld[ib][i];
       }
-      let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je]);
+      let LnmVectorB = rotation(&LnmVectorA, &self.get_Dnm()[je]);
       for j in 0..numExpansions {
         for k in 0..=j {
           let jk = j * j + j + k;
@@ -1194,15 +1098,15 @@ impl FMMRustGravity {
             let jnk = (n - j) * (n - j) + n - j;
             let nk = n * n + n + k;
             let nks = n * (n + 1) / 2 + k;
-            let cnm = self.anm[jnk] * self.anm[jk] / self.anm[nk]
+            let cnm = self.get_anm()[jnk] * self.get_anm()[jk] / self.get_anm()[nk]
               * rho.powi(n as i32 - j as i32)
-              * self.Ynm[jnk];
+              * self.get_Ynm()[jnk];
             LnmScalar += LnmVectorB[nks] * cnm;
           }
           LnmVectorA[jks] = LnmScalar;
         }
       }
-      let LnmVectorB = self.rotation(&LnmVectorA, &self.Dnm[je + numRelativeBox]);
+      let LnmVectorB = rotation(&LnmVectorA, &self.get_Dnm()[je + numRelativeBox]);
       for i in 0..numCoefficients {
         Lnm[ii][i] = LnmVectorB[i];
       }
@@ -1240,10 +1144,10 @@ impl FMMRustGravity {
         LnmVector[i] = Lnm[ii][i];
       }
       for i in particleOffset[0][ii]..=particleOffset[1][ii] {
-        dist.x = self.positions[i * 3] - boxCenter.x;
-        dist.y = self.positions[i * 3 + 1] - boxCenter.y;
-        dist.z = self.positions[i * 3 + 2] - boxCenter.z;
-        let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z, softening);
+        dist.x = self.get_positions()[i * 3] - boxCenter.x;
+        dist.y = self.get_positions()[i * 3 + 1] - boxCenter.y;
+        dist.z = self.get_positions()[i * 3 + 2] - boxCenter.z;
+        let (r, theta, phi) = cart2sph(dist.x, dist.y, dist.z, softening);
         let xx = theta.cos();
         let yy = theta.sin();
         let s2 = ((1f64 - xx) * (1f64 + xx)).sqrt();
@@ -1252,18 +1156,18 @@ impl FMMRustGravity {
         for m in 0..numExpansions {
           let mut p = pn;
           let nm = m * m + 2 * m;
-          YnmReal[nm] = self.factorial[nm] * p;
+          YnmReal[nm] = self.get_factorial()[nm] * p;
           let mut p1 = p;
           p = xx * (2 * m + 1) as f64 * p;
-          YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
+          YnmRealTheta[nm] = self.get_factorial()[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
           for n in (m + 1)..numExpansions {
             let nm = n * n + n + m;
-            YnmReal[nm] = self.factorial[nm] * p;
+            YnmReal[nm] = self.get_factorial()[nm] * p;
             let p2 = p1;
             p1 = p;
             p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
             YnmRealTheta[nm] =
-              self.factorial[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
+              self.get_factorial()[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
           }
           pn = -pn * fact * s2;
           fact += 2f64;
@@ -1298,9 +1202,9 @@ impl FMMRustGravity {
           + theta.cos() * phi.sin() / r * accelTheta
           + phi.cos() / r / theta.sin() * accelPhi;
         accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
-        self.accelerations[i * 3] += g * accel.x as f32;
-        self.accelerations[i * 3 + 1] += g * accel.y as f32;
-        self.accelerations[i * 3 + 2] += g * accel.z as f32;
+        self.get_accelerations()[i * 3] += g * accel.x as f32;
+        self.get_accelerations()[i * 3 + 1] += g * accel.y as f32;
+        self.get_accelerations()[i * 3 + 2] += g * accel.z as f32;
       }
     }
   }
@@ -1342,11 +1246,11 @@ impl FMMRustGravity {
           boxCenter.x = boxMin.x + (boxIndex3D.x as f32 + 0.5) * boxSize;
           boxCenter.y = boxMin.y + (boxIndex3D.y as f32 + 0.5) * boxSize;
           boxCenter.z = boxMin.z + (boxIndex3D.z as f32 + 0.5) * boxSize;
-          dist.x = self.positions[i * 3] - boxCenter.x;
-          dist.y = self.positions[i * 3 + 1] - boxCenter.y;
-          dist.z = self.positions[i * 3 + 2] - boxCenter.z;
+          dist.x = self.get_positions()[i * 3] - boxCenter.x;
+          dist.y = self.get_positions()[i * 3 + 1] - boxCenter.y;
+          dist.z = self.get_positions()[i * 3 + 2] - boxCenter.z;
 
-          let (r, theta, phi) = self.cart2sph(dist.x, dist.y, dist.z, softening);
+          let (r, theta, phi) = cart2sph(dist.x, dist.y, dist.z, softening);
 
           let xx = theta.cos();
           let yy = theta.sin();
@@ -1356,18 +1260,18 @@ impl FMMRustGravity {
           for m in 0..numExpansions {
             let mut p = pn;
             let nm = m * m + 2 * m;
-            YnmReal[nm] = self.factorial[nm] * p;
+            YnmReal[nm] = self.get_factorial()[nm] * p;
             let mut p1 = p;
             p = xx * (2 * m + 1) as f64 * p;
-            YnmRealTheta[nm] = self.factorial[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
+            YnmRealTheta[nm] = self.get_factorial()[nm] * (p - (m + 1) as f64 * xx * p1) / yy;
             for n in (m + 1)..numExpansions {
               let nm = n * n + n + m;
-              YnmReal[nm] = self.factorial[nm] * p;
+              YnmReal[nm] = self.get_factorial()[nm] * p;
               let p2 = p1;
               p1 = p;
               p = (xx * (2 * n + 1) as f64 * p1 - (n + m) as f64 * p2) / (n - m + 1) as f64;
               YnmRealTheta[nm] =
-                self.factorial[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
+                self.get_factorial()[nm] * ((n - m + 1) as f64 * p - (n + 1) as f64 * xx * p1) / yy;
             }
             pn = -pn * fact * s2;
             fact += 2f64;
@@ -1404,33 +1308,328 @@ impl FMMRustGravity {
             + phi.cos() / r / theta.sin() * accelPhi;
           accel.z = theta.cos() * accelR - theta.sin() / r * accelTheta;
 
-          self.accelerations[i * 3] += g * accel.x as f32;
-          self.accelerations[i * 3 + 1] += g * accel.y as f32;
-          self.accelerations[i * 3 + 2] += g * accel.z as f32;
+          self.get_accelerations()[i * 3] += g * accel.x as f32;
+          self.get_accelerations()[i * 3 + 1] += g * accel.y as f32;
+          self.get_accelerations()[i * 3 + 2] += g * accel.z as f32;
         }
       }
     }
   }
+}
 
-  pub fn frog_leap(&mut self, dt: f32) {
-    let half_dt = dt * 0.5f32;
-    for i in 0..self.len {
-      for k in 0..3 {
-        self.speeds[i * 3 + k] += self.accelerations[i * 3 + k] * half_dt;
-        self.positions[i * 3 + k] += self.speeds[i * 3 + k] * dt;
-      }
+#[wasm_bindgen]
+extern "C" {
+  #[wasm_bindgen(js_namespace = console)]
+  fn log(s: &str);
+}
+
+#[allow(unused_macros)]
+macro_rules! console_log {
+  // Note that this is using the `log` function imported above during
+  // `bare_bones`
+  ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub struct Vec3<T> {
+  pub x: T,
+  pub y: T,
+  pub z: T,
+}
+impl<T> Vec3<T> {
+  pub fn new(x: T, y: T, z: T) -> Vec3<T> {
+    Vec3 { x, y, z }
+  }
+}
+
+const numExpansions: usize = 10; // order of expansion in FMM
+const maxM2LInteraction: usize = 189; // max of M2L interacting boxes
+const numRelativeBox: usize = 512; // max of relative box positioning
+
+const numExpansion2: usize = numExpansions * numExpansions;
+const numExpansion4: usize = numExpansion2 * numExpansion2;
+const numCoefficients: usize = numExpansions * (numExpansions + 1) / 2;
+
+impl Gravity for FMMRustGravity {
+  fn get_len(&self) -> usize {
+    self.len
+  }
+  fn get_params(&self) -> &Params {
+    &self.params
+  }
+  fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    &mut self.accelerations
+  }
+  fn get_speeds(&mut self) -> &mut Vec<f32> {
+    &mut self.speeds
+  }
+  fn get_positions(&mut self) -> &mut Vec<f32> {
+    &mut self.positions
+  }
+  fn get_masses(&mut self) -> &mut Vec<f32> {
+    &mut self.masses
+  }
+  fn get_temperatures(&mut self) -> &mut Vec<f32> {
+    &mut self.temperatures
+  }
+}
+impl Gravity for TreeRustGravity {
+  fn get_len(&self) -> usize {
+    self.len
+  }
+  fn get_params(&self) -> &Params {
+    &self.params
+  }
+  fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    &mut self.accelerations
+  }
+  fn get_speeds(&mut self) -> &mut Vec<f32> {
+    &mut self.speeds
+  }
+  fn get_positions(&mut self) -> &mut Vec<f32> {
+    &mut self.positions
+  }
+  fn get_masses(&mut self) -> &mut Vec<f32> {
+    &mut self.masses
+  }
+  fn get_temperatures(&mut self) -> &mut Vec<f32> {
+    &mut self.temperatures
+  }
+}
+
+impl FMM for FMMRustGravity {
+  fn get_len(&self) -> usize {
+    self.len
+  }
+  fn get_params(&self) -> &Params {
+    &self.params
+  }
+  fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    &mut self.accelerations
+  }
+  fn get_positions(&mut self) -> &mut Vec<f32> {
+    &mut self.positions
+  }
+  fn get_masses(&mut self) -> &mut Vec<f32> {
+    &mut self.masses
+  }
+  fn get_mortonIndex(&mut self) -> &mut Vec<usize> {
+    &mut self.mortonIndex
+  }
+  fn get_sortValue(&mut self) -> &mut Vec<usize> {
+    &mut self.sortValue
+  }
+  fn get_sortIndex(&mut self) -> &mut Vec<usize> {
+    &mut self.sortIndex
+  }
+  fn get_sortValueBuffer(&mut self) -> &mut Vec<usize> {
+    &mut self.sortValueBuffer
+  }
+  fn get_sortIndexBuffer(&mut self) -> &mut Vec<usize> {
+    &mut self.sortIndexBuffer
+  }
+  fn get_sortPositionBuffer(&mut self) -> &mut Vec<f32> {
+    &mut self.sortPositionBuffer
+  }
+  fn get_sortMassBuffer(&mut self) -> &mut Vec<f32> {
+    &mut self.sortMassBuffer
+  }
+  fn get_factorial(&mut self) -> &mut Vec<f64> {
+    &mut self.factorial
+  }
+  fn get_Anm(&mut self) -> &mut Vec<f64> {
+    &mut self.Anm
+  }
+  fn get_anm(&mut self) -> &mut Vec<f64> {
+    &mut self.anm
+  }
+  fn get_Dnm(&mut self) -> &mut Vec<Vec<Vec<Complex>>> {
+    &mut self.Dnm
+  }
+  fn get_Ynm(&mut self) -> &mut Vec<Complex> {
+    &mut self.Ynm
+  }
+}
+
+impl FMM for TreeRustGravity {
+  fn get_len(&self) -> usize {
+    self.len
+  }
+  fn get_params(&self) -> &Params {
+    &self.params
+  }
+  fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    &mut self.accelerations
+  }
+  fn get_positions(&mut self) -> &mut Vec<f32> {
+    &mut self.positions
+  }
+  fn get_masses(&mut self) -> &mut Vec<f32> {
+    &mut self.masses
+  }
+  fn get_mortonIndex(&mut self) -> &mut Vec<usize> {
+    &mut self.mortonIndex
+  }
+  fn get_sortValue(&mut self) -> &mut Vec<usize> {
+    &mut self.sortValue
+  }
+  fn get_sortIndex(&mut self) -> &mut Vec<usize> {
+    &mut self.sortIndex
+  }
+  fn get_sortValueBuffer(&mut self) -> &mut Vec<usize> {
+    &mut self.sortValueBuffer
+  }
+  fn get_sortIndexBuffer(&mut self) -> &mut Vec<usize> {
+    &mut self.sortIndexBuffer
+  }
+  fn get_sortPositionBuffer(&mut self) -> &mut Vec<f32> {
+    &mut self.sortPositionBuffer
+  }
+  fn get_sortMassBuffer(&mut self) -> &mut Vec<f32> {
+    &mut self.sortMassBuffer
+  }
+  fn get_factorial(&mut self) -> &mut Vec<f64> {
+    &mut self.factorial
+  }
+  fn get_Anm(&mut self) -> &mut Vec<f64> {
+    &mut self.Anm
+  }
+  fn get_anm(&mut self) -> &mut Vec<f64> {
+    &mut self.anm
+  }
+  fn get_Dnm(&mut self) -> &mut Vec<Vec<Vec<Complex>>> {
+    &mut self.Dnm
+  }
+  fn get_Ynm(&mut self) -> &mut Vec<Complex> {
+    &mut self.Ynm
+  }
+}
+
+#[wasm_bindgen]
+pub struct FMMRustGravity {
+  params: Params,
+  positions: Vec<f32>,
+  speeds: Vec<f32>,
+  accelerations: Vec<f32>,
+  masses: Vec<f32>,
+  temperatures: Vec<f32>,
+  len: usize,
+
+  mortonIndex: Vec<usize>,
+  sortValue: Vec<usize>,
+  sortIndex: Vec<usize>,
+  sortValueBuffer: Vec<usize>,
+  sortIndexBuffer: Vec<usize>,
+  sortPositionBuffer: Vec<f32>,
+  sortMassBuffer: Vec<f32>,
+  factorial: Vec<f64>,
+
+  Anm: Vec<f64>,
+  anm: Vec<f64>,
+  Dnm: Vec<Vec<Vec<Complex>>>,
+  Ynm: Vec<Complex>,
+}
+
+#[wasm_bindgen]
+impl FMMRustGravity {
+  #[wasm_bindgen(constructor)]
+  pub fn new(orbs: &Array, params: &JsValue) -> Result<FMMRustGravity, JsValue> {
+    console_error_panic_hook::set_once();
+    let params = params
+      .into_serde()
+      .map_err(|e| JsValue::from(e.to_string()))?;
+    let len = orbs.length() as usize;
+
+    let mut positions = vec![0f32; 3 * len];
+    let mut speeds = vec![0f32; 3 * len];
+    let accelerations = vec![0f32; 3 * len];
+    let mut masses = vec![0f32; len];
+    let mut temperatures = vec![0f32; len];
+
+    for (i, orb) in orbs.iter().enumerate() {
+      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+      positions[i * 3] = orb.position.x;
+      positions[i * 3 + 1] = orb.position.y;
+      positions[i * 3 + 2] = orb.position.z;
+      speeds[i * 3] = orb.speed.x;
+      speeds[i * 3 + 1] = orb.speed.y;
+      speeds[i * 3 + 2] = orb.speed.z;
+      masses[i] = orb.mass;
+      temperatures[i] = orb.temperature;
     }
+
+    let mortonIndex = vec![0; len];
+    let sortValue = vec![0; len];
+    let sortIndex = vec![0; len];
+    let sortValueBuffer = vec![0; len];
+    let sortIndexBuffer = vec![0; len];
+    let sortPositionBuffer = vec![0f32; 3 * len];
+    let sortMassBuffer = vec![0f32; len];
+    let factorial = vec![0f64; 4 * numExpansion2];
+    let Anm = vec![0f64; numExpansion4];
+    let anm = vec![0f64; 4 * numExpansion2];
+    let Dnm = (0..(2 * numRelativeBox))
+      .map(|_| {
+        (0..numExpansions)
+          .map(|_| vec![Complex::new(0f64, 0f64); numExpansion2])
+          .collect::<Vec<_>>()
+      })
+      .collect::<Vec<_>>();
+    let Ynm = vec![Complex::new(0f64, 0f64); 4 * numExpansion2];
+
+    Ok(FMMRustGravity {
+      params,
+      positions,
+      speeds,
+      accelerations,
+      masses,
+      temperatures,
+      len,
+
+      // Do something about that:
+      mortonIndex,
+      sortValue,
+      sortIndex,
+      sortValueBuffer,
+      sortIndexBuffer,
+      sortPositionBuffer,
+      sortMassBuffer,
+      factorial,
+
+      // precalc
+      Anm,
+      anm,
+      Dnm,
+      Ynm,
+    })
   }
 
-  pub fn simulate(
-    &mut self,
-    g: f32,
-    softening: f32,
-    collisions: bool,
-    threshold: f32,
-    escape_distance: f32,
-  ) -> usize {
-    // self.direct(g);
+  pub fn positions_ptr(&self) -> *const f32 {
+    self.positions.as_ptr()
+  }
+  pub fn speeds_ptr(&self) -> *const f32 {
+    self.speeds.as_ptr()
+  }
+  pub fn masses_ptr(&self) -> *const f32 {
+    self.masses.as_ptr()
+  }
+  pub fn temperatures_ptr(&self) -> *const f32 {
+    self.temperatures.as_ptr()
+  }
+
+  pub fn frog_leap(&mut self) {
+    self.leap();
+  }
+
+  pub fn simulate(&mut self) -> usize {
+    let gravitationalConstant = self.params.gravitationalConstant;
+    let softening = self.params.softening;
+    let collisions = self.params.collisions;
+    let threshold = self.params.collisionThreshold;
+    let escapeDistance = self.params.escapeDistance;
+    let mut collided = Vec::new();
+    let mut skip = Vec::new();
+    // self.direct(gravitationalConstant);
 
     let (boxMin, rootBoxSize) = self.setDomainSize();
     let (maxLevel, numBoxIndexFull) = self.setOptimumLevel();
@@ -1487,7 +1686,7 @@ impl FMMRustGravity {
     }
 
     self.p2p(
-      g,
+      gravitationalConstant,
       softening,
       numBoxIndex,
       &numInteraction,
@@ -1511,33 +1710,6 @@ impl FMMRustGravity {
 
     if maxLevel > 2 {
       for numLevel in (2..maxLevel).rev() {
-        if self.variant == "tree" {
-          // M2P at lower levels
-          let (numInteraction, interactionList) = self.getInteractionList(
-            numBoxIndex,
-            numBoxIndexLeaf,
-            numLevel + 1,
-            2,
-            &levelOffset,
-            &boxIndexMask,
-            &boxIndexFull,
-          );
-          self.m2p(
-            g,
-            softening,
-            numBoxIndex,
-            numLevel + 1,
-            rootBoxSize,
-            &boxMin,
-            &numInteraction,
-            &interactionList,
-            &levelOffset,
-            &boxIndexFull,
-            &particleOffset,
-            &mut Mnm,
-          );
-        }
-
         // M2M
         let numBoxIndexOld = numBoxIndex;
         numBoxIndex = self.getBoxDataOfParent(
@@ -1548,6 +1720,7 @@ impl FMMRustGravity {
           &mut boxIndexMask,
           &mut boxIndexFull,
           &mut particleOffset,
+          false,
         );
         self.m2m(
           numBoxIndex,
@@ -1581,108 +1754,399 @@ impl FMMRustGravity {
       &boxIndexFull,
     );
 
-    if self.variant == "tree" {
-      // M2P at level 2
-      self.m2p(
-        g,
-        softening,
-        numBoxIndex,
-        numLevel,
-        rootBoxSize,
-        &boxMin,
-        &numInteraction,
-        &interactionList,
-        &levelOffset,
-        &boxIndexFull,
-        &particleOffset,
-        &mut Mnm,
-      );
-    } else {
-      // M2L at level 2
-      self.m2l(
-        softening,
-        numBoxIndex,
-        numLevel,
-        rootBoxSize,
-        &numInteraction,
-        &interactionList,
-        &levelOffset,
-        &boxIndexFull,
-        &mut Lnm,
-        &mut Mnm,
-      );
+    // M2L at level 2
+    self.m2l(
+      softening,
+      numBoxIndex,
+      numLevel,
+      rootBoxSize,
+      &numInteraction,
+      &interactionList,
+      &levelOffset,
+      &boxIndexFull,
+      &mut Lnm,
+      &mut Mnm,
+    );
 
-      // L2L
-      if maxLevel > 2 {
-        for numLevel in 3..=maxLevel {
-          numBoxIndex = levelOffset[numLevel - 2] - levelOffset[numLevel - 1];
-          self.l2l(
-            numBoxIndex,
-            numBoxIndexFull,
-            numLevel,
-            rootBoxSize,
-            &levelOffset,
-            &boxIndexFull,
-            &mut LnmOld,
-            &mut Lnm,
-          );
-          self.getBoxIndexMask(
-            numBoxIndex,
-            numBoxIndexFull,
-            numLevel,
-            &levelOffset,
-            &mut boxIndexMask,
-            &boxIndexFull,
-          );
+    // L2L
+    if maxLevel > 2 {
+      for numLevel in 3..=maxLevel {
+        numBoxIndex = levelOffset[numLevel - 2] - levelOffset[numLevel - 1];
+        self.l2l(
+          numBoxIndex,
+          numBoxIndexFull,
+          numLevel,
+          rootBoxSize,
+          &levelOffset,
+          &boxIndexFull,
+          &mut LnmOld,
+          &mut Lnm,
+        );
+        self.getBoxIndexMask(
+          numBoxIndex,
+          numBoxIndexFull,
+          numLevel,
+          &levelOffset,
+          &mut boxIndexMask,
+          &boxIndexFull,
+        );
 
-          // M2L at lower levels
-          let (numInteraction, interactionList) = self.getInteractionList(
-            numBoxIndex,
-            numBoxIndexLeaf,
-            numLevel,
-            2,
-            &levelOffset,
-            &boxIndexMask,
-            &boxIndexFull,
-          );
-          self.m2l(
-            softening,
-            numBoxIndex,
-            numLevel,
-            rootBoxSize,
-            &numInteraction,
-            &interactionList,
-            &levelOffset,
-            &boxIndexFull,
-            &mut Lnm,
-            &mut Mnm,
-          );
-        }
-        numLevel = maxLevel;
+        // M2L at lower levels
+        let (numInteraction, interactionList) = self.getInteractionList(
+          numBoxIndex,
+          numBoxIndexLeaf,
+          numLevel,
+          2,
+          &levelOffset,
+          &boxIndexMask,
+          &boxIndexFull,
+        );
+        self.m2l(
+          softening,
+          numBoxIndex,
+          numLevel,
+          rootBoxSize,
+          &numInteraction,
+          &interactionList,
+          &levelOffset,
+          &boxIndexFull,
+          &mut Lnm,
+          &mut Mnm,
+        );
       }
-      // L2P
-      self.l2p(
-        g,
-        softening,
-        numBoxIndex,
-        numLevel,
-        rootBoxSize,
-        &boxMin,
-        &boxIndexFull,
-        &particleOffset,
-        &mut Lnm,
-      );
+      numLevel = maxLevel;
     }
+    // L2P
+    self.l2p(
+      gravitationalConstant,
+      softening,
+      numBoxIndex,
+      numLevel,
+      rootBoxSize,
+      &boxMin,
+      &boxIndexFull,
+      &particleOffset,
+      &mut Lnm,
+    );
     self.unsortParticles(permutation);
+    self.solve_escapes(&mut skip);
+    if collided.len() > 0 {
+      self.solve_collisions(&collided)
+    }
+    if skip.len() > 0 {
+      self.len = self.crunch_orbs(&skip)
+    }
+
     self.len
   }
 
-  pub fn frog_drop(&mut self, dt: f32) {
-    let half_dt = dt * 0.5f32;
-    for i in 0..self.len {
-      for k in 0..3 {
-        self.speeds[i * 3 + k] += self.accelerations[i * 3 + k] * half_dt;
-      }
+  pub fn frog_drop(&mut self) {
+    self.drop();
+  }
+}
+
+#[wasm_bindgen]
+pub struct TreeRustGravity {
+  params: Params,
+  positions: Vec<f32>,
+  speeds: Vec<f32>,
+  accelerations: Vec<f32>,
+  masses: Vec<f32>,
+  temperatures: Vec<f32>,
+  len: usize,
+
+  mortonIndex: Vec<usize>,
+  sortValue: Vec<usize>,
+  sortIndex: Vec<usize>,
+  sortValueBuffer: Vec<usize>,
+  sortIndexBuffer: Vec<usize>,
+  sortPositionBuffer: Vec<f32>,
+  sortMassBuffer: Vec<f32>,
+  factorial: Vec<f64>,
+
+  Anm: Vec<f64>,
+  anm: Vec<f64>,
+  Dnm: Vec<Vec<Vec<Complex>>>,
+  Ynm: Vec<Complex>,
+}
+
+#[wasm_bindgen]
+impl TreeRustGravity {
+  #[wasm_bindgen(constructor)]
+  pub fn new(orbs: &Array, params: &JsValue) -> Result<TreeRustGravity, JsValue> {
+    console_error_panic_hook::set_once();
+    let params = params
+      .into_serde()
+      .map_err(|e| JsValue::from(e.to_string()))?;
+    let len = orbs.length() as usize;
+
+    let mut positions = vec![0f32; 3 * len];
+    let mut speeds = vec![0f32; 3 * len];
+    let accelerations = vec![0f32; 3 * len];
+    let mut masses = vec![0f32; len];
+    let mut temperatures = vec![0f32; len];
+
+    for (i, orb) in orbs.iter().enumerate() {
+      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+      positions[i * 3] = orb.position.x;
+      positions[i * 3 + 1] = orb.position.y;
+      positions[i * 3 + 2] = orb.position.z;
+      speeds[i * 3] = orb.speed.x;
+      speeds[i * 3 + 1] = orb.speed.y;
+      speeds[i * 3 + 2] = orb.speed.z;
+      masses[i] = orb.mass;
+      temperatures[i] = orb.temperature;
     }
+
+    let mortonIndex = vec![0; len];
+    let sortValue = vec![0; len];
+    let sortIndex = vec![0; len];
+    let sortValueBuffer = vec![0; len];
+    let sortIndexBuffer = vec![0; len];
+    let sortPositionBuffer = vec![0f32; 3 * len];
+    let sortMassBuffer = vec![0f32; len];
+    let factorial = vec![0f64; 4 * numExpansion2];
+    let Anm = vec![0f64; numExpansion4];
+    let anm = vec![0f64; 4 * numExpansion2];
+    let Dnm = (0..(2 * numRelativeBox))
+      .map(|_| {
+        (0..numExpansions)
+          .map(|_| vec![Complex::new(0f64, 0f64); numExpansion2])
+          .collect::<Vec<_>>()
+      })
+      .collect::<Vec<_>>();
+    let Ynm = vec![Complex::new(0f64, 0f64); 4 * numExpansion2];
+
+    Ok(TreeRustGravity {
+      params,
+      positions,
+      speeds,
+      accelerations,
+      masses,
+      temperatures,
+      len,
+
+      // Do something about that:
+      mortonIndex,
+      sortValue,
+      sortIndex,
+      sortValueBuffer,
+      sortIndexBuffer,
+      sortPositionBuffer,
+      sortMassBuffer,
+      factorial,
+
+      // precalc
+      Anm,
+      anm,
+      Dnm,
+      Ynm,
+    })
+  }
+
+  pub fn positions_ptr(&self) -> *const f32 {
+    self.positions.as_ptr()
+  }
+  pub fn speeds_ptr(&self) -> *const f32 {
+    self.speeds.as_ptr()
+  }
+  pub fn masses_ptr(&self) -> *const f32 {
+    self.masses.as_ptr()
+  }
+  pub fn temperatures_ptr(&self) -> *const f32 {
+    self.temperatures.as_ptr()
+  }
+
+  pub fn frog_leap(&mut self) {
+    self.leap();
+  }
+
+  pub fn simulate(&mut self) -> usize {
+    let gravitationalConstant = self.params.gravitationalConstant;
+    let softening = self.params.softening;
+    let collisions = self.params.collisions;
+    let threshold = self.params.collisionThreshold;
+    let escapeDistance = self.params.escapeDistance;
+    let mut collided = Vec::new();
+    let mut skip = Vec::new();
+    // self.direct(gravitationalConstant);
+
+    let (boxMin, rootBoxSize) = self.setDomainSize();
+    let (maxLevel, numBoxIndexFull) = self.setOptimumLevel();
+    self.morton(maxLevel, rootBoxSize, boxMin);
+    let permutation = self.sortParticles(numBoxIndexFull);
+
+    self.morton(maxLevel, rootBoxSize, boxMin);
+    let (numBoxIndexLeaf, numBoxIndexTotal) = self.countNonEmptyBoxes(maxLevel, numBoxIndexFull);
+
+    // Allocations
+    let mut particleOffset = [vec![0; numBoxIndexLeaf], vec![0; numBoxIndexLeaf]];
+
+    let mut boxIndexMask = vec![0; numBoxIndexFull];
+    let mut boxIndexFull = vec![0; numBoxIndexTotal];
+    let mut levelOffset = vec![0; maxLevel];
+
+    let mut Lnm = (0..numBoxIndexLeaf)
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
+      .collect::<Vec<_>>();
+    let mut LnmOld = (0..numBoxIndexLeaf)
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
+      .collect::<Vec<_>>();
+    let mut Mnm = (0..numBoxIndexTotal)
+      .map(|_| vec![Complex::new(0f64, 0f64); numCoefficients])
+      .collect::<Vec<_>>();
+
+    let mut numLevel = maxLevel;
+
+    levelOffset[numLevel - 1] = 0;
+    self.morton(maxLevel, rootBoxSize, boxMin);
+    let mut numBoxIndex = self.getBoxData(
+      numBoxIndexFull,
+      &mut boxIndexMask,
+      &mut boxIndexFull,
+      &mut particleOffset,
+    );
+
+    // P2P
+
+    let (numInteraction, interactionList) = self.getInteractionList(
+      numBoxIndex,
+      numBoxIndexLeaf,
+      numLevel,
+      0,
+      &levelOffset,
+      &boxIndexMask,
+      &boxIndexFull,
+    );
+
+    for i in 0..self.len {
+      self.accelerations[i * 3] = 0f32;
+      self.accelerations[i * 3 + 1] = 0f32;
+      self.accelerations[i * 3 + 2] = 0f32;
+    }
+
+    self.p2p(
+      gravitationalConstant,
+      softening,
+      numBoxIndex,
+      &numInteraction,
+      &interactionList,
+      &particleOffset,
+    );
+
+    numLevel = maxLevel;
+
+    // P2M
+    self.p2m(
+      softening,
+      numBoxIndex,
+      rootBoxSize,
+      &boxMin,
+      maxLevel,
+      &boxIndexFull,
+      &particleOffset,
+      &mut Mnm,
+    );
+
+    if maxLevel > 2 {
+      for numLevel in (2..maxLevel).rev() {
+        // M2P at lower levels
+        let (numInteraction, interactionList) = self.getInteractionList(
+          numBoxIndex,
+          numBoxIndexLeaf,
+          numLevel + 1,
+          2,
+          &levelOffset,
+          &boxIndexMask,
+          &boxIndexFull,
+        );
+        self.m2p(
+          gravitationalConstant,
+          softening,
+          numBoxIndex,
+          numLevel + 1,
+          rootBoxSize,
+          &boxMin,
+          &numInteraction,
+          &interactionList,
+          &levelOffset,
+          &boxIndexFull,
+          &particleOffset,
+          &mut Mnm,
+        );
+
+        // M2M
+        let numBoxIndexOld = numBoxIndex;
+        numBoxIndex = self.getBoxDataOfParent(
+          numBoxIndex,
+          numBoxIndexFull,
+          numLevel,
+          &mut levelOffset,
+          &mut boxIndexMask,
+          &mut boxIndexFull,
+          &mut particleOffset,
+          true,
+        );
+        self.m2m(
+          numBoxIndex,
+          numBoxIndexOld,
+          numLevel,
+          rootBoxSize,
+          &mut levelOffset,
+          &mut boxIndexMask,
+          &mut boxIndexFull,
+          &mut Mnm,
+        );
+      }
+      numLevel = 2;
+    } else {
+      self.getBoxIndexMask(
+        numBoxIndex,
+        numBoxIndexFull,
+        numLevel,
+        &levelOffset,
+        &mut boxIndexMask,
+        &boxIndexFull,
+      );
+    }
+    let (numInteraction, interactionList) = self.getInteractionList(
+      numBoxIndex,
+      numBoxIndexLeaf,
+      numLevel,
+      1,
+      &levelOffset,
+      &boxIndexMask,
+      &boxIndexFull,
+    );
+
+    // M2P at level 2
+    self.m2p(
+      gravitationalConstant,
+      softening,
+      numBoxIndex,
+      numLevel,
+      rootBoxSize,
+      &boxMin,
+      &numInteraction,
+      &interactionList,
+      &levelOffset,
+      &boxIndexFull,
+      &particleOffset,
+      &mut Mnm,
+    );
+    self.unsortParticles(permutation);
+    self.solve_escapes(&mut skip);
+    if collided.len() > 0 {
+      self.solve_collisions(&collided)
+    }
+    if skip.len() > 0 {
+      self.len = self.crunch_orbs(&skip)
+    }
+
+    self.len
+  }
+
+  pub fn frog_drop(&mut self) {
+    self.drop();
   }
 }

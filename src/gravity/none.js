@@ -77,13 +77,14 @@ export default class NoGravity {
     const temperatures = [...this.temperatures].filter(
       (_, i) => !skip.includes(i)
     )
-    this.len -= skip.length
-    for (let i = 0, n = this.len; i < n; i++) {
+    const newLen = this.len - skip.length
+    for (let i = 0, n = newLen; i < n; i++) {
       this.position[i] = positions[i]
       this.speed[i] = speeds[i]
       this.masses[i] = masses[i]
       this.temperatures[i] = temperatures[i]
     }
+    return newLen
   }
 
   simulate() {
@@ -92,7 +93,7 @@ export default class NoGravity {
 
     this.solveEscapes(skip)
     collided.length && this.solveCollisions(collided)
-    skip.length && this.crunchOrbs(skip)
+    skip.length && (this.len = this.crunchOrbs(skip))
     return this.len
   }
 

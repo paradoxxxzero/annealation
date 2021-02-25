@@ -37,9 +37,9 @@ export default class P2PGravity extends NoGravity {
       }
     }
 
-    escapeDistance && this.solveEscapes(escapeDistance, skip)
+    escapeDistance && this.solveEscapes(skip)
     collided.length && this.solveCollisions(collided)
-    skip.length && this.crunchOrbs(skip)
+    skip.length && (this.len = this.crunchOrbs(skip))
 
     return this.len
   }

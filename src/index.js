@@ -26,6 +26,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, {
   P2PRustGravity,
   FMMRustGravity,
+  TreeRustGravity,
   RustNoGravity,
   wasm_memory,
 } from 'wasm'
@@ -48,7 +49,7 @@ const backends = {
   rust_p2p: P2PRustGravity,
   js_fmm: FMMGravity,
   rust_fmm: FMMRustGravity,
-  rust_tree: FMMRustGravity,
+  rust_tree: TreeRustGravity,
   js_none: NoGravity,
   rust_none: RustNoGravity,
 }
