@@ -23,7 +23,6 @@ export default class NoGravity {
     this.acceleration = orbs.map(() => new Vector3())
     this.u = new Vector3()
     this.origin = new Vector3()
-    this.update()
   }
 
   paramsChange() {}

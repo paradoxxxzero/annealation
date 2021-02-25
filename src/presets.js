@@ -33,7 +33,7 @@ export default {
     },
     RegularCube: {
       0: {
-        backend: 'rust_fmm',
+        backend: 'rust_p2p',
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -123,7 +123,7 @@ export default {
     },
     HarmonicSphere: {
       0: {
-        backend: 'rust_p2p',
+        backend: 'js_p2p_threaded',
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -135,15 +135,15 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'harmonicSphere',
-        number: 1500,
-        range: 750,
+        number: 4000,
+        range: 1500,
         speed: 15,
         mass: 10,
         blackHoleMass: 500000,
         scale: 30,
         colorMode: 'Temperature',
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.1,
+        simulationSpeed: 0.2,
         softening: 50,
         collisions: false,
         collisionThreshold: 10,

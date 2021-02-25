@@ -34,6 +34,7 @@ import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
 import NoGravity from './gravity/none'
+import P2PThreadedGravity from './gravity/p2p-threaded'
 let raf = null
 
 const colorModes = {
@@ -47,6 +48,7 @@ let particles, gravity
 const backends = {
   js_p2p: P2PGravity,
   rust_p2p: P2PRustGravity,
+  js_p2p_threaded: P2PThreadedGravity,
   js_fmm: FMMGravity,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
@@ -136,15 +138,15 @@ function onWindowResize() {
     1 / (window.innerHeight * pixelRatio)
 }
 
-function animate() {
-  raf = requestAnimationFrame(animate)
+async function animate() {
   stats.update()
-  render()
+  await render()
+  raf = requestAnimationFrame(animate)
 }
 
-function render() {
+async function render() {
   gravity.frog_leap()
-  const newLen = gravity.simulate()
+  const newLen = await gravity.simulate()
   gravity.frog_drop()
 
   if (newLen !== particles.geometry.drawRange.count) {

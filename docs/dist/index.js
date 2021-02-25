@@ -2440,7 +2440,7 @@ function updateDisplays(controllerArray) {
 }
 var GUI$1 = GUI;
 
-// _snowpack/pkg/common/three.module-7c46d396.js
+// _snowpack/pkg/common/three.module-b2dca07c.js
 var REVISION = "125";
 var MOUSE = {LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2};
 var TOUCH = {ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3};
@@ -26342,7 +26342,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-// _snowpack/pkg/common/Pass-2df2d89c.js
+// _snowpack/pkg/common/Pass-7a267e18.js
 function Pass() {
   this.enabled = true;
   this.needsSwap = true;
@@ -27137,7 +27137,7 @@ var CopyShader = {
   ].join("\n")
 };
 
-// _snowpack/pkg/common/ShaderPass-e67124a9.js
+// _snowpack/pkg/common/ShaderPass-ef5ba7f6.js
 var ShaderPass = function(shader, textureID) {
   Pass.call(this);
   this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
@@ -30744,7 +30744,7 @@ var presets_default = {
     },
     RegularCube: {
       0: {
-        backend: "rust_fmm",
+        backend: "rust_p2p",
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -30834,7 +30834,7 @@ var presets_default = {
     },
     HarmonicSphere: {
       0: {
-        backend: "rust_p2p",
+        backend: "js_p2p_threaded",
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -30846,15 +30846,15 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "harmonicSphere",
-        number: 1500,
-        range: 750,
+        number: 4e3,
+        range: 1500,
         speed: 15,
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.1,
+        simulationSpeed: 0.2,
         softening: 50,
         collisions: false,
         collisionThreshold: 10,
@@ -31184,14 +31184,6 @@ function takeObject(idx) {
   dropObject(idx);
   return ret;
 }
-function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
-}
 var cachedTextDecoder = new TextDecoder("utf-8", {ignoreBOM: true, fatal: true});
 cachedTextDecoder.decode();
 var cachegetUint8Memory0 = null;
@@ -31203,6 +31195,14 @@ function getUint8Memory0() {
 }
 function getStringFromWasm0(ptr, len) {
   return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+}
+function addHeapObject(obj) {
+  if (heap_next === heap.length)
+    heap.push(heap.length + 1);
+  const idx = heap_next;
+  heap_next = heap[idx];
+  heap[idx] = obj;
+  return idx;
 }
 var WASM_VECTOR_LEN = 0;
 var cachedTextEncoder = new TextEncoder("utf-8");
@@ -31253,6 +31253,13 @@ function getInt32Memory0() {
   }
   return cachegetInt32Memory0;
 }
+var stack_pointer = 32;
+function addBorrowedObject(obj) {
+  if (stack_pointer == 1)
+    throw new Error("out of js stack");
+  heap[--stack_pointer] = obj;
+  return stack_pointer;
+}
 function wasm_memory() {
   var ret = wasm.wasm_memory();
   return takeObject(ret);
@@ -31268,9 +31275,14 @@ var FMMRustGravity = class {
     this.ptr = 0;
     wasm.__wbg_fmmrustgravity_free(ptr);
   }
-  static new(len, variantIndex) {
-    var ret = wasm.fmmrustgravity_new(len, variantIndex);
-    return FMMRustGravity.__wrap(ret);
+  constructor(orbs, params2) {
+    try {
+      var ret = wasm.fmmrustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      return FMMRustGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
   }
   positions_ptr() {
     var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
@@ -31288,18 +31300,15 @@ var FMMRustGravity = class {
     var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
-  precalc(softening) {
-    wasm.fmmrustgravity_precalc(this.ptr, softening);
+  frog_leap() {
+    wasm.fmmrustgravity_frog_leap(this.ptr);
   }
-  frog_leap(dt) {
-    wasm.fmmrustgravity_frog_leap(this.ptr, dt);
-  }
-  simulate(g, softening, collisions, threshold, escape_distance) {
-    var ret = wasm.fmmrustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
+  simulate() {
+    var ret = wasm.fmmrustgravity_simulate(this.ptr);
     return ret >>> 0;
   }
-  frog_drop(dt) {
-    wasm.fmmrustgravity_frog_drop(this.ptr, dt);
+  frog_drop() {
+    wasm.fmmrustgravity_frog_drop(this.ptr);
   }
 };
 var P2PRustGravity = class {
@@ -31313,9 +31322,14 @@ var P2PRustGravity = class {
     this.ptr = 0;
     wasm.__wbg_p2prustgravity_free(ptr);
   }
-  static new(len) {
-    var ret = wasm.p2prustgravity_new(len);
-    return P2PRustGravity.__wrap(ret);
+  constructor(orbs, params2) {
+    try {
+      var ret = wasm.p2prustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      return P2PRustGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
   }
   positions_ptr() {
     var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
@@ -31333,15 +31347,105 @@ var P2PRustGravity = class {
     var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
-  frog_leap(dt) {
-    wasm.p2prustgravity_frog_leap(this.ptr, dt);
+  frog_leap() {
+    wasm.fmmrustgravity_frog_leap(this.ptr);
   }
-  simulate(g, softening, collisions, threshold, escape_distance) {
-    var ret = wasm.p2prustgravity_simulate(this.ptr, g, softening, collisions, threshold, escape_distance);
+  simulate() {
+    var ret = wasm.p2prustgravity_simulate(this.ptr);
     return ret >>> 0;
   }
-  frog_drop(dt) {
-    wasm.p2prustgravity_frog_drop(this.ptr, dt);
+  frog_drop() {
+    wasm.fmmrustgravity_frog_drop(this.ptr);
+  }
+};
+var RustNoGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(RustNoGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_rustnogravity_free(ptr);
+  }
+  constructor(orbs, params2) {
+    try {
+      var ret = wasm.rustnogravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      return RustNoGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  positions_ptr() {
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap() {
+    wasm.fmmrustgravity_frog_leap(this.ptr);
+  }
+  simulate() {
+    var ret = wasm.rustnogravity_simulate(this.ptr);
+    return ret >>> 0;
+  }
+  frog_drop() {
+    wasm.fmmrustgravity_frog_drop(this.ptr);
+  }
+};
+var TreeRustGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(TreeRustGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_treerustgravity_free(ptr);
+  }
+  constructor(orbs, params2) {
+    try {
+      var ret = wasm.treerustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      return TreeRustGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  positions_ptr() {
+    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
+    return ret;
+  }
+  speeds_ptr() {
+    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap() {
+    wasm.fmmrustgravity_frog_leap(this.ptr);
+  }
+  simulate() {
+    var ret = wasm.treerustgravity_simulate(this.ptr);
+    return ret >>> 0;
+  }
+  frog_drop() {
+    wasm.fmmrustgravity_frog_drop(this.ptr);
   }
 };
 async function load2(module, imports) {
@@ -31374,6 +31478,21 @@ async function init(input) {
   }
   const imports = {};
   imports.wbg = {};
+  imports.wbg.__wbg_length_4c7aec6f35774e3d = function(arg0) {
+    var ret = getObject(arg0).length;
+    return ret;
+  };
+  imports.wbg.__wbg_get_a8b9619536c590d4 = function(arg0, arg1) {
+    var ret = getObject(arg0)[arg1 >>> 0];
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+    takeObject(arg0);
+  };
+  imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
+    var ret = getStringFromWasm0(arg0, arg1);
+    return addHeapObject(ret);
+  };
   imports.wbg.__wbg_new_59cb74e423758ede = function() {
     var ret = new Error();
     return addHeapObject(ret);
@@ -31392,8 +31511,13 @@ async function init(input) {
       wasm.__wbindgen_free(arg0, arg1);
     }
   };
-  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-    takeObject(arg0);
+  imports.wbg.__wbindgen_json_serialize = function(arg0, arg1) {
+    const obj = getObject(arg1);
+    var ret = JSON.stringify(obj === void 0 ? null : obj);
+    var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    getInt32Memory0()[arg0 / 4 + 1] = len0;
+    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
   };
   imports.wbg.__wbindgen_memory = function() {
     var ret = wasm.memory;
@@ -31401,6 +31525,9 @@ async function init(input) {
   };
   imports.wbg.__wbindgen_throw = function(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
+  };
+  imports.wbg.__wbindgen_rethrow = function(arg0) {
+    throw takeObject(arg0);
   };
   if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
     input = fetch(input);
@@ -31501,80 +31628,82 @@ var stats_min = createCommonjsModule(function(module, exports) {
 });
 var statsjs_default = stats_min;
 
-// dist/gravity/p2p.js
-var P2PGravity = class {
-  constructor(orbs) {
+// dist/gravity/none.js
+var NoGravity = class {
+  constructor(orbs, params2) {
+    this.params = params2;
     this.len = orbs.length;
     this.positions = new Float32Array(3 * this.len);
     this.masses = new Float32Array(this.len);
     this.temperatures = new Float32Array(this.len);
+    orbs.forEach(({position, mass, temperature}, i) => {
+      this.positions[i * 3] = position.x;
+      this.positions[i * 3 + 1] = position.y;
+      this.positions[i * 3 + 2] = position.z;
+      this.masses[i] = mass;
+      this.temperatures[i] = temperature;
+    });
     this.position = orbs.map(({position}) => position);
     this.speed = orbs.map(({speed}) => speed);
     this.acceleration = orbs.map(() => new Vector3());
     this.u = new Vector3();
     this.origin = new Vector3();
   }
-  frog_leap(dt) {
+  paramsChange() {
+  }
+  frog_leap() {
+    const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
     for (var i = 0, n = this.len; i < n; i++) {
       this.speed[i].addScaledVector(this.acceleration[i], half_dt);
       this.position[i].addScaledVector(this.speed[i], dt);
     }
   }
-  simulate(G, softening, collisions, collisionThreshold, escapeDistance) {
-    var i, n, j, l;
-    const collided = [];
-    const skip = [];
-    const softening2 = softening * softening;
-    const threshold2 = collisionThreshold * collisionThreshold;
-    for (i = 0, n = this.len; i < n; i++) {
-      this.acceleration[i].set(0, 0, 0);
-      for (j = 0; j < i; j++) {
-        this.u.subVectors(this.position[j], this.position[i]);
-        let distance2 = this.u.lengthSq();
-        let distance = Math.sqrt(distance2 + softening2);
-        if (collisions) {
-          if (distance2 < threshold2) {
-            collided.push([i, j]);
-            skip.push(j);
-          }
-        }
-        this.u.normalize().multiplyScalar(G / (distance * distance));
-        this.acceleration[i].addScaledVector(this.u, this.masses[j]);
-        this.acceleration[j].addScaledVector(this.u, -this.masses[i]);
-      }
+  solveCollisions(collided) {
+    for (let l = 0, n = collided.length; l < n; l++) {
+      let [i, j] = collided[l];
+      let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
+      this.position[i].multiplyScalar(this.masses[i]).addScaledVector(this.position[j], this.masses[j]).multiplyScalar(mass_ratio);
+      this.speed[i].multiplyScalar(this.masses[i]).addScaledVector(this.speed[j], this.masses[j]).multiplyScalar(mass_ratio);
+      this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
+      this.masses[i] += this.masses[j];
     }
-    for (i = 0, n = this.len; i < n; i++) {
+  }
+  solveEscapes(skip) {
+    const {escapeDistance} = this.params;
+    if (!escapeDistance) {
+      return;
+    }
+    for (let i = 0, n = this.len; i < n; i++) {
       if (this.position[i].distanceTo(this.origin) > escapeDistance) {
         skip.push(i);
       }
     }
-    if (skip.length) {
-      for (l = 0, n = collided.length; l < n; l++) {
-        ;
-        [i, j] = collided[l];
-        let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
-        this.position[i].multiplyScalar(this.masses[i]).addScaledVector(this.position[j], this.masses[j]).multiplyScalar(mass_ratio);
-        this.speed[i].multiplyScalar(this.masses[i]).addScaledVector(this.speed[j], this.masses[j]).multiplyScalar(mass_ratio);
-        this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
-        this.masses[i] += this.masses[j];
-      }
-      const positions = [...this.position].filter((_, i2) => !skip.includes(i2));
-      const speeds = [...this.speed].filter((_, i2) => !skip.includes(i2));
-      const masses = [...this.masses].filter((_, i2) => !skip.includes(i2));
-      const temperatures = [...this.temperatures].filter((_, i2) => !skip.includes(i2));
-      this.len -= skip.length;
-      for (i = 0, n = this.len; i < n; i++) {
-        this.position[i] = positions[i];
-        this.speed[i] = speeds[i];
-        this.masses[i] = masses[i];
-        this.temperatures[i] = temperatures[i];
-      }
+  }
+  crunchOrbs(skip) {
+    const positions = [...this.position].filter((_, i) => !skip.includes(i));
+    const speeds = [...this.speed].filter((_, i) => !skip.includes(i));
+    const masses = [...this.masses].filter((_, i) => !skip.includes(i));
+    const temperatures = [...this.temperatures].filter((_, i) => !skip.includes(i));
+    const newLen = this.len - skip.length;
+    for (let i = 0, n = newLen; i < n; i++) {
+      this.position[i] = positions[i];
+      this.speed[i] = speeds[i];
+      this.masses[i] = masses[i];
+      this.temperatures[i] = temperatures[i];
     }
+    return newLen;
+  }
+  simulate() {
+    const collided = [];
+    const skip = [];
+    this.solveEscapes(skip);
+    collided.length && this.solveCollisions(collided);
+    skip.length && (this.len = this.crunchOrbs(skip));
     return this.len;
   }
-  frog_drop(dt) {
-    const half_dt = dt * 0.5;
+  frog_drop() {
+    const half_dt = this.params.simulationSpeed * 0.5;
     for (var i = 0, n = this.len; i < n; i++) {
       this.speed[i].addScaledVector(this.acceleration[i], half_dt);
     }
@@ -31596,38 +31725,63 @@ var P2PGravity = class {
     delete this.acceleration;
   }
 };
+var none_default = NoGravity;
+
+// dist/gravity/p2p.js
+var P2PGravity = class extends none_default {
+  simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      escapeDistance
+    } = this.params;
+    const collided = [];
+    const skip = [];
+    const softening2 = softening * softening;
+    const threshold2 = collisionThreshold * collisionThreshold;
+    for (let i = 0, n = this.len; i < n; i++) {
+      this.acceleration[i].set(0, 0, 0);
+      for (let j = 0; j < i; j++) {
+        this.u.subVectors(this.position[j], this.position[i]);
+        let distance2 = this.u.lengthSq();
+        let distance = Math.sqrt(distance2 + softening2);
+        if (collisions) {
+          if (distance2 < threshold2) {
+            collided.push([i, j]);
+            skip.push(j);
+          }
+        }
+        this.u.normalize().multiplyScalar(gravitationalConstant / (distance * distance));
+        this.acceleration[i].addScaledVector(this.u, this.masses[j]);
+        this.acceleration[j].addScaledVector(this.u, -this.masses[i]);
+      }
+    }
+    escapeDistance && this.solveEscapes(skip);
+    collided.length && this.solveCollisions(collided);
+    skip.length && (this.len = this.crunchOrbs(skip));
+    return this.len;
+  }
+};
 var p2p_default = P2PGravity;
 
 // dist/gravity/fmm.js
-var FMMGravity = class {
-  constructor(orbs, range, resolution) {
-    this.len = orbs.length;
-    this.positions = new Float32Array(3 * this.len);
-    this.masses = new Float32Array(this.len);
-    this.temperatures = new Float32Array(this.len);
-    this.position = orbs.map(({position}) => position);
-    this.speed = orbs.map(({speed}) => speed);
-    this.acceleration = orbs.map(() => new Vector3());
-    this.u = new Vector3();
-    this.origin = new Vector3();
-    this.range = range;
-    this.levels = ~~resolution;
-    this.grid_dimension_size = 1 << 3 * this.levels;
-    this.grid = new Float32Array(this.grid_dimension_size * 3);
+var FMMGravity = class extends none_default {
+  constructor(orbs, params2) {
+    super(orbs, params2);
+    this.paramsChange();
   }
-  frog_leap(dt) {
-    const half_dt = dt * 0.5;
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
-      this.position[i].addScaledVector(this.speed[i], dt);
-    }
+  paramsChange() {
+    this.grid_dimension_size = 1 << 3 * ~~this.params.resolution;
+    this.grid = new Float32Array(this.grid_dimension_size * 3);
   }
   getCells(position) {
     const cells = [];
-    var num, size, x, y, z, half_range = this.range * 0.5;
-    for (var level = 1; level < this.levels; level++) {
+    var num, size, x, y, z, half_range = this.params.range * 0.5;
+    for (var level = 1; level < ~~this.params.resolution; level++) {
       num = 1 << level;
-      size = this.range / num;
+      size = this.params.range / num;
       x = Math.floor((position.x + half_range) / size);
       y = Math.floor((position.y + half_range) / size);
       z = Math.floor((position.z + half_range) / size);
@@ -31640,9 +31794,19 @@ var FMMGravity = class {
   getHash(level, x, y, z) {
     return (1 << 3 * level) + x * (1 << 2 * level) + y * (1 << 1 * level) + z;
   }
-  simulate(G) {
+  simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      escapeDistance
+    } = this.params;
+    const collided = [];
+    const skip = [];
+    const softening2 = softening * softening;
     this.grid.fill(0);
-    var i, n, cells, cell_size, cell_hash, half_range = this.range * 0.5, childrenShifts = [
+    var i, n, cells, cell_size, cell_hash, half_range = this.params.range * 0.5, childrenShifts = [
       [0, 0, 0],
       [1, 0, 0],
       [0, 1, 0],
@@ -31667,12 +31831,12 @@ var FMMGravity = class {
           cell_num = 1 << level;
           if (!(x == occ_x && y == occ_y && z == occ_z && level == occ_level)) {
             cell_hash = this.getHash(level, x, y, z);
-            cell_size = this.range / cell_num;
+            cell_size = this.params.range / cell_num;
             offset_x = this.position[i].x - (x + 0.5) * cell_size + half_range;
             offset_y = this.position[i].y - (y + 0.5) * cell_size + half_range;
             offset_z = this.position[i].z - (z + 0.5) * cell_size + half_range;
-            distance = Math.sqrt(offset_x * offset_x + offset_y * offset_y + offset_z * offset_z);
-            k = G * this.masses[i] / (distance * distance * distance);
+            distance = Math.sqrt(offset_x * offset_x + offset_y * offset_y + offset_z * offset_z + softening2);
+            k = gravitationalConstant * this.masses[i] / (distance * distance * distance);
             this.grid[cell_hash] += k * offset_x;
             this.grid[cell_hash + this.grid_dimension_size] += k * offset_y;
             this.grid[cell_hash + 2 * this.grid_dimension_size] += k * offset_z;
@@ -31694,115 +31858,121 @@ var FMMGravity = class {
         this.acceleration[i].z += this.grid[cell_hash + 2 * this.grid_dimension_size];
       }
     }
+    escapeDistance && this.solveEscapes(skip);
+    collided.length && this.solveCollisions(collided);
+    skip.length && (this.len = this.crunchOrbs(skip));
     return this.len;
-  }
-  frog_drop(dt) {
-    const half_dt = dt * 0.5;
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt);
-    }
-    this.update();
-  }
-  update() {
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.positions[i * 3] = this.position[i].x;
-      this.positions[i * 3 + 1] = this.position[i].y;
-      this.positions[i * 3 + 2] = this.position[i].z;
-    }
-  }
-  free() {
-    delete this.positions;
-    delete this.masses;
-    delete this.temperatures;
-    delete this.position;
-    delete this.speed;
-    delete this.acceleration;
   }
 };
 var fmm_default = FMMGravity;
 
-// dist/gravity/none.js
-var NoGravity = class {
-  constructor(orbs) {
-    this.len = orbs.length;
-    this.positions = new Float32Array(3 * this.len);
-    this.masses = new Float32Array(this.len);
-    this.temperatures = new Float32Array(this.len);
-    this.position = orbs.map(({position}) => position);
-    this.speed = orbs.map(({speed}) => speed);
-    this.u = new Vector3();
-    this.origin = new Vector3();
+// dist/gravity/p2p-threaded.js
+import.meta.env = env_exports;
+var hasSAB = typeof SharedArrayBuffer !== "undefined";
+var SAB = hasSAB ? SharedArrayBuffer : ArrayBuffer;
+var workerPromise = (worker, ...args) => {
+  return new Promise((resolve) => {
+    worker.postMessage(...args);
+    worker.onmessage = (e) => resolve(e.data);
+  });
+};
+var P2PThreadedGravity = class extends none_default {
+  constructor(orbs, params2) {
+    super(orbs, params2);
+    this.positionsBuffer = new SAB(3 * this.len * 4);
+    this.positions = new Float32Array(this.positionsBuffer);
+    this.speedsBuffer = new SAB(3 * this.len * 4);
+    this.speeds = new Float32Array(this.speedsBuffer);
+    this.accelerationsBuffer = new SAB(3 * this.len * 4);
+    this.accelerations = new Float32Array(this.accelerationsBuffer);
+    this.massesBuffer = new SAB(this.len * 4);
+    this.masses = new Float32Array(this.massesBuffer);
+    this.pool = new Array(~~params2.resolution).fill().map(() => new Worker(new URL("../../worker/p2p-thread.js", import.meta.url)));
+    if (hasSAB) {
+      this.pool.forEach((worker) => {
+        worker.postMessage([
+          "init",
+          this.accelerationsBuffer,
+          this.positionsBuffer,
+          this.massesBuffer
+        ]);
+      });
+    }
+    orbs.forEach(({position, mass, speed, temperature}, i) => {
+      this.positions[i * 3] = position.x;
+      this.positions[i * 3 + 1] = position.y;
+      this.positions[i * 3 + 2] = position.z;
+      this.speeds[i * 3] = speed.x;
+      this.speeds[i * 3 + 1] = speed.y;
+      this.speeds[i * 3 + 2] = speed.z;
+      this.masses[i] = mass;
+      this.temperatures[i] = temperature;
+    });
   }
-  frog_leap(dt) {
+  frog_leap() {
+    const dt = this.params.simulationSpeed;
+    const half_dt = dt * 0.5;
     for (var i = 0, n = this.len; i < n; i++) {
-      this.position[i].addScaledVector(this.speed[i], dt);
+      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt;
+      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt;
+      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt;
+      this.positions[i * 3] += this.speeds[i * 3] * dt;
+      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt;
+      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt;
     }
   }
-  simulate(G, softening, collisions, collisionThreshold, escapeDistance) {
-    var i, n, j, l;
+  async simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      escapeDistance
+    } = this.params;
     const collided = [];
     const skip = [];
+    const softening2 = softening * softening;
     const threshold2 = collisionThreshold * collisionThreshold;
-    if (collisions) {
-      for (i = 0, n = this.len; i < n; i++) {
-        for (j = 0; j < i; j++) {
-          this.u.subVectors(this.position[j], this.position[i]);
-          let distance2 = this.u.lengthSq();
-          if (distance2 < threshold2) {
-            collided.push([i, j]);
-            skip.push(j);
-          }
+    let parts = ~~(this.len / this.pool.length);
+    const accelerationBuffers = await Promise.all(this.pool.map((worker, i) => workerPromise(worker, [
+      "iterate",
+      i * parts,
+      i == this.pool.length - 1 ? this.len : (i + 1) * parts,
+      this.len,
+      gravitationalConstant,
+      softening2
+    ].concat(hasSAB ? [] : [
+      this.accelerationsBuffer,
+      this.positionsBuffer,
+      this.massesBuffer
+    ]))));
+    if (!hasSAB) {
+      accelerationBuffers.forEach(([accelerationBuffer, start, end]) => {
+        const accelerations = new Float32Array(accelerationBuffer);
+        for (let i = start; i < end; i++) {
+          this.accelerations[i * 3] = accelerations[i * 3];
+          this.accelerations[i * 3 + 1] = accelerations[i * 3 + 1];
+          this.accelerations[i * 3 + 2] = accelerations[i * 3 + 2];
         }
-      }
-    }
-    for (i = 0, n = this.len; i < n; i++) {
-      if (this.position[i].distanceTo(this.origin) > escapeDistance) {
-        skip.push(i);
-      }
-    }
-    if (skip.length) {
-      for (l = 0, n = collided.length; l < n; l++) {
-        ;
-        [i, j] = collided[l];
-        let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
-        this.position[i].multiplyScalar(this.masses[i]).addScaledVector(this.position[j], this.masses[j]).multiplyScalar(mass_ratio);
-        this.speed[i].multiplyScalar(this.masses[i]).addScaledVector(this.speed[j], this.masses[j]).multiplyScalar(mass_ratio);
-        this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
-        this.masses[i] += this.masses[j];
-      }
-      const positions = [...this.position].filter((_, i2) => !skip.includes(i2));
-      const speeds = [...this.speed].filter((_, i2) => !skip.includes(i2));
-      const masses = [...this.masses].filter((_, i2) => !skip.includes(i2));
-      const temperatures = [...this.temperatures].filter((_, i2) => !skip.includes(i2));
-      this.len -= skip.length;
-      for (i = 0, n = this.len; i < n; i++) {
-        this.position[i] = positions[i];
-        this.speed[i] = speeds[i];
-        this.masses[i] = masses[i];
-        this.temperatures[i] = temperatures[i];
-      }
+      });
     }
     return this.len;
   }
-  frog_drop(dt) {
-    this.update();
-  }
-  update() {
+  frog_drop() {
+    const dt = this.params.simulationSpeed;
+    const half_dt = dt * 0.5;
     for (var i = 0, n = this.len; i < n; i++) {
-      this.positions[i * 3] = this.position[i].x;
-      this.positions[i * 3 + 1] = this.position[i].y;
-      this.positions[i * 3 + 2] = this.position[i].z;
+      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt;
+      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt;
+      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt;
     }
   }
   free() {
-    delete this.positions;
-    delete this.masses;
-    delete this.temperatures;
-    delete this.position;
-    delete this.speed;
+    super.free();
+    this.pool.forEach((worker) => worker.terminate());
   }
 };
-var none_default = NoGravity;
+var p2p_threaded_default = P2PThreadedGravity;
 
 // dist/index.js
 var raf = null;
@@ -31815,14 +31985,16 @@ var colorModes = {
 };
 var particles;
 var gravity;
-var backends = [
-  "js_p2p",
-  "rust_p2p",
-  "js_fmm",
-  "rust_fmm",
-  "rust_tree",
-  "js_none"
-];
+var backends = {
+  js_p2p: p2p_default,
+  rust_p2p: P2PRustGravity,
+  js_p2p_threaded: p2p_threaded_default,
+  js_fmm: fmm_default,
+  rust_fmm: FMMRustGravity,
+  rust_tree: TreeRustGravity,
+  js_none: none_default,
+  rust_none: RustNoGravity
+};
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
@@ -31869,23 +32041,15 @@ function onWindowResize() {
   fxaaPass.material.uniforms.resolution.value.x = 1 / (window.innerWidth * pixelRatio2);
   fxaaPass.material.uniforms.resolution.value.y = 1 / (window.innerHeight * pixelRatio2);
 }
-function animate() {
-  raf = requestAnimationFrame(animate);
+async function animate() {
   stats.update();
-  render();
+  await render();
+  raf = requestAnimationFrame(animate);
 }
-function render() {
-  const {
-    simulationSpeed: dt,
-    gravitationalConstant: G,
-    collisions,
-    softening,
-    collisionThreshold,
-    escapeDistance
-  } = params;
-  gravity.frog_leap(dt);
-  const newLen = gravity.simulate(G, softening, collisions, collisionThreshold, escapeDistance);
-  gravity.frog_drop(dt);
+async function render() {
+  gravity.frog_leap();
+  const newLen = await gravity.simulate();
+  gravity.frog_drop();
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen);
     particles.geometry.attributes.temperature.needsUpdate = true;
@@ -31898,53 +32062,24 @@ function render() {
 function init2() {
   const {
     backend,
-    softening,
     configuration,
-    range,
     scale,
     blackHoleMassThreshold,
-    colorMode,
-    resolution
+    colorMode
   } = params;
   const orbs = configurations_exports[configuration](params);
   let positions, masses, temperatures;
-  if (backend === "js_p2p") {
-    gravity = new p2p_default(orbs);
-    ({positions, masses, temperatures} = gravity);
-  } else if (backend === "js_none") {
-    gravity = new none_default(orbs);
-    ({positions, masses, temperatures} = gravity);
-  } else if (backend === "js_fmm") {
-    gravity = new fmm_default(orbs, range, resolution);
-    ({positions, masses, temperatures} = gravity);
-  } else if (backend.startsWith("rust")) {
-    if (backend === "rust_p2p") {
-      gravity = P2PRustGravity.new(orbs.length);
-    } else if (backend === "rust_fmm") {
-      gravity = FMMRustGravity.new(orbs.length, 1);
-      gravity.precalc(softening);
-    } else if (backend === "rust_tree") {
-      gravity = FMMRustGravity.new(orbs.length, 0);
-      gravity.precalc(softening);
-    }
+  const Backend = backends[backend];
+  gravity = new Backend(orbs, params);
+  if (backend.startsWith("rust")) {
     const {buffer} = wasm_memory();
     positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
     masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
     temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
-    const speeds = new Float32Array(buffer, gravity.speeds_ptr(), 3 * orbs.length);
-    orbs.forEach(({speed}, i) => {
-      speeds[i * 3] = speed.x;
-      speeds[i * 3 + 1] = speed.y;
-      speeds[i * 3 + 2] = speed.z;
-    });
+  } else {
+    ;
+    ({positions, masses, temperatures} = gravity);
   }
-  orbs.forEach(({position, mass, temperature}, i) => {
-    positions[i * 3] = position.x;
-    positions[i * 3 + 1] = position.y;
-    positions[i * 3 + 2] = position.z;
-    masses[i] = mass;
-    temperatures[i] = temperature;
-  });
   const geometry = new BufferGeometry();
   geometry.setDrawRange(0, orbs.length);
   geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
@@ -31975,7 +32110,7 @@ function initGUI() {
     load: presets_default,
     preset
   });
-  gui.add(params, "backend", backends).onChange(restart);
+  gui.add(params, "backend", Object.keys(backends)).onChange(restart);
   gui.add(params, "resolution", 1, 9).onChange(restart);
   const fx = gui.addFolder("Render fx");
   fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);

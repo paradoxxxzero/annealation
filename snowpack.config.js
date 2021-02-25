@@ -1,6 +1,7 @@
 module.exports = {
   mount: {
     public: { url: '/', static: true },
+    'src/gravity/worker': { url: '/worker' },
     src: { url: '/dist' },
   },
   plugins: [
