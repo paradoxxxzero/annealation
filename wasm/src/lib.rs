@@ -1,10 +1,36 @@
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-mod utils;
 
 #[wasm_bindgen]
 pub fn wasm_memory() -> JsValue {
   wasm_bindgen::memory()
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Vector3 {
+  x: f32,
+  y: f32,
+  z: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Orb {
+  mass: f32,
+  temperature: f32,
+  position: Vector3,
+  speed: Vector3,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Params {
+  simulationSpeed: f32,
+  gravitationalConstant: f32,
+  softening: f32,
+  collisions: bool,
+  collisionThreshold: f32,
+  escapeDistance: f32,
+}
+
 mod fmm;
+mod none;
 mod p2p;

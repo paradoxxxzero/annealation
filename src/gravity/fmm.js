@@ -1,32 +1,14 @@
-import { Vector3 } from 'three'
+import NoGravity from './none'
 
-export default class FMMGravity {
-  constructor(orbs, range, resolution) {
-    this.len = orbs.length
-    this.positions = new Float32Array(3 * this.len)
-    this.masses = new Float32Array(this.len)
-    this.temperatures = new Float32Array(this.len)
-
-    this.position = orbs.map(({ position }) => position)
-    this.speed = orbs.map(({ speed }) => speed)
-    this.acceleration = orbs.map(() => new Vector3())
-    this.u = new Vector3()
-    this.origin = new Vector3()
-
-    this.range = range
-    this.levels = ~~resolution
-
-    this.grid_dimension_size = 1 << (3 * this.levels)
-    this.grid = new Float32Array(this.grid_dimension_size * 3)
+export default class FMMGravity extends NoGravity {
+  constructor(orbs, params) {
+    super(orbs, params)
+    this.paramsChange()
   }
 
-  frog_leap(dt) {
-    const half_dt = dt * 0.5
-
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt)
-      this.position[i].addScaledVector(this.speed[i], dt)
-    }
+  paramsChange() {
+    this.grid_dimension_size = 1 << (3 * ~~this.params.resolution)
+    this.grid = new Float32Array(this.grid_dimension_size * 3)
   }
 
   getCells(position) {
@@ -36,11 +18,11 @@ export default class FMMGravity {
       x,
       y,
       z,
-      half_range = this.range * 0.5
+      half_range = this.params.range * 0.5
 
-    for (var level = 1; level < this.levels; level++) {
+    for (var level = 1; level < ~~this.params.resolution; level++) {
       num = 1 << level
-      size = this.range / num
+      size = this.params.range / num
       x = Math.floor((position.x + half_range) / size)
       y = Math.floor((position.y + half_range) / size)
       z = Math.floor((position.z + half_range) / size)
@@ -59,7 +41,18 @@ export default class FMMGravity {
     )
   }
 
-  simulate(G) {
+  simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      escapeDistance,
+    } = this.params
+
+    const collided = []
+    const skip = []
+    const softening2 = softening * softening
     this.grid.fill(0)
 
     var i,
@@ -67,7 +60,7 @@ export default class FMMGravity {
       cells,
       cell_size,
       cell_hash,
-      half_range = this.range * 0.5,
+      half_range = this.params.range * 0.5,
       childrenShifts = [
         [0, 0, 0],
         [1, 0, 0],
@@ -117,14 +110,19 @@ export default class FMMGravity {
           if (!(x == occ_x && y == occ_y && z == occ_z && level == occ_level)) {
             cell_hash = this.getHash(level, x, y, z)
 
-            cell_size = this.range / cell_num
+            cell_size = this.params.range / cell_num
             offset_x = this.position[i].x - (x + 0.5) * cell_size + half_range
             offset_y = this.position[i].y - (y + 0.5) * cell_size + half_range
             offset_z = this.position[i].z - (z + 0.5) * cell_size + half_range
             distance = Math.sqrt(
-              offset_x * offset_x + offset_y * offset_y + offset_z * offset_z
+              offset_x * offset_x +
+                offset_y * offset_y +
+                offset_z * offset_z +
+                softening2
             )
-            k = (G * this.masses[i]) / (distance * distance * distance)
+            k =
+              (gravitationalConstant * this.masses[i]) /
+              (distance * distance * distance)
 
             this.grid[cell_hash] += k * offset_x
             this.grid[cell_hash + this.grid_dimension_size] += k * offset_y
@@ -153,32 +151,11 @@ export default class FMMGravity {
         ]
       }
     }
+
+    escapeDistance && this.solveEscapes(escapeDistance, skip)
+    collided.length && this.solveCollisions(collided)
+    skip.length && this.crunchOrbs(skip)
+
     return this.len
-  }
-
-  frog_drop(dt) {
-    const half_dt = dt * 0.5
-
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt)
-    }
-    this.update()
-  }
-
-  update() {
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.positions[i * 3] = this.position[i].x
-      this.positions[i * 3 + 1] = this.position[i].y
-      this.positions[i * 3 + 2] = this.position[i].z
-    }
-  }
-
-  free() {
-    delete this.positions
-    delete this.masses
-    delete this.temperatures
-    delete this.position
-    delete this.speed
-    delete this.acceleration
   }
 }

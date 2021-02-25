@@ -23,7 +23,12 @@ import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import wasmInit, { P2PRustGravity, FMMRustGravity, wasm_memory } from 'wasm'
+import wasmInit, {
+  P2PRustGravity,
+  FMMRustGravity,
+  RustNoGravity,
+  wasm_memory,
+} from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
@@ -38,14 +43,15 @@ const colorModes = {
   ColorCoded: 0.75,
 }
 let particles, gravity
-const backends = [
-  'js_p2p',
-  'rust_p2p',
-  'js_fmm',
-  'rust_fmm',
-  'rust_tree',
-  'js_none',
-]
+const backends = {
+  js_p2p: P2PGravity,
+  rust_p2p: P2PRustGravity,
+  js_fmm: FMMGravity,
+  rust_fmm: FMMRustGravity,
+  rust_tree: FMMRustGravity,
+  js_none: NoGravity,
+  rust_none: RustNoGravity,
+}
 
 const stats = new Stats()
 
@@ -136,23 +142,10 @@ function animate() {
 }
 
 function render() {
-  const {
-    simulationSpeed: dt,
-    gravitationalConstant: G,
-    collisions,
-    softening,
-    collisionThreshold,
-    escapeDistance,
-  } = params
-  gravity.frog_leap(dt)
-  const newLen = gravity.simulate(
-    G,
-    softening,
-    collisions,
-    collisionThreshold,
-    escapeDistance
-  )
-  gravity.frog_drop(dt)
+  gravity.frog_leap()
+  const newLen = gravity.simulate()
+  gravity.frog_drop()
+
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen)
     particles.geometry.attributes.temperature.needsUpdate = true
@@ -166,36 +159,17 @@ function render() {
 function init() {
   const {
     backend,
-    softening,
     configuration,
-    range,
     scale,
     blackHoleMassThreshold,
     colorMode,
-    resolution,
   } = params
   const orbs = configurations[configuration](params)
   let positions, masses, temperatures
+  const Backend = backends[backend]
+  gravity = new Backend(orbs, params)
 
-  if (backend === 'js_p2p') {
-    gravity = new P2PGravity(orbs)
-    ;({ positions, masses, temperatures } = gravity)
-  } else if (backend === 'js_none') {
-    gravity = new NoGravity(orbs)
-    ;({ positions, masses, temperatures } = gravity)
-  } else if (backend === 'js_fmm') {
-    gravity = new FMMGravity(orbs, range, resolution)
-    ;({ positions, masses, temperatures } = gravity)
-  } else if (backend.startsWith('rust')) {
-    if (backend === 'rust_p2p') {
-      gravity = P2PRustGravity.new(orbs.length)
-    } else if (backend === 'rust_fmm') {
-      gravity = FMMRustGravity.new(orbs.length, 1)
-      gravity.precalc(softening)
-    } else if (backend === 'rust_tree') {
-      gravity = FMMRustGravity.new(orbs.length, 0)
-      gravity.precalc(softening)
-    }
+  if (backend.startsWith('rust')) {
     const { buffer } = wasm_memory()
     positions = new Float32Array(
       buffer,
@@ -208,25 +182,10 @@ function init() {
       gravity.temperatures_ptr(),
       orbs.length
     )
-    // Extra init of speeds
-    const speeds = new Float32Array(
-      buffer,
-      gravity.speeds_ptr(),
-      3 * orbs.length
-    )
-    orbs.forEach(({ speed }, i) => {
-      speeds[i * 3] = speed.x
-      speeds[i * 3 + 1] = speed.y
-      speeds[i * 3 + 2] = speed.z
-    })
+    // gravity.precalc(softening)
+  } else {
+    ;({ positions, masses, temperatures } = gravity)
   }
-  orbs.forEach(({ position, mass, temperature }, i) => {
-    positions[i * 3] = position.x
-    positions[i * 3 + 1] = position.y
-    positions[i * 3 + 2] = position.z
-    masses[i] = mass
-    temperatures[i] = temperature
-  })
 
   const geometry = new BufferGeometry()
   geometry.setDrawRange(0, orbs.length)
@@ -271,7 +230,7 @@ function initGUI() {
     load: presets,
     preset,
   })
-  gui.add(params, 'backend', backends).onChange(restart)
+  gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
   gui.add(params, 'resolution', 1, 9).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))

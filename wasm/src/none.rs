@@ -3,7 +3,7 @@ use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct P2PRustGravity {
+pub struct RustNoGravity {
     params: Params,
     positions: Vec<f32>,
     speeds: Vec<f32>,
@@ -14,9 +14,9 @@ pub struct P2PRustGravity {
 }
 
 #[wasm_bindgen]
-impl P2PRustGravity {
+impl RustNoGravity {
     #[wasm_bindgen(constructor)]
-    pub fn new(orbs: &Array, params: &JsValue) -> Result<P2PRustGravity, JsValue> {
+    pub fn new(orbs: &Array, params: &JsValue) -> Result<RustNoGravity, JsValue> {
         console_error_panic_hook::set_once();
         let params = params
             .into_serde()
@@ -40,7 +40,7 @@ impl P2PRustGravity {
             temperatures[i] = orb.temperature;
         }
 
-        Ok(P2PRustGravity {
+        Ok(RustNoGravity {
             params,
             positions,
             speeds,

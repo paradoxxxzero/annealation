@@ -1,4 +1,4 @@
-import { Color, Spherical, Vector3, Euler } from 'three'
+import { Spherical, Vector3, Euler } from 'three'
 import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
 
 const colorEncode = (r, g, b, l = 256) =>
@@ -6,10 +6,10 @@ const colorEncode = (r, g, b, l = 256) =>
   ~~(Math.min(g, 0.99) * l) * l +
   ~~(Math.min(b, 0.99) * l) * l * l
 
-const normalGauss = x => {
-  // [0, 1] -> [0, 1] max at 1/2
-  return Math.exp(-Math.pow((x - 0.5) * 4, 2))
-}
+// const normalGauss = x => {
+//   // [0, 1] -> [0, 1] max at 1/2
+//   return Math.exp(-Math.pow((x - 0.5) * 4, 2))
+// }
 const centeredGauss = x => {
   // [-1, 1] -> [0, 1] max at 0
   return Math.exp(-Math.pow(x * 2, 2))

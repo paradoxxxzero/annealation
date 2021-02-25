@@ -5,7 +5,6 @@
 
   Reference : GPU Gems Vol.4 "Treecode and fast multipole method for N-body simulation with CUDA"
 */
-use crate::utils::init_hook;
 use num_complex::Complex64 as Complex;
 use std::f32;
 use std::f64;
@@ -74,7 +73,7 @@ pub struct FMMRustGravity {
 #[wasm_bindgen]
 impl FMMRustGravity {
   pub fn new(len: usize, variantIndex: usize) -> FMMRustGravity {
-    init_hook();
+    console_error_panic_hook::set_once();
 
     let positions = vec![0f32; 3 * len];
     let speeds = vec![0f32; 3 * len];
