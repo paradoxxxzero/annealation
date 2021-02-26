@@ -1,4 +1,13 @@
+let accelerations, positions, masses
+
 onmessage = function (e) {
+  if (e.data.length === 3) {
+    let [accelerationsBuffer, positionsBuffer, massesBuffer] = e.data
+    positions = new Float32Array(positionsBuffer)
+    accelerations = new Float32Array(accelerationsBuffer)
+    masses = new Float32Array(massesBuffer)
+    return
+  }
   const [
     start,
     end,
@@ -7,13 +16,8 @@ onmessage = function (e) {
     softening2,
     collisions,
     threshold2,
-    accelerationsBuffer,
-    positionsBuffer,
-    massesBuffer,
   ] = e.data
-  const positions = new Float32Array(positionsBuffer)
-  const accelerations = new Float32Array(accelerationsBuffer)
-  const masses = new Float32Array(massesBuffer)
+
   const collided = []
   const u = [0, 0, 0]
   const a = [0, 0, 0]
@@ -43,5 +47,5 @@ onmessage = function (e) {
     accelerations[i * 3 + 1] = a[1] * gravitationalConstant
     accelerations[i * 3 + 2] = a[2] * gravitationalConstant
   }
-  postMessage([accelerationsBuffer, start, end, collided])
+  postMessage([collided])
 }
