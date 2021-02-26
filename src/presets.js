@@ -4,6 +4,7 @@ export default {
     Cube: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -34,6 +35,7 @@ export default {
     RegularCube: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -64,6 +66,7 @@ export default {
     Galaxy: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -94,6 +97,7 @@ export default {
     Sphere: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -124,6 +128,7 @@ export default {
     HarmonicSphere: {
       0: {
         backend: 'js_p2p_threaded',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -154,6 +159,7 @@ export default {
     ProtoSolarSystem: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -184,6 +190,7 @@ export default {
     CollidingGalaxies: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -214,6 +221,7 @@ export default {
     Fountain: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -244,6 +252,7 @@ export default {
     EightCubes: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -274,6 +283,7 @@ export default {
     Plane: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,
@@ -304,6 +314,7 @@ export default {
     Teapot: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -334,6 +345,7 @@ export default {
     TeapotWithBlackHole: {
       0: {
         backend: 'rust_p2p',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: true,
         fxaa: true,
@@ -364,6 +376,7 @@ export default {
     Ekusupuroshon: {
       0: {
         backend: 'js_fmm',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
         autoRotate: false,
         fxaa: true,
@@ -394,6 +407,7 @@ export default {
     BigSphere: {
       0: {
         backend: 'js_fmm',
+        threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         autoRotate: false,
         fxaa: true,

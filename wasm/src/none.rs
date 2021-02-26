@@ -81,7 +81,7 @@ pub trait Gravity {
                 self.get_speeds()[i * 3 + k] = self.get_speeds()[(i + shift) * 3 + k];
                 self.get_accelerations()[i * 3 + k] = self.get_accelerations()[(i + shift) * 3 + k];
             }
-            self.get_temperatures()[i] = self.get_temperatures()[(i + shift)];
+            self.get_temperatures()[i] = self.get_temperatures()[i + shift];
             self.get_masses()[i] = self.get_masses()[i + shift];
             i += 1;
         }

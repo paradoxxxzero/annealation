@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "snowpack dev",
-    "build": "snowpack build && sed -i \"s/\\\\\\.js\\\\\\$\\/,\\s\\\"/index.js\\$\\/, \\\"wasm\\/index/\" docs/dist/index.js && rm docs/dist/wasm/.gitignore && touch docs/.nojekyll",
+    "build": "snowpack build && rm docs/dist/wasm/.gitignore && touch docs/.nojekyll",
     "test": "echo \"This template does not include a test runner by default.\" && exit 1"
   },
   "devDependencies": {

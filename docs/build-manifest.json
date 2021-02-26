@@ -4,6 +4,10 @@
       "bytes": 42,
       "imports": []
     },
+    "_snowpack/env.js": {
+      "bytes": 97,
+      "imports": []
+    },
     "_snowpack/pkg/dat.gui.js": {
       "bytes": 86125,
       "imports": []
@@ -180,10 +184,6 @@
         }
       ]
     },
-    "_snowpack/env.js": {
-      "bytes": 97,
-      "imports": []
-    },
     "dist/wasm/index.js": {
       "bytes": 12985,
       "imports": [
@@ -225,7 +225,7 @@
       ]
     },
     "dist/gravity/p2p-threaded.js": {
-      "bytes": 4323,
+      "bytes": 4498,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -238,8 +238,12 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 9349,
+      "bytes": 9499,
       "imports": [
+        {
+          "path": "_snowpack/env.js",
+          "kind": "import-statement"
+        },
         {
           "path": "_snowpack/pkg/dat.gui.js",
           "kind": "import-statement"
@@ -335,6 +339,9 @@
       "exports": [],
       "entryPoint": "dist/index.js",
       "inputs": {
+        "_snowpack/env.js": {
+          "bytesInOutput": 186
+        },
         "_snowpack/pkg/dat.gui.js": {
           "bytesInOutput": 85977
         },
@@ -389,9 +396,6 @@
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
         },
-        "_snowpack/env.js": {
-          "bytesInOutput": 186
-        },
         "dist/wasm/index.js": {
           "bytesInOutput": 10575
         },
@@ -408,13 +412,13 @@
           "bytesInOutput": 3843
         },
         "dist/gravity/p2p-threaded.js": {
-          "bytesInOutput": 3872
+          "bytesInOutput": 4016
         },
         "dist/index.js": {
-          "bytesInOutput": 7561
+          "bytesInOutput": 7649
         }
       },
-      "bytes": 1189881
+      "bytes": 1190113
     }
   }
 }

@@ -4,6 +4,17 @@ var __export = (target, all) => {
     __defProp(target, name, {get: all[name], enumerable: true});
 };
 
+// _snowpack/env.js
+var env_exports = {};
+__export(env_exports, {
+  MODE: () => MODE,
+  NODE_ENV: () => NODE_ENV,
+  SSR: () => SSR
+});
+var MODE = "production";
+var NODE_ENV = "production";
+var SSR = false;
+
 // _snowpack/pkg/dat.gui.js
 function ___$insertStyle(css2) {
   if (!css2) {
@@ -31153,17 +31164,6 @@ var presets_default = {
   }
 };
 
-// _snowpack/env.js
-var env_exports = {};
-__export(env_exports, {
-  MODE: () => MODE,
-  NODE_ENV: () => NODE_ENV,
-  SSR: () => SSR
-});
-var MODE = "production";
-var NODE_ENV = "production";
-var SSR = false;
-
 // dist/wasm/index.js
 import.meta.env = env_exports;
 var wasm;
@@ -31474,7 +31474,7 @@ async function load2(module, imports) {
 }
 async function init(input) {
   if (typeof input === "undefined") {
-    input = import.meta.url.replace(/index.js$/, "wasm/index_bg.wasm");
+    input = import.meta.url.replace(/\.js$/, "_bg.wasm");
   }
   const imports = {};
   imports.wbg = {};
@@ -31887,7 +31887,10 @@ var P2PThreadedGravity = class extends none_default {
     this.accelerations = new Float32Array(this.accelerationsBuffer);
     this.massesBuffer = new SAB(this.len * 4);
     this.masses = new Float32Array(this.massesBuffer);
-    this.pool = new Array(~~params2.resolution).fill().map(() => new Worker(new URL("./gravity/worker/p2p-thread.js", import.meta.url)));
+    this.pool = new Array(~~params2.resolution).fill().map(() => {
+      const url = import.meta.url;
+      return new Worker(url.includes("gravity") ? new URL("../../worker/p2p-thread.js", import.meta.url) : new URL("./gravity/worker/p2p-thread.js", import.meta.url));
+    });
     if (hasSAB) {
       this.pool.forEach((worker) => {
         worker.postMessage([
@@ -31975,6 +31978,7 @@ var P2PThreadedGravity = class extends none_default {
 var p2p_threaded_default = P2PThreadedGravity;
 
 // dist/index.js
+import.meta.env = env_exports;
 var raf = null;
 var colorModes = {
   Temperature: 0.5,
@@ -32157,7 +32161,8 @@ function initGUI() {
     restart();
   });
 }
-var wasmPromise = wasm_default();
+console.log(import.meta.url);
+var wasmPromise = wasm_default("./dist/wasm/index_bg.wasm");
 wasmPromise.then(() => {
   init2();
   initGUI();

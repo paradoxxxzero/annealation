@@ -35,6 +35,7 @@ import P2PGravity from './gravity/p2p'
 import FMMGravity from './gravity/fmm'
 import NoGravity from './gravity/none'
 import P2PThreadedGravity from './gravity/p2p-threaded'
+import P2PThreadedSABGravity from './gravity/p2p-threaded-sab'
 let raf = null
 
 const colorModes = {
@@ -49,11 +50,16 @@ const backends = {
   js_p2p: P2PGravity,
   rust_p2p: P2PRustGravity,
   js_p2p_threaded: P2PThreadedGravity,
+  js_p2p_sab: P2PThreadedSABGravity,
   js_fmm: FMMGravity,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
   js_none: NoGravity,
   rust_none: RustNoGravity,
+}
+
+if (typeof SharedArrayBuffer === 'undefined') {
+  delete backends.js_p2p_threaded_sab
 }
 
 const stats = new Stats()
@@ -234,7 +240,8 @@ function initGUI() {
     preset,
   })
   gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
-  gui.add(params, 'resolution', 1, 9).onChange(restart)
+  gui.add(params, 'resolution', 1, 9, 1).onChange(restart)
+  gui.add(params, 'threads', 1, 128, 1).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
   fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
@@ -308,7 +315,8 @@ function initGUI() {
     restart()
   })
 }
-const wasmPromise = wasmInit()
+
+const wasmPromise = wasmInit('./dist/wasm/index_bg.wasm')
 
 wasmPromise.then(() => {
   init()
