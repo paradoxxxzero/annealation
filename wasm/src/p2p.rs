@@ -15,25 +15,28 @@ pub struct P2PRustGravity {
 }
 
 impl Gravity for P2PRustGravity {
-    fn get_len(&self) -> usize {
+    fn _len(&self) -> usize {
         self.len
     }
-    fn get_params(&self) -> &Params {
+    fn _len_set(&mut self, len: usize) {
+        self.len = len;
+    }
+    fn _params(&self) -> &Params {
         &self.params
     }
-    fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    fn _accelerations(&mut self) -> &mut Vec<f32> {
         &mut self.accelerations
     }
-    fn get_speeds(&mut self) -> &mut Vec<f32> {
+    fn _speeds(&mut self) -> &mut Vec<f32> {
         &mut self.speeds
     }
-    fn get_positions(&mut self) -> &mut Vec<f32> {
+    fn _positions(&mut self) -> &mut Vec<f32> {
         &mut self.positions
     }
-    fn get_masses(&mut self) -> &mut Vec<f32> {
+    fn _masses(&mut self) -> &mut Vec<f32> {
         &mut self.masses
     }
-    fn get_temperatures(&mut self) -> &mut Vec<f32> {
+    fn _temperatures(&mut self) -> &mut Vec<f32> {
         &mut self.temperatures
     }
 }
@@ -92,25 +95,22 @@ impl P2PRustGravity {
         self.leap();
     }
     pub fn simulate(&mut self) -> usize {
-        let gravitationalConstant = self.params.gravitationalConstant;
+        let gravitational_constant = self.params.gravitationalConstant;
         let softening = self.params.softening;
         let collisions = self.params.collisions;
         let threshold = self.params.collisionThreshold;
-        let escapeDistance = self.params.escapeDistance;
 
         let mut collided = Vec::new();
-        let mut skip = Vec::new();
         let softening2 = softening * softening;
         let threshold2 = threshold * threshold;
+        let mut a = [0f32, 0f32, 0f32];
 
         for i in 0..self.len {
-            if skip.contains(&i) {
-                continue;
-            }
-            for k in 0..3 {
-                self.accelerations[i * 3 + k] = 0f32;
-            }
-            for j in 0..i {
+            a.fill(0f32);
+            for j in 0..self.len {
+                if i == j {
+                    continue;
+                }
                 let u = [
                     self.positions[j * 3] - self.positions[i * 3],
                     self.positions[j * 3 + 1] - self.positions[i * 3 + 1],
@@ -120,30 +120,22 @@ impl P2PRustGravity {
                 let distance = (distance2 + softening2).sqrt();
                 if collisions {
                     if distance2 < threshold2 {
-                        skip.push(j);
                         collided.push((i, j));
                     }
                 }
 
-                let fact = gravitationalConstant / (distance * distance * distance);
-                let f1 = fact * self.masses[j];
-                let f2 = -fact * self.masses[i];
+                let fact = self.masses[j] / (distance * distance * distance);
 
-                for k in 0..3 {
-                    self.accelerations[i * 3 + k] += u[k] * f1;
-                    self.accelerations[j * 3 + k] += u[k] * f2;
-                }
+                a[0] += u[0] * fact;
+                a[1] += u[1] * fact;
+                a[2] += u[2] * fact;
+            }
+            for k in 0..3 {
+                self.accelerations[i * 3 + k] = a[k] * gravitational_constant;
             }
         }
-        self.solve_escapes(&mut skip);
-        if collided.len() > 0 {
-            self.solve_collisions(&collided)
-        }
-        if skip.len() > 0 {
-            self.len = self.crunch_orbs(&skip)
-        }
 
-        self.len
+        self.solve(collided)
     }
     pub fn frog_drop(&mut self) {
         self.drop();

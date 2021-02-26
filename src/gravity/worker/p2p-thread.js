@@ -16,11 +16,10 @@ onmessage = function (e) {
   const masses = new Float32Array(massesBuffer)
   const collided = []
   const u = [0, 0, 0]
-  for (var i = start; i < end; i++) {
-    accelerations[i * 3] = 0
-    accelerations[i * 3 + 1] = 0
-    accelerations[i * 3 + 2] = 0
-    for (var j = 0; j < len; j++) {
+  const a = [0, 0, 0]
+  for (let i = start; i < end; i++) {
+    a.fill(0)
+    for (let j = 0; j < len; j++) {
       if (i === j) {
         continue
       }
@@ -35,13 +34,14 @@ onmessage = function (e) {
         }
       }
 
-      let fact =
-        (masses[j] * gravitationalConstant) / (distance * distance * distance)
-
-      accelerations[i * 3] += u[0] * fact
-      accelerations[i * 3 + 1] += u[1] * fact
-      accelerations[i * 3 + 2] += u[2] * fact
+      let fact = masses[j] / (distance * distance * distance)
+      a[0] += u[0] * fact
+      a[1] += u[1] * fact
+      a[2] += u[2] * fact
     }
+    accelerations[i * 3] = a[0] * gravitationalConstant
+    accelerations[i * 3 + 1] = a[1] * gravitationalConstant
+    accelerations[i * 3 + 2] = a[2] * gravitationalConstant
   }
   postMessage([accelerationsBuffer, start, end, collided])
 }

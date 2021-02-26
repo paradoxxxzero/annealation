@@ -1,46 +1,47 @@
 import NoGravity from './none'
 
 export default class P2PGravity extends NoGravity {
-  simulate() {
+  async simulate() {
     const {
       gravitationalConstant,
       softening,
       collisions,
       collisionThreshold,
-      escapeDistance,
     } = this.params
-
-    const collided = []
-    const skip = []
-
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
+
+    const collided = []
+    const u = [0, 0, 0]
+    const a = [0, 0, 0]
     for (let i = 0, n = this.len; i < n; i++) {
-      this.acceleration[i].set(0, 0, 0)
-      for (let j = 0; j < i; j++) {
-        this.u.subVectors(this.position[j], this.position[i])
-        let distance2 = this.u.lengthSq()
+      a.fill(0)
+      for (let j = 0; j < this.len; j++) {
+        if (i === j) {
+          continue
+        }
+        u[0] = this.positions[j * 3] - this.positions[i * 3]
+        u[1] = this.positions[j * 3 + 1] - this.positions[i * 3 + 1]
+        u[2] = this.positions[j * 3 + 2] - this.positions[i * 3 + 2]
+        let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2]
         let distance = Math.sqrt(distance2 + softening2)
         if (collisions) {
           if (distance2 < threshold2) {
             collided.push([i, j])
-            skip.push(j)
           }
         }
 
-        // a = G * M / d²
-        this.u
-          .normalize()
-          .multiplyScalar(gravitationalConstant / (distance * distance))
-        this.acceleration[i].addScaledVector(this.u, this.masses[j])
-        this.acceleration[j].addScaledVector(this.u, -this.masses[i])
+        let fact = this.masses[j] / (distance * distance * distance)
+
+        a[0] += u[0] * fact
+        a[1] += u[1] * fact
+        a[2] += u[2] * fact
       }
+      this.accelerations[i * 3] = a[0] * gravitationalConstant
+      this.accelerations[i * 3 + 1] = a[1] * gravitationalConstant
+      this.accelerations[i * 3 + 2] = a[2] * gravitationalConstant
     }
 
-    escapeDistance && this.solveEscapes(skip)
-    collided.length && this.solveCollisions(collided)
-    skip.length && (this.len = this.crunchOrbs(skip))
-
-    return this.len
+    return this.solve(collided)
   }
 }

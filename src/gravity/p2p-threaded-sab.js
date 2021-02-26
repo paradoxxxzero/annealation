@@ -1,10 +1,10 @@
 /* global SharedArrayBuffer */
-import P2PThreadedGravity, { workerPromise } from './p2p-threaded'
+import { workerPromise } from './p2p-threaded'
+import NoGravity from './none'
 
-export default class P2PThreadedSABGravity extends P2PThreadedGravity {
+export default class P2PThreadedSABGravity extends NoGravity {
   constructor(orbs, params) {
     super(orbs, params)
-    this.pool.forEach(worker => worker.terminate())
     this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
     this.positions = new Float32Array(this.positionsBuffer)
     this.speedsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
@@ -25,7 +25,6 @@ export default class P2PThreadedSABGravity extends P2PThreadedGravity {
     })
     this.pool.forEach(worker => {
       worker.postMessage([
-        'init',
         this.accelerationsBuffer,
         this.positionsBuffer,
         this.massesBuffer,
@@ -42,20 +41,6 @@ export default class P2PThreadedSABGravity extends P2PThreadedGravity {
       this.masses[i] = mass
       this.temperatures[i] = temperature
     })
-  }
-
-  frog_leap() {
-    const dt = this.params.simulationSpeed
-    const half_dt = dt * 0.5
-
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt
-      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt
-      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt
-      this.positions[i * 3] += this.speeds[i * 3] * dt
-      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt
-      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt
-    }
   }
 
   async simulate() {
@@ -77,7 +62,6 @@ export default class P2PThreadedSABGravity extends P2PThreadedGravity {
     const workersResults = await Promise.all(
       this.pool.map((worker, i) =>
         workerPromise(worker, [
-          'iterate',
           i * parts,
           i == this.pool.length - 1 ? this.len : (i + 1) * parts,
           this.len,

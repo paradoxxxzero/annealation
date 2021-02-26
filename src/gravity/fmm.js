@@ -11,7 +11,7 @@ export default class FMMGravity extends NoGravity {
     this.grid = new Float32Array(this.grid_dimension_size * 3)
   }
 
-  getCells(position) {
+  getCells(i) {
     const cells = []
     var num,
       size,
@@ -23,9 +23,9 @@ export default class FMMGravity extends NoGravity {
     for (var level = 1; level < ~~this.params.resolution; level++) {
       num = 1 << level
       size = this.params.range / num
-      x = Math.floor((position.x + half_range) / size)
-      y = Math.floor((position.y + half_range) / size)
-      z = Math.floor((position.z + half_range) / size)
+      x = Math.floor((this.positions[i * 3] + half_range) / size)
+      y = Math.floor((this.positions[i * 3 + 1] + half_range) / size)
+      z = Math.floor((this.positions[i * 3 + 2] + half_range) / size)
 
       // in bounds
       if (0 <= x && x < num && 0 <= y && y < num && 0 <= z && z < num) {
@@ -41,17 +41,11 @@ export default class FMMGravity extends NoGravity {
     )
   }
 
-  simulate() {
-    const {
-      gravitationalConstant,
-      softening,
-      collisions,
-      collisionThreshold,
-      escapeDistance,
-    } = this.params
+  async simulate() {
+    // TODO: implement collisions somehow
+    const { gravitationalConstant, softening } = this.params
 
     const collided = []
-    const skip = []
     const softening2 = softening * softening
     this.grid.fill(0)
 
@@ -74,7 +68,7 @@ export default class FMMGravity extends NoGravity {
 
     // Computing cells from all particles
     for (i = 0, n = this.len; i < n; i++) {
-      cells = this.getCells(this.position[i])
+      cells = this.getCells(i)
       var cell_level = 0,
         cell_x = 0,
         cell_y = 0,
@@ -111,9 +105,12 @@ export default class FMMGravity extends NoGravity {
             cell_hash = this.getHash(level, x, y, z)
 
             cell_size = this.params.range / cell_num
-            offset_x = this.position[i].x - (x + 0.5) * cell_size + half_range
-            offset_y = this.position[i].y - (y + 0.5) * cell_size + half_range
-            offset_z = this.position[i].z - (z + 0.5) * cell_size + half_range
+            offset_x =
+              this.positions[i * 3] - (x + 0.5) * cell_size + half_range
+            offset_y =
+              this.positions[i * 3 + 1] - (y + 0.5) * cell_size + half_range
+            offset_z =
+              this.positions[i * 3 + 2] - (z + 0.5) * cell_size + half_range
             distance = Math.sqrt(
               offset_x * offset_x +
                 offset_y * offset_y +
@@ -137,25 +134,21 @@ export default class FMMGravity extends NoGravity {
     }
 
     // Applying force from all cells to particles
+    const a = [0, 0, 0]
     for (i = 0, n = this.len; i < n; i++) {
-      cells = this.getCells(this.position[i])
-      this.acceleration[i].set(0, 0, 0)
+      cells = this.getCells(i)
+      a.fill(0)
       for (cell_i = 0; cell_i < cells.length; cell_i++) {
         cell_hash = this.getHash(...cells[cell_i])
-        this.acceleration[i].x += this.grid[cell_hash]
-        this.acceleration[i].y += this.grid[
-          cell_hash + this.grid_dimension_size
-        ]
-        this.acceleration[i].z += this.grid[
-          cell_hash + 2 * this.grid_dimension_size
-        ]
+        a[0] += this.grid[cell_hash]
+        a[1] += this.grid[cell_hash + this.grid_dimension_size]
+        a[2] += this.grid[cell_hash + 2 * this.grid_dimension_size]
       }
+      this.accelerations[i * 3] = a[0]
+      this.accelerations[i * 3 + 1] = a[1]
+      this.accelerations[i * 3 + 2] = a[2]
     }
 
-    escapeDistance && this.solveEscapes(skip)
-    collided.length && this.solveCollisions(collided)
-    skip.length && (this.len = this.crunchOrbs(skip))
-
-    return this.len
+    return this.solve(collided)
   }
 }

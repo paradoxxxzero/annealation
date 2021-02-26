@@ -3,71 +3,108 @@ use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 pub trait Gravity {
-    fn get_len(&self) -> usize;
-    fn get_params(&self) -> &Params;
-    fn get_accelerations(&mut self) -> &mut Vec<f32>;
-    fn get_speeds(&mut self) -> &mut Vec<f32>;
-    fn get_positions(&mut self) -> &mut Vec<f32>;
-    fn get_masses(&mut self) -> &mut Vec<f32>;
-    fn get_temperatures(&mut self) -> &mut Vec<f32>;
+    fn _len(&self) -> usize;
+    fn _len_set(&mut self, len: usize);
+    fn _params(&self) -> &Params;
+    fn _accelerations(&mut self) -> &mut Vec<f32>;
+    fn _speeds(&mut self) -> &mut Vec<f32>;
+    fn _positions(&mut self) -> &mut Vec<f32>;
+    fn _masses(&mut self) -> &mut Vec<f32>;
+    fn _temperatures(&mut self) -> &mut Vec<f32>;
 
     fn leap(&mut self) {
-        let dt = self.get_params().simulationSpeed;
+        let dt = self._params().simulationSpeed;
         let half_dt = dt * 0.5f32;
-        for i in 0..self.get_len() {
+        for i in 0..self._len() {
             for k in 0..3 {
-                self.get_speeds()[i * 3 + k] += self.get_accelerations()[i * 3 + k] * half_dt;
-                self.get_positions()[i * 3 + k] += self.get_speeds()[i * 3 + k] * dt;
+                self._speeds()[i * 3 + k] += self._accelerations()[i * 3 + k] * half_dt;
+                self._positions()[i * 3 + k] += self._speeds()[i * 3 + k] * dt;
             }
         }
     }
+
     fn drop(&mut self) {
-        let dt = self.get_params().simulationSpeed;
+        let dt = self._params().simulationSpeed;
         let half_dt = dt * 0.5f32;
-        for i in 0..self.get_len() {
+        for i in 0..self._len() {
             for k in 0..3 {
-                self.get_speeds()[i * 3 + k] += self.get_accelerations()[i * 3 + k] * half_dt;
+                self._speeds()[i * 3 + k] += self._accelerations()[i * 3 + k] * half_dt;
             }
         }
     }
 
-    fn solve_collisions(&mut self, collided: &Vec<(usize, usize)>) {
-        for &item in collided.iter() {
-            let (i, j) = item;
-            let mass_ratio = 1. / (self.get_masses()[i] + self.get_masses()[j]);
-            for k in 0..3 {
-                self.get_positions()[i * 3 + k] = mass_ratio
-                    * (self.get_positions()[i * 3 + k] * self.get_masses()[i]
-                        + self.get_positions()[j * 3 + k] * self.get_masses()[j]);
-                self.get_speeds()[i * 3 + k] = mass_ratio
-                    * (self.get_speeds()[i * 3 + k] * self.get_masses()[i]
-                        + self.get_speeds()[j * 3 + k] * self.get_masses()[j]);
+    fn aggregate_collisions(&mut self, collided: Vec<(usize, usize)>) -> Vec<Vec<usize>> {
+        let mut aggregated: Vec<Vec<usize>> = Vec::new();
+        for (i, j) in collided {
+            let mut isNew = true;
+            for cell in &mut aggregated {
+                let isIin = cell.contains(&i);
+                let isJin = cell.contains(&j);
+                if isIin || isJin {
+                    isNew = false
+                }
+                if isIin != isJin {
+                    let newI = if isIin { j } else { i };
+                    if newI > cell[0] {
+                        cell.push(newI);
+                    } else {
+                        cell.insert(0, newI);
+                    }
+                    break;
+                }
             }
-            self.get_temperatures()[i] = mass_ratio
-                * (self.get_temperatures()[i] * self.get_masses()[i]
-                    + self.get_temperatures()[j] * self.get_masses()[j]);
-            self.get_masses()[i] += self.get_masses()[j];
+            if isNew {
+                aggregated.push(if i > j { vec![j, i] } else { vec![i, j] });
+            }
+        }
+        return aggregated;
+    }
+
+    fn solve_collisions(&mut self, collided: Vec<Vec<usize>>) {
+        for item in collided.iter() {
+            let i = item[0];
+            for j in &item[1..] {
+                let mass_ratio = 1. / (self._masses()[i] + self._masses()[*j]);
+                for k in 0..3 {
+                    self._positions()[i * 3 + k] = mass_ratio
+                        * (self._positions()[i * 3 + k] * self._masses()[i]
+                            + self._positions()[j * 3 + k] * self._masses()[*j]);
+                    self._speeds()[i * 3 + k] = mass_ratio
+                        * (self._speeds()[i * 3 + k] * self._masses()[i]
+                            + self._speeds()[j * 3 + k] * self._masses()[*j]);
+                }
+                self._temperatures()[i] = mass_ratio
+                    * (self._temperatures()[i] * self._masses()[i]
+                        + self._temperatures()[*j] * self._masses()[*j]);
+                self._masses()[i] += self._masses()[*j];
+            }
         }
     }
 
-    fn solve_escapes(&mut self, skip: &mut Vec<usize>) {
-        let escape_distance = self.get_params().escapeDistance;
+    fn solve_escapes(&mut self) -> Vec<usize> {
+        let mut skip = Vec::new();
+        let escape_distance = self._params().escapeDistance;
+        if escape_distance < 0.01 {
+            return skip;
+        }
         let escape_distance2 = escape_distance * escape_distance;
-        for i in 0..self.get_len() {
-            if self.get_positions()[i * 3] * self.get_positions()[i * 3]
-                + self.get_positions()[i * 3 + 1] * self.get_positions()[i * 3 + 1]
-                + self.get_positions()[i * 3 + 2] * self.get_positions()[i * 3 + 2]
+        for i in 0..self._len() {
+            if self._positions()[i * 3] * self._positions()[i * 3]
+                + self._positions()[i * 3 + 1] * self._positions()[i * 3 + 1]
+                + self._positions()[i * 3 + 2] * self._positions()[i * 3 + 2]
                 > escape_distance2
             {
                 skip.push(i);
             }
         }
+
+        skip
     }
 
     fn crunch_orbs(&mut self, skip: &Vec<usize>) -> usize {
         let mut i = 0;
         let mut shift = 0;
-        while i + shift < self.get_len() {
+        while i + shift < self._len() {
             if skip.contains(&(i + shift)) {
                 shift += 1;
                 continue;
@@ -77,15 +114,33 @@ pub trait Gravity {
                 continue;
             }
             for k in 0..3 {
-                self.get_positions()[i * 3 + k] = self.get_positions()[(i + shift) * 3 + k];
-                self.get_speeds()[i * 3 + k] = self.get_speeds()[(i + shift) * 3 + k];
-                self.get_accelerations()[i * 3 + k] = self.get_accelerations()[(i + shift) * 3 + k];
+                self._positions()[i * 3 + k] = self._positions()[(i + shift) * 3 + k];
+                self._speeds()[i * 3 + k] = self._speeds()[(i + shift) * 3 + k];
+                self._accelerations()[i * 3 + k] = self._accelerations()[(i + shift) * 3 + k];
             }
-            self.get_temperatures()[i] = self.get_temperatures()[i + shift];
-            self.get_masses()[i] = self.get_masses()[i + shift];
+            self._temperatures()[i] = self._temperatures()[i + shift];
+            self._masses()[i] = self._masses()[i + shift];
             i += 1;
         }
-        self.get_len() - shift
+        self._len() - shift
+    }
+
+    fn solve(&mut self, collided: Vec<(usize, usize)>) -> usize {
+        let mut skip = self.solve_escapes();
+        if collided.len() > 0 {
+            let collided: Vec<Vec<usize>> = self.aggregate_collisions(collided);
+            for cell in &collided {
+                for item in &cell[1..] {
+                    skip.push(*item);
+                }
+            }
+            self.solve_collisions(collided);
+        }
+        if skip.len() > 0 {
+            let new_len = self.crunch_orbs(&skip);
+            self._len_set(new_len);
+        }
+        self._len()
     }
 }
 
@@ -101,25 +156,28 @@ pub struct RustNoGravity {
 }
 
 impl Gravity for RustNoGravity {
-    fn get_len(&self) -> usize {
+    fn _len(&self) -> usize {
         self.len
     }
-    fn get_params(&self) -> &Params {
+    fn _len_set(&mut self, len: usize) {
+        self.len = len;
+    }
+    fn _params(&self) -> &Params {
         &self.params
     }
-    fn get_accelerations(&mut self) -> &mut Vec<f32> {
+    fn _accelerations(&mut self) -> &mut Vec<f32> {
         &mut self.accelerations
     }
-    fn get_speeds(&mut self) -> &mut Vec<f32> {
+    fn _speeds(&mut self) -> &mut Vec<f32> {
         &mut self.speeds
     }
-    fn get_positions(&mut self) -> &mut Vec<f32> {
+    fn _positions(&mut self) -> &mut Vec<f32> {
         &mut self.positions
     }
-    fn get_masses(&mut self) -> &mut Vec<f32> {
+    fn _masses(&mut self) -> &mut Vec<f32> {
         &mut self.masses
     }
-    fn get_temperatures(&mut self) -> &mut Vec<f32> {
+    fn _temperatures(&mut self) -> &mut Vec<f32> {
         &mut self.temperatures
     }
 }
@@ -177,17 +235,9 @@ impl RustNoGravity {
     }
 
     pub fn simulate(&mut self) -> usize {
-        let mut collided: Vec<(usize, usize)> = Vec::new();
-        let mut skip = Vec::new();
+        let collided: Vec<(usize, usize)> = Vec::new();
 
-        self.solve_escapes(&mut skip);
-        if collided.len() > 0 {
-            self.solve_collisions(&collided)
-        }
-        if skip.len() > 0 {
-            self.len = self.crunch_orbs(&skip)
-        }
-        self.len
+        self.solve(collided)
     }
 
     pub fn frog_drop(&mut self) {

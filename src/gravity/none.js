@@ -1,11 +1,11 @@
-import { Vector3 } from 'three'
-
 export default class NoGravity {
   constructor(orbs, params) {
     this.params = params
 
     this.len = orbs.length
     this.positions = new Float32Array(3 * this.len)
+    this.speeds = new Float32Array(3 * this.len)
+    this.accelerations = new Float32Array(3 * this.len)
     this.masses = new Float32Array(this.len)
     this.temperatures = new Float32Array(this.len)
 
@@ -16,13 +16,6 @@ export default class NoGravity {
       this.masses[i] = mass
       this.temperatures[i] = temperature
     })
-
-    // Vector array utils
-    this.position = orbs.map(({ position }) => position)
-    this.speed = orbs.map(({ speed }) => speed)
-    this.acceleration = orbs.map(() => new Vector3())
-    this.u = new Vector3()
-    this.origin = new Vector3()
   }
 
   paramsChange() {}
@@ -32,93 +25,170 @@ export default class NoGravity {
     const half_dt = dt * 0.5
 
     for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt)
-      this.position[i].addScaledVector(this.speed[i], dt)
+      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt
+      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt
+      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt
+      this.positions[i * 3] += this.speeds[i * 3] * dt
+      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt
+      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt
     }
+  }
+
+  aggregateCollisions(collided) {
+    const aggregated = []
+    for (let l = 0, n = collided.length; l < n; l++) {
+      const [i, j] = collided[l]
+      let isNew = true
+      for (let k = 0, m = aggregated.length; k < m; k++) {
+        const cell = aggregated[k]
+        const isIin = cell.includes(i)
+        const isJin = cell.includes(j)
+        if (isIin || isJin) {
+          isNew = false
+        }
+        if (isIin !== isJin) {
+          let newI = isIin ? j : i
+          if (newI > cell[0]) {
+            cell.push(newI)
+          } else {
+            cell.unshift(newI)
+          }
+          break
+        }
+      }
+      if (isNew) {
+        aggregated.push(i > j ? [j, i] : [i, j])
+      }
+    }
+    return aggregated
   }
 
   solveCollisions(collided) {
     for (let l = 0, n = collided.length; l < n; l++) {
-      let [i, j] = collided[l]
-      let mass_ratio = 1 / (this.masses[i] + this.masses[j])
-      this.position[i]
-        .multiplyScalar(this.masses[i])
-        .addScaledVector(this.position[j], this.masses[j])
-        .multiplyScalar(mass_ratio)
-      this.speed[i]
-        .multiplyScalar(this.masses[i])
-        .addScaledVector(this.speed[j], this.masses[j])
-        .multiplyScalar(mass_ratio)
-      this.temperatures[i] =
-        mass_ratio *
-        (this.temperatures[i] * this.masses[i] +
-          this.temperatures[j] * this.masses[j])
-      this.masses[i] += this.masses[j]
-    }
-  }
+      const cell = collided[l]
+      let i = cell[0]
+      for (let m = 1, o = cell.length; m < o; m++) {
+        let j = cell[m]
+        let mass_ratio = 1 / (this.masses[i] + this.masses[j])
+        this.positions[i * 3] =
+          mass_ratio *
+          (this.positions[i * 3] * this.masses[i] +
+            this.positions[j * 3] * this.masses[j])
+        this.positions[i * 3 + 1] =
+          mass_ratio *
+          (this.positions[i * 3 + 1] * this.masses[i] +
+            this.positions[j * 3 + 1] * this.masses[j])
+        this.positions[i * 3 + 2] =
+          mass_ratio *
+          (this.positions[i * 3 + 2] * this.masses[i] +
+            this.positions[j * 3 + 2] * this.masses[j])
 
-  solveEscapes(skip) {
-    const { escapeDistance } = this.params
-    if (!escapeDistance) {
-      return
-    }
-    for (let i = 0, n = this.len; i < n; i++) {
-      if (this.position[i].distanceTo(this.origin) > escapeDistance) {
-        skip.push(i)
+        this.speeds[i * 3] =
+          mass_ratio *
+          (this.speeds[i * 3] * this.masses[i] +
+            this.speeds[j * 3] * this.masses[j])
+        this.speeds[i * 3 + 1] =
+          mass_ratio *
+          (this.speeds[i * 3 + 1] * this.masses[i] +
+            this.speeds[j * 3 + 1] * this.masses[j])
+        this.speeds[i * 3 + 2] =
+          mass_ratio *
+          (this.speeds[i * 3 + 2] * this.masses[i] +
+            this.speeds[j * 3 + 2] * this.masses[j])
+
+        this.temperatures[i] =
+          mass_ratio *
+          (this.temperatures[i] * this.masses[i] +
+            this.temperatures[j] * this.masses[j])
+
+        this.masses[i] += this.masses[j]
       }
     }
   }
 
-  crunchOrbs(skip) {
-    const positions = [...this.position].filter((_, i) => !skip.includes(i))
-    const speeds = [...this.speed].filter((_, i) => !skip.includes(i))
-    const masses = [...this.masses].filter((_, i) => !skip.includes(i))
-    const temperatures = [...this.temperatures].filter(
-      (_, i) => !skip.includes(i)
-    )
-    const newLen = this.len - skip.length
-    for (let i = 0, n = newLen; i < n; i++) {
-      this.position[i] = positions[i]
-      this.speed[i] = speeds[i]
-      this.masses[i] = masses[i]
-      this.temperatures[i] = temperatures[i]
+  solveEscapes() {
+    const skip = []
+    const { escapeDistance } = this.params
+    if (!escapeDistance) {
+      return skip
     }
-    return newLen
+    const escapeDistance2 = escapeDistance * escapeDistance
+    for (let i = 0, n = this.len; i < n; i++) {
+      if (
+        this.positions[i * 3] * this.positions[i * 3] +
+          this.positions[i * 3 + 1] * this.positions[i * 3 + 1] +
+          this.positions[i * 3 + 2] * this.positions[i * 3 + 2] >
+        escapeDistance2
+      ) {
+        skip.push(i)
+      }
+    }
+    return skip
   }
 
-  simulate() {
-    const collided = []
-    const skip = []
+  crunchOrbs(skip) {
+    let i = 0
+    let shift = 0
+    while (i + shift < this.len) {
+      if (skip.includes(i + shift)) {
+        shift += 1
+        continue
+      }
+      if (shift == 0) {
+        i += 1
+        continue
+      }
+      this.positions[i * 3] = this.positions[(i + shift) * 3]
+      this.positions[i * 3 + 1] = this.positions[(i + shift) * 3 + 1]
+      this.positions[i * 3 + 2] = this.positions[(i + shift) * 3 + 2]
+      this.speeds[i * 3] = this.speeds[(i + shift) * 3]
+      this.speeds[i * 3 + 1] = this.speeds[(i + shift) * 3 + 1]
+      this.speeds[i * 3 + 2] = this.speeds[(i + shift) * 3 + 2]
+      this.accelerations[i * 3] = this.accelerations[(i + shift) * 3]
+      this.accelerations[i * 3 + 1] = this.accelerations[(i + shift) * 3 + 1]
+      this.accelerations[i * 3 + 2] = this.accelerations[(i + shift) * 3 + 2]
+      this.temperatures[i] = this.temperatures[i + shift]
+      this.masses[i] = this.masses[i + shift]
+      i += 1
+    }
+    return this.len - shift
+  }
 
-    this.solveEscapes(skip)
-    collided.length && this.solveCollisions(collided)
-    skip.length && (this.len = this.crunchOrbs(skip))
+  solve(collided) {
+    const skip = this.solveEscapes()
+    if (collided.length) {
+      collided = this.aggregateCollisions(collided)
+      collided.forEach(cell => {
+        skip.push(...cell.slice(1))
+      })
+      this.solveCollisions(collided)
+    }
+    if (skip.length) {
+      this.len = this.crunchOrbs(skip)
+    }
     return this.len
   }
 
-  frog_drop() {
-    const half_dt = this.params.simulationSpeed * 0.5
-
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speed[i].addScaledVector(this.acceleration[i], half_dt)
-    }
-    this.update()
+  async simulate() {
+    return this.solve([])
   }
 
-  update() {
+  frog_drop() {
+    const dt = this.params.simulationSpeed
+    const half_dt = dt * 0.5
+
     for (var i = 0, n = this.len; i < n; i++) {
-      this.positions[i * 3] = this.position[i].x
-      this.positions[i * 3 + 1] = this.position[i].y
-      this.positions[i * 3 + 2] = this.position[i].z
+      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt
+      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt
+      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt
     }
   }
 
   free() {
-    delete this.positions
-    delete this.masses
     delete this.temperatures
-    delete this.position
-    delete this.speed
-    delete this.acceleration
+    delete this.masses
+    delete this.accelerations
+    delete this.speeds
+    delete this.positions
   }
 }
