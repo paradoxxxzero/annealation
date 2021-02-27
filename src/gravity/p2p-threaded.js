@@ -58,9 +58,10 @@ export default class P2PThreadedGravity extends Gravity {
     workersResults.forEach(([accelerationBuffer, start, end, collidedPart]) => {
       const accelerations = new Float32Array(accelerationBuffer)
       for (let i = start; i < end; i++) {
-        this.accelerations[i * 3] = accelerations[i * 3]
-        this.accelerations[i * 3 + 1] = accelerations[i * 3 + 1]
-        this.accelerations[i * 3 + 2] = accelerations[i * 3 + 2]
+        let i3 = i * 3
+        this.accelerations[i3] = accelerations[i3]
+        this.accelerations[i3 + 1] = accelerations[i3 + 1]
+        this.accelerations[i3 + 2] = accelerations[i3 + 2]
       }
       collided.push(...collidedPart)
     })

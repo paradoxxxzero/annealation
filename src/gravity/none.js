@@ -5,9 +5,10 @@ export default class NoGravity extends Gravity {
     const dt = this.params.simulationSpeed
 
     for (var i = 0, n = this.len; i < n; i++) {
-      this.positions[i * 3] += this.speeds[i * 3] * dt
-      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt
-      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt
+      let i3 = i * 3
+      this.positions[i3] += this.speeds[i3] * dt
+      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt
+      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt
     }
   }
 

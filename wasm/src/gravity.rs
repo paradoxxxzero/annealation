@@ -14,9 +14,10 @@ pub trait Gravity {
     let dt = self._params().simulationSpeed;
     let half_dt = dt * 0.5f32;
     for i in 0..self._len() {
+      let i3 = i * 3;
       for k in 0..3 {
-        self._speeds()[i * 3 + k] += self._accelerations()[i * 3 + k] * half_dt;
-        self._positions()[i * 3 + k] += self._speeds()[i * 3 + k] * dt;
+        self._speeds()[i3 + k] += self._accelerations()[i3 + k] * half_dt;
+        self._positions()[i3 + k] += self._speeds()[i3 + k] * dt;
       }
     }
   }
@@ -25,8 +26,9 @@ pub trait Gravity {
     let dt = self._params().simulationSpeed;
     let half_dt = dt * 0.5f32;
     for i in 0..self._len() {
+      let i3 = i * 3;
       for k in 0..3 {
-        self._speeds()[i * 3 + k] += self._accelerations()[i * 3 + k] * half_dt;
+        self._speeds()[i3 + k] += self._accelerations()[i3 + k] * half_dt;
       }
     }
   }
@@ -61,15 +63,17 @@ pub trait Gravity {
   fn solve_collisions(&mut self, collided: Vec<Vec<usize>>) {
     for item in collided.iter() {
       let i = item[0];
+      let i3 = i * 3;
       for j in &item[1..] {
+        let j3 = j * 3;
         let mass_ratio = 1. / (self._masses()[i] + self._masses()[*j]);
         for k in 0..3 {
-          self._positions()[i * 3 + k] = mass_ratio
-            * (self._positions()[i * 3 + k] * self._masses()[i]
-              + self._positions()[j * 3 + k] * self._masses()[*j]);
-          self._speeds()[i * 3 + k] = mass_ratio
-            * (self._speeds()[i * 3 + k] * self._masses()[i]
-              + self._speeds()[j * 3 + k] * self._masses()[*j]);
+          self._positions()[i3 + k] = mass_ratio
+            * (self._positions()[i3 + k] * self._masses()[i]
+              + self._positions()[j3 + k] * self._masses()[*j]);
+          self._speeds()[i3 + k] = mass_ratio
+            * (self._speeds()[i3 + k] * self._masses()[i]
+              + self._speeds()[j3 + k] * self._masses()[*j]);
         }
         self._temperatures()[i] = mass_ratio
           * (self._temperatures()[i] * self._masses()[i]
@@ -87,9 +91,10 @@ pub trait Gravity {
     }
     let escape_distance2 = escape_distance * escape_distance;
     for i in 0..self._len() {
-      if self._positions()[i * 3] * self._positions()[i * 3]
-        + self._positions()[i * 3 + 1] * self._positions()[i * 3 + 1]
-        + self._positions()[i * 3 + 2] * self._positions()[i * 3 + 2]
+      let i3 = i * 3;
+      if self._positions()[i3] * self._positions()[i3]
+        + self._positions()[i3 + 1] * self._positions()[i3 + 1]
+        + self._positions()[i3 + 2] * self._positions()[i3 + 2]
         > escape_distance2
       {
         skip.push(i);
@@ -111,10 +116,12 @@ pub trait Gravity {
         i += 1;
         continue;
       }
+      let i3 = i * 3;
+      let is3 = (i + shift) * 3;
       for k in 0..3 {
-        self._positions()[i * 3 + k] = self._positions()[(i + shift) * 3 + k];
-        self._speeds()[i * 3 + k] = self._speeds()[(i + shift) * 3 + k];
-        self._accelerations()[i * 3 + k] = self._accelerations()[(i + shift) * 3 + k];
+        self._positions()[i3 + k] = self._positions()[is3 + k];
+        self._speeds()[i3 + k] = self._speeds()[is3 + k];
+        self._accelerations()[i3 + k] = self._accelerations()[is3 + k];
       }
       self._temperatures()[i] = self._temperatures()[i + shift];
       self._masses()[i] = self._masses()[i + shift];

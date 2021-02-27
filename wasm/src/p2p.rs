@@ -106,15 +106,17 @@ impl P2PRustGravity {
         let mut a = [0f32, 0f32, 0f32];
 
         for i in 0..self.len {
+            let i3 = i * 3;
             a.fill(0f32);
             for j in 0..self.len {
                 if i == j {
                     continue;
                 }
+                let j3 = j * 3;
                 let u = [
-                    self.positions[j * 3] - self.positions[i * 3],
-                    self.positions[j * 3 + 1] - self.positions[i * 3 + 1],
-                    self.positions[j * 3 + 2] - self.positions[i * 3 + 2],
+                    self.positions[j3] - self.positions[i3],
+                    self.positions[j3 + 1] - self.positions[i3 + 1],
+                    self.positions[j3 + 2] - self.positions[i3 + 2],
                 ];
                 let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
                 let distance = (distance2 + softening2).sqrt();
@@ -131,7 +133,7 @@ impl P2PRustGravity {
                 a[2] += u[2] * fact;
             }
             for k in 0..3 {
-                self.accelerations[i * 3 + k] = a[k] * gravitational_constant;
+                self.accelerations[i3 + k] = a[k] * gravitational_constant;
             }
         }
 

@@ -29,12 +29,13 @@ export default class Gravity {
     const half_dt = dt * 0.5
 
     for (var i = 0, n = this.len; i < n; i++) {
-      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt
-      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt
-      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt
-      this.positions[i * 3] += this.speeds[i * 3] * dt
-      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt
-      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt
+      let i3 = i * 3
+      this.speeds[i3] += this.accelerations[i3] * half_dt
+      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt
+      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt
+      this.positions[i3] += this.speeds[i3] * dt
+      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt
+      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt
     }
   }
 
@@ -71,34 +72,35 @@ export default class Gravity {
     for (let l = 0, n = collided.length; l < n; l++) {
       const cell = collided[l]
       let i = cell[0]
+      let i3 = i * 3
       for (let m = 1, o = cell.length; m < o; m++) {
         let j = cell[m]
+        let j3 = j3
         let mass_ratio = 1 / (this.masses[i] + this.masses[j])
-        this.positions[i * 3] =
+        this.positions[i3] =
           mass_ratio *
-          (this.positions[i * 3] * this.masses[i] +
-            this.positions[j * 3] * this.masses[j])
-        this.positions[i * 3 + 1] =
+          (this.positions[i3] * this.masses[i] +
+            this.positions[j3] * this.masses[j])
+        this.positions[i3 + 1] =
           mass_ratio *
-          (this.positions[i * 3 + 1] * this.masses[i] +
-            this.positions[j * 3 + 1] * this.masses[j])
-        this.positions[i * 3 + 2] =
+          (this.positions[i3 + 1] * this.masses[i] +
+            this.positions[j3 + 1] * this.masses[j])
+        this.positions[i3 + 2] =
           mass_ratio *
-          (this.positions[i * 3 + 2] * this.masses[i] +
-            this.positions[j * 3 + 2] * this.masses[j])
+          (this.positions[i3 + 2] * this.masses[i] +
+            this.positions[j3 + 2] * this.masses[j])
 
-        this.speeds[i * 3] =
+        this.speeds[i3] =
           mass_ratio *
-          (this.speeds[i * 3] * this.masses[i] +
-            this.speeds[j * 3] * this.masses[j])
-        this.speeds[i * 3 + 1] =
+          (this.speeds[i3] * this.masses[i] + this.speeds[j3] * this.masses[j])
+        this.speeds[i3 + 1] =
           mass_ratio *
-          (this.speeds[i * 3 + 1] * this.masses[i] +
-            this.speeds[j * 3 + 1] * this.masses[j])
-        this.speeds[i * 3 + 2] =
+          (this.speeds[i3 + 1] * this.masses[i] +
+            this.speeds[j3 + 1] * this.masses[j])
+        this.speeds[i3 + 2] =
           mass_ratio *
-          (this.speeds[i * 3 + 2] * this.masses[i] +
-            this.speeds[j * 3 + 2] * this.masses[j])
+          (this.speeds[i3 + 2] * this.masses[i] +
+            this.speeds[j3 + 2] * this.masses[j])
 
         this.temperatures[i] =
           mass_ratio *
@@ -118,10 +120,11 @@ export default class Gravity {
     }
     const escapeDistance2 = escapeDistance * escapeDistance
     for (let i = 0, n = this.len; i < n; i++) {
+      let i3 = i * 3
       if (
-        this.positions[i * 3] * this.positions[i * 3] +
-          this.positions[i * 3 + 1] * this.positions[i * 3 + 1] +
-          this.positions[i * 3 + 2] * this.positions[i * 3 + 2] >
+        this.positions[i3] * this.positions[i3] +
+          this.positions[i3 + 1] * this.positions[i3 + 1] +
+          this.positions[i3 + 2] * this.positions[i3 + 2] >
         escapeDistance2
       ) {
         skip.push(i)
@@ -142,15 +145,17 @@ export default class Gravity {
         i += 1
         continue
       }
-      this.positions[i * 3] = this.positions[(i + shift) * 3]
-      this.positions[i * 3 + 1] = this.positions[(i + shift) * 3 + 1]
-      this.positions[i * 3 + 2] = this.positions[(i + shift) * 3 + 2]
-      this.speeds[i * 3] = this.speeds[(i + shift) * 3]
-      this.speeds[i * 3 + 1] = this.speeds[(i + shift) * 3 + 1]
-      this.speeds[i * 3 + 2] = this.speeds[(i + shift) * 3 + 2]
-      this.accelerations[i * 3] = this.accelerations[(i + shift) * 3]
-      this.accelerations[i * 3 + 1] = this.accelerations[(i + shift) * 3 + 1]
-      this.accelerations[i * 3 + 2] = this.accelerations[(i + shift) * 3 + 2]
+      let i3 = i * 3
+      let is3 = (i + shift) * 3
+      this.positions[i3] = this.positions[is3]
+      this.positions[i3 + 1] = this.positions[is3 + 1]
+      this.positions[i3 + 2] = this.positions[is3 + 2]
+      this.speeds[i3] = this.speeds[is3]
+      this.speeds[i3 + 1] = this.speeds[is3 + 1]
+      this.speeds[i3 + 2] = this.speeds[is3 + 2]
+      this.accelerations[i3] = this.accelerations[is3]
+      this.accelerations[i3 + 1] = this.accelerations[is3 + 1]
+      this.accelerations[i3 + 2] = this.accelerations[is3 + 2]
       this.temperatures[i] = this.temperatures[i + shift]
       this.masses[i] = this.masses[i + shift]
       i += 1
@@ -182,9 +187,10 @@ export default class Gravity {
     const half_dt = dt * 0.5
 
     for (var i = 0, n = this.len; i < n; i++) {
-      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt
-      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt
-      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt
+      let i3 = i * 3
+      this.speeds[i3] += this.accelerations[i3] * half_dt
+      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt
+      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt
     }
   }
 
