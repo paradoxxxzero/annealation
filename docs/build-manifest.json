@@ -198,11 +198,11 @@
       "imports": []
     },
     "dist/gravity/gravity.js": {
-      "bytes": 5894,
+      "bytes": 5897,
       "imports": []
     },
     "dist/gravity/p2p.js": {
-      "bytes": 1430,
+      "bytes": 1433,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -424,10 +424,10 @@
           "bytesInOutput": 3401
         },
         "dist/gravity/gravity.js": {
-          "bytesInOutput": 5748
+          "bytesInOutput": 5751
         },
         "dist/gravity/p2p.js": {
-          "bytesInOutput": 1443
+          "bytesInOutput": 1446
         },
         "dist/gravity/fmm.js": {
           "bytesInOutput": 3698
@@ -445,7 +445,7 @@
           "bytesInOutput": 7864
         }
       },
-      "bytes": 1012387
+      "bytes": 1012393
     }
   }
 }

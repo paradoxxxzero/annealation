@@ -26461,7 +26461,7 @@ var Gravity = class {
       let i3 = i * 3;
       for (let m = 1, o = cell.length; m < o; m++) {
         let j = cell[m];
-        let j3 = j3;
+        let j3 = j * 3;
         let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
         this.positions[i3] = mass_ratio * (this.positions[i3] * this.masses[i] + this.positions[j3] * this.masses[j]);
         this.positions[i3 + 1] = mass_ratio * (this.positions[i3 + 1] * this.masses[i] + this.positions[j3 + 1] * this.masses[j]);
@@ -26571,7 +26571,7 @@ var P2PGravity = class extends gravity_default {
     const u = [0, 0, 0];
     const a = [0, 0, 0];
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i3;
+      let i3 = i * 3;
       a.fill(0);
       for (let j = 0; j < this.len; j++) {
         if (i === j) {

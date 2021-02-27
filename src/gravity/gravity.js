@@ -75,7 +75,7 @@ export default class Gravity {
       let i3 = i * 3
       for (let m = 1, o = cell.length; m < o; m++) {
         let j = cell[m]
-        let j3 = j3
+        let j3 = j * 3
         let mass_ratio = 1 / (this.masses[i] + this.masses[j])
         this.positions[i3] =
           mass_ratio *

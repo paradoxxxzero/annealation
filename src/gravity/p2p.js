@@ -15,7 +15,7 @@ export default class P2PGravity extends Gravity {
     const u = [0, 0, 0]
     const a = [0, 0, 0]
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i3
+      let i3 = i * 3
       a.fill(0)
       for (let j = 0; j < this.len; j++) {
         if (i === j) {
