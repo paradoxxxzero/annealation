@@ -1,4 +1,4 @@
-use crate::none::Gravity;
+use crate::gravity::Gravity;
 use crate::{Orb, Params};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;

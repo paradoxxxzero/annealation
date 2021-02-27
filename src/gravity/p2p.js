@@ -1,6 +1,6 @@
-import NoGravity from './none'
+import Gravity from './gravity'
 
-export default class P2PGravity extends NoGravity {
+export default class P2PGravity extends Gravity {
   async simulate() {
     const {
       gravitationalConstant,

@@ -29,17 +29,23 @@ const rngTemperatureMass = maxMass => {
       (1 + variance * centeredGauss(1 - 2 * Math.random())),
   }
 }
+
+const blackHole = blackHoleMass =>
+  blackHoleMass
+    ? [
+        {
+          temperature: 0,
+          mass: blackHoleMass,
+          position: new Vector3(),
+          speed: new Vector3(),
+        },
+      ]
+    : []
+
 export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    return {
+  return new Array(number)
+    .fill()
+    .map(() => ({
       // mass 10^30 kg
       ...rngTemperatureMass(mass),
       // distance 10^16 m
@@ -53,8 +59,8 @@ export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
         speed / 2 - Math.random() * speed,
         speed / 2 - Math.random() * speed
       ),
-    }
-  })
+    }))
+    .concat(blackHole(blackHoleMass))
 }
 
 export const regularCube = ({ number, range, speed, mass, blackHoleMass }) => {
@@ -81,18 +87,7 @@ export const regularCube = ({ number, range, speed, mass, blackHoleMass }) => {
       )
     )
     .flat(3)
-    .concat(
-      blackHoleMass
-        ? [
-            {
-              temperature: 0,
-              mass: blackHoleMass,
-              position: new Vector3(),
-              speed: new Vector3(),
-            },
-          ]
-        : []
-    )
+    .concat(blackHole(blackHoleMass))
 }
 
 export const sphere = ({
@@ -106,35 +101,32 @@ export const sphere = ({
   const spherical = new Spherical()
   range *= 0.5
 
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    spherical.radius = range * Math.cbrt(Math.random())
-    spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.acos(2 * Math.random() - 1.0)
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = range * Math.cbrt(Math.random())
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi = Math.acos(2 * Math.random() - 1.0)
 
-    const position = new Vector3().setFromSpherical(spherical)
-    const x = 1 - 2 * Math.random()
-    const y = 1 - 2 * Math.random()
-    const z = -(x * position.x + y * position.y) / position.z
-    const speedVector = new Vector3(x, y, z)
-      .normalize()
-      .multiplyScalar(
-        speed *
-          Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
-      )
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed: speedVector,
-    }
-  })
+      const position = new Vector3().setFromSpherical(spherical)
+      const x = 1 - 2 * Math.random()
+      const y = 1 - 2 * Math.random()
+      const z = -(x * position.x + y * position.y) / position.z
+      const speedVector = new Vector3(x, y, z)
+        .normalize()
+        .multiplyScalar(
+          speed *
+            Math.sqrt(
+              (gravitationalConstant * blackHoleMass) / spherical.radius
+            )
+        )
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: speedVector,
+      }
+    })
+    .concat(blackHole(blackHoleMass))
 }
 
 export const harmonicSphere = ({
@@ -148,37 +140,64 @@ export const harmonicSphere = ({
   const spherical = new Spherical()
   range *= 0.5
 
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    spherical.radius = range * Math.cbrt(Math.random())
-    spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.acos(2 * Math.random() - 1.0)
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = range * Math.cbrt(Math.random())
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi = Math.acos(2 * Math.random() - 1.0)
 
-    const position = new Vector3().setFromSpherical(spherical)
+      const position = new Vector3().setFromSpherical(spherical)
 
-    const speedVector = new Vector3(
-      speed * Math.cos(spherical.theta),
-      0,
-      -speed * Math.sin(spherical.theta)
-    )
-      .normalize()
-      .multiplyScalar(
-        Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
+      const speedVector = new Vector3(
+        speed * Math.cos(spherical.theta),
+        0,
+        -speed * Math.sin(spherical.theta)
       )
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed: speedVector,
-    }
-  })
+        .normalize()
+        .multiplyScalar(
+          Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
+        )
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: speedVector,
+      }
+    })
+    .concat(blackHole(blackHoleMass))
 }
+
+export const expandingSphere = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+}) => {
+  const spherical = new Spherical()
+  range *= 0.5
+
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = range * Math.cbrt(Math.random())
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi = Math.acos(2 * Math.random() - 1.0)
+
+      const position = new Vector3().setFromSpherical(spherical)
+      const speedVector = position
+        .clone()
+        .normalize()
+        .multiplyScalar(Math.random() * speed)
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: speedVector,
+      }
+    })
+    .concat(blackHole(blackHoleMass))
+}
+
 export const disc = ({
   number,
   range,
@@ -190,35 +209,32 @@ export const disc = ({
   const spherical = new Spherical()
   range *= 0.5
   const minRange = range / 10
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    spherical.radius = minRange + (range - minRange) * Math.random()
-    spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
-    const position = new Vector3().setFromSpherical(spherical)
-    const speedVector = new Vector3(
-      Math.cos(spherical.theta),
-      0,
-      -Math.sin(spherical.theta)
-    )
-      .normalize()
-      .multiplyScalar(
-        speed *
-          Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = minRange + (range - minRange) * Math.random()
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
+      const position = new Vector3().setFromSpherical(spherical)
+      const speedVector = new Vector3(
+        Math.cos(spherical.theta),
+        0,
+        -Math.sin(spherical.theta)
       )
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed: speedVector,
-    }
-  })
+        .normalize()
+        .multiplyScalar(
+          speed *
+            Math.sqrt(
+              (gravitationalConstant * blackHoleMass) / spherical.radius
+            )
+        )
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: speedVector,
+      }
+    })
+    .concat(blackHole(blackHoleMass))
 }
 
 export const solarSystem = ({ gravitationalConstant }) => {
@@ -361,26 +377,21 @@ export const fountain = ({ number, range, mass, speed, blackHoleMass }) => {
   const spherical = new Spherical()
   range *= 0.5
 
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    spherical.radius = range / 10 + Math.random() * range
-    spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.PI - (Math.random() * Math.PI) / 12
-    const position = new Vector3().setFromSpherical(spherical)
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = range / 10 + Math.random() * range
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi = Math.PI - (Math.random() * Math.PI) / 12
+      const position = new Vector3().setFromSpherical(spherical)
 
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed: new Vector3(0, speed * Math.random(), 0),
-    }
-  })
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: new Vector3(0, speed * Math.random(), 0),
+      }
+    })
+    .concat(blackHole(blackHoleMass))
 }
 
 export const eightCubes = ({ number, range, mass, speed, blackHoleMass }) => {
@@ -433,49 +444,38 @@ export const eightCubes = ({ number, range, mass, speed, blackHoleMass }) => {
 export const plane = ({ number, range, mass, blackHoleMass }) => {
   range *= 0.25
 
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
+  return new Array(number)
+    .fill()
+    .map(() => {
       return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
+        ...rngTemperatureMass(mass),
+        position: new Vector3(
+          range / 2 - Math.random() * range,
+          range,
+          range / 2 - Math.random() * range
+        ),
         speed: new Vector3(),
       }
-    }
-    return {
-      ...rngTemperatureMass(mass),
-      position: new Vector3(
-        range / 2 - Math.random() * range,
-        range,
-        range / 2 - Math.random() * range
-      ),
-      speed: new Vector3(),
-    }
-  })
+    })
+    .concat(blackHole(blackHoleMass))
 }
 
 export const teapot = ({ number, range, mass, blackHoleMass }) => {
   const segments = ~~(Math.sqrt(number / 32) - 1)
   const teapotGeometry = new TeapotGeometry(~~(range / 5), segments)
   const positions = teapotGeometry.attributes.position
-  const orbs = new Array(positions.count).fill().map((_, i) => {
-    return {
-      ...rngTemperatureMass(mass),
-      position: new Vector3(
-        positions.getX(i),
-        positions.getY(i),
-        positions.getZ(i)
-      ),
-      speed: new Vector3(),
-    }
-  })
-  if (blackHoleMass) {
-    orbs.push({
-      temperature: 0,
-      mass: blackHoleMass,
-      position: new Vector3(),
-      speed: new Vector3(),
+  return new Array(positions.count)
+    .fill()
+    .map((_, i) => {
+      return {
+        ...rngTemperatureMass(mass),
+        position: new Vector3(
+          positions.getX(i),
+          positions.getY(i),
+          positions.getZ(i)
+        ),
+        speed: new Vector3(),
+      }
     })
-  }
-  return orbs
+    .concat(blackHole(blackHoleMass))
 }

@@ -1,6 +1,6 @@
-import NoGravity from './none'
+import Gravity from './gravity'
 
-export default class FMMGravity extends NoGravity {
+export default class FMMGravity extends Gravity {
   constructor(orbs, params) {
     super(orbs, params)
     this.paramsChange()

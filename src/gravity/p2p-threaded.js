@@ -1,4 +1,4 @@
-import NoGravity from './none'
+import Gravity from './gravity'
 
 export const workerPromise = (worker, ...args) => {
   return new Promise(resolve => {
@@ -7,7 +7,7 @@ export const workerPromise = (worker, ...args) => {
   })
 }
 
-export default class P2PThreadedGravity extends NoGravity {
+export default class P2PThreadedGravity extends Gravity {
   constructor(orbs, params) {
     super(orbs, params)
 

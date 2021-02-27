@@ -1,8 +1,8 @@
 /* global SharedArrayBuffer */
 import { workerPromise } from './p2p-threaded'
-import NoGravity from './none'
+import Gravity from './gravity'
 
-export default class P2PThreadedSABGravity extends NoGravity {
+export default class P2PThreadedSABGravity extends Gravity {
   constructor(orbs, params) {
     super(orbs, params)
     this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8

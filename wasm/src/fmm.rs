@@ -5,7 +5,7 @@
 
   Reference : GPU Gems Vol.4 "Treecode and fast multipole method for N-body simulation with CUDA"
 */
-use crate::none::Gravity;
+use crate::gravity::Gravity;
 use crate::{Orb, Params};
 use js_sys::Array;
 

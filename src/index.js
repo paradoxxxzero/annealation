@@ -58,6 +58,10 @@ const backends = {
   rust_none: RustNoGravity,
 }
 
+const fallbacks = {
+  js_p2p_sab: 'js_p2p_threaded',
+}
+
 if (typeof SharedArrayBuffer === 'undefined') {
   delete backends.js_p2p_threaded_sab
 }
@@ -175,7 +179,7 @@ function init() {
   } = params
   const orbs = configurations[configuration](params)
   let positions, masses, temperatures
-  const Backend = backends[backend]
+  const Backend = backends[backend] || backends[fallbacks[backend]]
   gravity = new Backend(orbs, params)
 
   if (backend.startsWith('rust')) {
