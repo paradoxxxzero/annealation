@@ -1,5 +1,6 @@
 export default class Gravity {
   constructor(orbs, params) {
+    this.alive = true
     this.params = params
 
     this.len = orbs.length
@@ -188,6 +189,7 @@ export default class Gravity {
   }
 
   free() {
+    this.alive = false
     delete this.temperatures
     delete this.masses
     delete this.accelerations

@@ -49,10 +49,8 @@ export default class P2PThreadedSABGravity extends Gravity {
       softening,
       collisions,
       collisionThreshold,
-      escapeDistance,
     } = this.params
     let collided = []
-    const skip = []
 
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
@@ -72,23 +70,18 @@ export default class P2PThreadedSABGravity extends Gravity {
         ])
       )
     )
+    if (!this.alive) {
+      return
+    }
     workersResults.forEach(([collidedPart]) => {
       collided.push(...collidedPart)
     })
 
-    escapeDistance && this.solveEscapes(skip)
-    if (collided.length) {
-      collided = this.aggregateCollisions(collided)
-      collided.forEach(cell => {
-        skip.push(...cell.slice(1))
-      })
-      this.solveCollisions(collided)
-    }
-    skip.length &&
-      (this.len = this.crunchOrbs(
-        skip.concat(collided.map(([i, j]) => Math.max(i, j)))
-      ))
+    return this.solve(collided)
+  }
 
-    return this.len
+  free() {
+    super.free()
+    this.pool.forEach(worker => worker.terminate())
   }
 }
