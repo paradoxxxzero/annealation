@@ -4,7 +4,7 @@ export default class NoGravity extends Gravity {
   frog_leap() {
     const dt = this.params.simulationSpeed
 
-    for (var i = 0, n = this.len; i < n; i++) {
+    for (let i = 0, n = this.len; i < n; i++) {
       let i3 = i * 3
       this.positions[i3] += this.speeds[i3] * dt
       this.positions[i3 + 1] += this.speeds[i3 + 1] * dt

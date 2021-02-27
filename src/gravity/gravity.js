@@ -28,7 +28,7 @@ export default class Gravity {
     const dt = this.params.simulationSpeed
     const half_dt = dt * 0.5
 
-    for (var i = 0, n = this.len; i < n; i++) {
+    for (let i = 0, n = this.len; i < n; i++) {
       let i3 = i * 3
       this.speeds[i3] += this.accelerations[i3] * half_dt
       this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt
@@ -186,7 +186,7 @@ export default class Gravity {
     const dt = this.params.simulationSpeed
     const half_dt = dt * 0.5
 
-    for (var i = 0, n = this.len; i < n; i++) {
+    for (let i = 0, n = this.len; i < n; i++) {
       let i3 = i * 3
       this.speeds[i3] += this.accelerations[i3] * half_dt
       this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt

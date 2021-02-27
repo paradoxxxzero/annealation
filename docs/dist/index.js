@@ -23542,6 +23542,7 @@ __export(configurations_exports, {
   cube: () => cube,
   disc: () => disc,
   eightCubes: () => eightCubes,
+  expandingSphere: () => expandingSphere,
   fountain: () => fountain,
   harmonicSphere: () => harmonicSphere,
   plane: () => plane,
@@ -25123,22 +25124,20 @@ var rngTemperatureMass = (maxMass) => {
     temperature: theoricTemperature * (1 + variance * centeredGauss(1 - 2 * Math.random()))
   };
 };
+var blackHole = (blackHoleMass) => blackHoleMass ? [
+  {
+    temperature: 0,
+    mass: blackHoleMass,
+    position: new Vector3(),
+    speed: new Vector3()
+  }
+] : [];
 var cube = ({number, range, speed, mass, blackHoleMass}) => {
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
-    return {
-      ...rngTemperatureMass(mass),
-      position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
-      speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
-    };
-  });
+  return new Array(number).fill().map(() => ({
+    ...rngTemperatureMass(mass),
+    position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
+    speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
+  })).concat(blackHole(blackHoleMass));
 };
 var regularCube = ({number, range, speed, mass, blackHoleMass}) => {
   const n = ~~Math.cbrt(number);
@@ -25150,14 +25149,7 @@ var regularCube = ({number, range, speed, mass, blackHoleMass}) => {
       position: pos.multiplyScalar(range),
       speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
     };
-  }))).flat(3).concat(blackHoleMass ? [
-    {
-      temperature: 0,
-      mass: blackHoleMass,
-      position: new Vector3(),
-      speed: new Vector3()
-    }
-  ] : []);
+  }))).flat(3).concat(blackHole(blackHoleMass));
 };
 var sphere = ({
   number,
@@ -25169,15 +25161,7 @@ var sphere = ({
 }) => {
   const spherical = new Spherical();
   range *= 0.5;
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
+  return new Array(number).fill().map(() => {
     spherical.radius = range * Math.cbrt(Math.random());
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.acos(2 * Math.random() - 1);
@@ -25191,7 +25175,7 @@ var sphere = ({
       position,
       speed: speedVector
     };
-  });
+  }).concat(blackHole(blackHoleMass));
 };
 var harmonicSphere = ({
   number,
@@ -25203,15 +25187,7 @@ var harmonicSphere = ({
 }) => {
   const spherical = new Spherical();
   range *= 0.5;
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
+  return new Array(number).fill().map(() => {
     spherical.radius = range * Math.cbrt(Math.random());
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.acos(2 * Math.random() - 1);
@@ -25222,7 +25198,29 @@ var harmonicSphere = ({
       position,
       speed: speedVector
     };
-  });
+  }).concat(blackHole(blackHoleMass));
+};
+var expandingSphere = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass
+}) => {
+  const spherical = new Spherical();
+  range *= 0.5;
+  return new Array(number).fill().map(() => {
+    spherical.radius = range * Math.cbrt(Math.random());
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.acos(2 * Math.random() - 1);
+    const position = new Vector3().setFromSpherical(spherical);
+    const speedVector = position.clone().normalize().multiplyScalar(Math.random() * speed);
+    return {
+      ...rngTemperatureMass(mass),
+      position,
+      speed: speedVector
+    };
+  }).concat(blackHole(blackHoleMass));
 };
 var disc = ({
   number,
@@ -25235,15 +25233,7 @@ var disc = ({
   const spherical = new Spherical();
   range *= 0.5;
   const minRange = range / 10;
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
+  return new Array(number).fill().map(() => {
     spherical.radius = minRange + (range - minRange) * Math.random();
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
@@ -25254,7 +25244,7 @@ var disc = ({
       position,
       speed: speedVector
     };
-  });
+  }).concat(blackHole(blackHoleMass));
 };
 var solarSystem = ({gravitationalConstant}) => {
   const spherical = new Spherical();
@@ -25368,15 +25358,7 @@ var collidingDisc = ({
 var fountain = ({number, range, mass, speed, blackHoleMass}) => {
   const spherical = new Spherical();
   range *= 0.5;
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
+  return new Array(number).fill().map(() => {
     spherical.radius = range / 10 + Math.random() * range;
     spherical.theta = Math.random() * 2 * Math.PI;
     spherical.phi = Math.PI - Math.random() * Math.PI / 12;
@@ -25386,7 +25368,7 @@ var fountain = ({number, range, mass, speed, blackHoleMass}) => {
       position,
       speed: new Vector3(0, speed * Math.random(), 0)
     };
-  });
+  }).concat(blackHole(blackHoleMass));
 };
 var eightCubes = ({number, range, mass, speed, blackHoleMass}) => {
   const N = 8;
@@ -25415,42 +25397,25 @@ var eightCubes = ({number, range, mass, speed, blackHoleMass}) => {
 };
 var plane = ({number, range, mass, blackHoleMass}) => {
   range *= 0.25;
-  return new Array(number).fill().map((_, i) => {
-    if (i === 0 && blackHoleMass) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
+  return new Array(number).fill().map(() => {
     return {
       ...rngTemperatureMass(mass),
       position: new Vector3(range / 2 - Math.random() * range, range, range / 2 - Math.random() * range),
       speed: new Vector3()
     };
-  });
+  }).concat(blackHole(blackHoleMass));
 };
 var teapot = ({number, range, mass, blackHoleMass}) => {
   const segments = ~~(Math.sqrt(number / 32) - 1);
   const teapotGeometry = new TeapotGeometry(~~(range / 5), segments);
   const positions = teapotGeometry.attributes.position;
-  const orbs = new Array(positions.count).fill().map((_, i) => {
+  return new Array(positions.count).fill().map((_, i) => {
     return {
       ...rngTemperatureMass(mass),
       position: new Vector3(positions.getX(i), positions.getY(i), positions.getZ(i)),
       speed: new Vector3()
     };
-  });
-  if (blackHoleMass) {
-    orbs.push({
-      temperature: 0,
-      mass: blackHoleMass,
-      position: new Vector3(),
-      speed: new Vector3()
-    });
-  }
-  return orbs;
+  }).concat(blackHole(blackHoleMass));
 };
 
 // dist/fragmentShader.js
@@ -25837,7 +25802,7 @@ var presets_default = {
     },
     Ekusupuroshon: {
       0: {
-        backend: "js_fmm",
+        backend: "js_none",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
         autoRotate: false,
@@ -25849,10 +25814,41 @@ var presets_default = {
         bloomExposure: 0.75,
         afterImage: false,
         afterImageDamp: 0.75,
-        configuration: "sphere",
+        configuration: "expandingSphere",
         number: 5e4,
-        range: 100,
-        speed: 0,
+        range: 10,
+        speed: 100,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 30,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    LittleExpand: {
+      0: {
+        backend: "js_p2p_sab",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 3,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "expandingSphere",
+        number: 3e3,
+        range: 10,
+        speed: 40,
         mass: 10,
         blackHoleMass: 0,
         scale: 30,
@@ -26156,14 +26152,14 @@ var RustNoGravity = class {
     return ret;
   }
   frog_leap() {
-    wasm.fmmrustgravity_frog_leap(this.ptr);
+    wasm.rustnogravity_frog_leap(this.ptr);
   }
   simulate() {
     var ret = wasm.rustnogravity_simulate(this.ptr);
     return ret >>> 0;
   }
   frog_drop() {
-    wasm.fmmrustgravity_frog_drop(this.ptr);
+    wasm.rustnogravity_frog_drop(this.ptr);
   }
 };
 var TreeRustGravity = class {
@@ -26393,9 +26389,10 @@ var stats_min = createCommonjsModule(function(module, exports) {
 });
 var statsjs_default = stats_min;
 
-// dist/gravity/none.js
-var NoGravity = class {
+// dist/gravity/gravity.js
+var Gravity = class {
   constructor(orbs, params2) {
+    this.alive = true;
     this.params = params2;
     this.len = orbs.length;
     this.positions = new Float32Array(3 * this.len);
@@ -26403,10 +26400,13 @@ var NoGravity = class {
     this.accelerations = new Float32Array(3 * this.len);
     this.masses = new Float32Array(this.len);
     this.temperatures = new Float32Array(this.len);
-    orbs.forEach(({position, mass, temperature}, i) => {
+    orbs.forEach(({position, mass, speed, temperature}, i) => {
       this.positions[i * 3] = position.x;
       this.positions[i * 3 + 1] = position.y;
       this.positions[i * 3 + 2] = position.z;
+      this.speeds[i * 3] = speed.x;
+      this.speeds[i * 3 + 1] = speed.y;
+      this.speeds[i * 3 + 2] = speed.z;
       this.masses[i] = mass;
       this.temperatures[i] = temperature;
     });
@@ -26416,13 +26416,14 @@ var NoGravity = class {
   frog_leap() {
     const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt;
-      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt;
-      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt;
-      this.positions[i * 3] += this.speeds[i * 3] * dt;
-      this.positions[i * 3 + 1] += this.speeds[i * 3 + 1] * dt;
-      this.positions[i * 3 + 2] += this.speeds[i * 3 + 2] * dt;
+    for (let i = 0, n = this.len; i < n; i++) {
+      let i3 = i * 3;
+      this.speeds[i3] += this.accelerations[i3] * half_dt;
+      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt;
+      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
+      this.positions[i3] += this.speeds[i3] * dt;
+      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt;
+      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt;
     }
   }
   aggregateCollisions(collided) {
@@ -26457,15 +26458,17 @@ var NoGravity = class {
     for (let l = 0, n = collided.length; l < n; l++) {
       const cell = collided[l];
       let i = cell[0];
+      let i3 = i * 3;
       for (let m = 1, o = cell.length; m < o; m++) {
         let j = cell[m];
+        let j3 = j3;
         let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
-        this.positions[i * 3] = mass_ratio * (this.positions[i * 3] * this.masses[i] + this.positions[j * 3] * this.masses[j]);
-        this.positions[i * 3 + 1] = mass_ratio * (this.positions[i * 3 + 1] * this.masses[i] + this.positions[j * 3 + 1] * this.masses[j]);
-        this.positions[i * 3 + 2] = mass_ratio * (this.positions[i * 3 + 2] * this.masses[i] + this.positions[j * 3 + 2] * this.masses[j]);
-        this.speeds[i * 3] = mass_ratio * (this.speeds[i * 3] * this.masses[i] + this.speeds[j * 3] * this.masses[j]);
-        this.speeds[i * 3 + 1] = mass_ratio * (this.speeds[i * 3 + 1] * this.masses[i] + this.speeds[j * 3 + 1] * this.masses[j]);
-        this.speeds[i * 3 + 2] = mass_ratio * (this.speeds[i * 3 + 2] * this.masses[i] + this.speeds[j * 3 + 2] * this.masses[j]);
+        this.positions[i3] = mass_ratio * (this.positions[i3] * this.masses[i] + this.positions[j3] * this.masses[j]);
+        this.positions[i3 + 1] = mass_ratio * (this.positions[i3 + 1] * this.masses[i] + this.positions[j3 + 1] * this.masses[j]);
+        this.positions[i3 + 2] = mass_ratio * (this.positions[i3 + 2] * this.masses[i] + this.positions[j3 + 2] * this.masses[j]);
+        this.speeds[i3] = mass_ratio * (this.speeds[i3] * this.masses[i] + this.speeds[j3] * this.masses[j]);
+        this.speeds[i3 + 1] = mass_ratio * (this.speeds[i3 + 1] * this.masses[i] + this.speeds[j3 + 1] * this.masses[j]);
+        this.speeds[i3 + 2] = mass_ratio * (this.speeds[i3 + 2] * this.masses[i] + this.speeds[j3 + 2] * this.masses[j]);
         this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
         this.masses[i] += this.masses[j];
       }
@@ -26479,7 +26482,8 @@ var NoGravity = class {
     }
     const escapeDistance2 = escapeDistance * escapeDistance;
     for (let i = 0, n = this.len; i < n; i++) {
-      if (this.positions[i * 3] * this.positions[i * 3] + this.positions[i * 3 + 1] * this.positions[i * 3 + 1] + this.positions[i * 3 + 2] * this.positions[i * 3 + 2] > escapeDistance2) {
+      let i3 = i * 3;
+      if (this.positions[i3] * this.positions[i3] + this.positions[i3 + 1] * this.positions[i3 + 1] + this.positions[i3 + 2] * this.positions[i3 + 2] > escapeDistance2) {
         skip.push(i);
       }
     }
@@ -26497,15 +26501,17 @@ var NoGravity = class {
         i += 1;
         continue;
       }
-      this.positions[i * 3] = this.positions[(i + shift) * 3];
-      this.positions[i * 3 + 1] = this.positions[(i + shift) * 3 + 1];
-      this.positions[i * 3 + 2] = this.positions[(i + shift) * 3 + 2];
-      this.speeds[i * 3] = this.speeds[(i + shift) * 3];
-      this.speeds[i * 3 + 1] = this.speeds[(i + shift) * 3 + 1];
-      this.speeds[i * 3 + 2] = this.speeds[(i + shift) * 3 + 2];
-      this.accelerations[i * 3] = this.accelerations[(i + shift) * 3];
-      this.accelerations[i * 3 + 1] = this.accelerations[(i + shift) * 3 + 1];
-      this.accelerations[i * 3 + 2] = this.accelerations[(i + shift) * 3 + 2];
+      let i3 = i * 3;
+      let is3 = (i + shift) * 3;
+      this.positions[i3] = this.positions[is3];
+      this.positions[i3 + 1] = this.positions[is3 + 1];
+      this.positions[i3 + 2] = this.positions[is3 + 2];
+      this.speeds[i3] = this.speeds[is3];
+      this.speeds[i3 + 1] = this.speeds[is3 + 1];
+      this.speeds[i3 + 2] = this.speeds[is3 + 2];
+      this.accelerations[i3] = this.accelerations[is3];
+      this.accelerations[i3 + 1] = this.accelerations[is3 + 1];
+      this.accelerations[i3 + 2] = this.accelerations[is3 + 2];
       this.temperatures[i] = this.temperatures[i + shift];
       this.masses[i] = this.masses[i + shift];
       i += 1;
@@ -26532,13 +26538,15 @@ var NoGravity = class {
   frog_drop() {
     const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
-    for (var i = 0, n = this.len; i < n; i++) {
-      this.speeds[i * 3] += this.accelerations[i * 3] * half_dt;
-      this.speeds[i * 3 + 1] += this.accelerations[i * 3 + 1] * half_dt;
-      this.speeds[i * 3 + 2] += this.accelerations[i * 3 + 2] * half_dt;
+    for (let i = 0, n = this.len; i < n; i++) {
+      let i3 = i * 3;
+      this.speeds[i3] += this.accelerations[i3] * half_dt;
+      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt;
+      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
     }
   }
   free() {
+    this.alive = false;
     delete this.temperatures;
     delete this.masses;
     delete this.accelerations;
@@ -26546,10 +26554,10 @@ var NoGravity = class {
     delete this.positions;
   }
 };
-var none_default = NoGravity;
+var gravity_default = Gravity;
 
 // dist/gravity/p2p.js
-var P2PGravity = class extends none_default {
+var P2PGravity = class extends gravity_default {
   async simulate() {
     const {
       gravitationalConstant,
@@ -26563,14 +26571,16 @@ var P2PGravity = class extends none_default {
     const u = [0, 0, 0];
     const a = [0, 0, 0];
     for (let i = 0, n = this.len; i < n; i++) {
+      let i3 = i3;
       a.fill(0);
       for (let j = 0; j < this.len; j++) {
         if (i === j) {
           continue;
         }
-        u[0] = this.positions[j * 3] - this.positions[i * 3];
-        u[1] = this.positions[j * 3 + 1] - this.positions[i * 3 + 1];
-        u[2] = this.positions[j * 3 + 2] - this.positions[i * 3 + 2];
+        let j3 = j * 3;
+        u[0] = this.positions[j3] - this.positions[i3];
+        u[1] = this.positions[j3 + 1] - this.positions[i3 + 1];
+        u[2] = this.positions[j3 + 2] - this.positions[i3 + 2];
         let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
         let distance = Math.sqrt(distance2 + softening2);
         if (collisions) {
@@ -26583,9 +26593,9 @@ var P2PGravity = class extends none_default {
         a[1] += u[1] * fact;
         a[2] += u[2] * fact;
       }
-      this.accelerations[i * 3] = a[0] * gravitationalConstant;
-      this.accelerations[i * 3 + 1] = a[1] * gravitationalConstant;
-      this.accelerations[i * 3 + 2] = a[2] * gravitationalConstant;
+      this.accelerations[i3] = a[0] * gravitationalConstant;
+      this.accelerations[i3 + 1] = a[1] * gravitationalConstant;
+      this.accelerations[i3 + 2] = a[2] * gravitationalConstant;
     }
     return this.solve(collided);
   }
@@ -26593,7 +26603,7 @@ var P2PGravity = class extends none_default {
 var p2p_default = P2PGravity;
 
 // dist/gravity/fmm.js
-var FMMGravity = class extends none_default {
+var FMMGravity = class extends gravity_default {
   constructor(orbs, params2) {
     super(orbs, params2);
     this.paramsChange();
@@ -26686,6 +26696,25 @@ var FMMGravity = class extends none_default {
 };
 var fmm_default = FMMGravity;
 
+// dist/gravity/none.js
+var NoGravity = class extends gravity_default {
+  frog_leap() {
+    const dt = this.params.simulationSpeed;
+    for (let i = 0, n = this.len; i < n; i++) {
+      let i3 = i * 3;
+      this.positions[i3] += this.speeds[i3] * dt;
+      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt;
+      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt;
+    }
+  }
+  simulate() {
+    return this.len;
+  }
+  frog_drop() {
+  }
+};
+var none_default = NoGravity;
+
 // dist/gravity/p2p-threaded.js
 import.meta.env = env_exports;
 var workerPromise = (worker, ...args) => {
@@ -26694,7 +26723,7 @@ var workerPromise = (worker, ...args) => {
     worker.onmessage = (e) => resolve(e.data);
   });
 };
-var P2PThreadedGravity = class extends none_default {
+var P2PThreadedGravity = class extends gravity_default {
   constructor(orbs, params2) {
     super(orbs, params2);
     this.pool = new Array(~~params2.threads).fill().map(() => {
@@ -26725,12 +26754,16 @@ var P2PThreadedGravity = class extends none_default {
       this.positions.buffer,
       this.masses.buffer
     ])));
+    if (!this.alive) {
+      return;
+    }
     workersResults.forEach(([accelerationBuffer, start, end, collidedPart]) => {
       const accelerations = new Float32Array(accelerationBuffer);
       for (let i = start; i < end; i++) {
-        this.accelerations[i * 3] = accelerations[i * 3];
-        this.accelerations[i * 3 + 1] = accelerations[i * 3 + 1];
-        this.accelerations[i * 3 + 2] = accelerations[i * 3 + 2];
+        let i3 = i * 3;
+        this.accelerations[i3] = accelerations[i3];
+        this.accelerations[i3 + 1] = accelerations[i3 + 1];
+        this.accelerations[i3 + 2] = accelerations[i3 + 2];
       }
       collided.push(...collidedPart);
     });
@@ -26745,7 +26778,7 @@ var p2p_threaded_default = P2PThreadedGravity;
 
 // dist/gravity/p2p-threaded-sab.js
 import.meta.env = env_exports;
-var P2PThreadedSABGravity = class extends none_default {
+var P2PThreadedSABGravity = class extends gravity_default {
   constructor(orbs, params2) {
     super(orbs, params2);
     this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4);
@@ -26783,11 +26816,9 @@ var P2PThreadedSABGravity = class extends none_default {
       gravitationalConstant,
       softening,
       collisions,
-      collisionThreshold,
-      escapeDistance
+      collisionThreshold
     } = this.params;
     let collided = [];
-    const skip = [];
     const softening2 = softening * softening;
     const threshold2 = collisionThreshold * collisionThreshold;
     let parts = ~~(this.len / this.pool.length);
@@ -26800,19 +26831,17 @@ var P2PThreadedSABGravity = class extends none_default {
       collisions,
       threshold2
     ])));
+    if (!this.alive) {
+      return;
+    }
     workersResults.forEach(([collidedPart]) => {
       collided.push(...collidedPart);
     });
-    escapeDistance && this.solveEscapes(skip);
-    if (collided.length) {
-      collided = this.aggregateCollisions(collided);
-      collided.forEach((cell) => {
-        skip.push(...cell.slice(1));
-      });
-      this.solveCollisions(collided);
-    }
-    skip.length && (this.len = this.crunchOrbs(skip.concat(collided.map(([i, j]) => Math.max(i, j)))));
-    return this.len;
+    return this.solve(collided);
+  }
+  free() {
+    super.free();
+    this.pool.forEach((worker) => worker.terminate());
   }
 };
 var p2p_threaded_sab_default = P2PThreadedSABGravity;
@@ -26838,6 +26867,9 @@ var backends = {
   rust_tree: TreeRustGravity,
   js_none: none_default,
   rust_none: RustNoGravity
+};
+var fallbacks = {
+  js_p2p_sab: "js_p2p_threaded"
 };
 if (typeof SharedArrayBuffer === "undefined") {
   delete backends.js_p2p_threaded_sab;
@@ -26916,7 +26948,7 @@ function init2() {
   } = params;
   const orbs = configurations_exports[configuration](params);
   let positions, masses, temperatures;
-  const Backend = backends[backend];
+  const Backend = backends[backend] || backends[fallbacks[backend]];
   gravity = new Backend(orbs, params);
   if (backend.startsWith("rust")) {
     const {buffer} = wasm_memory();

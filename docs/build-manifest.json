@@ -139,7 +139,7 @@
       ]
     },
     "dist/configurations.js": {
-      "bytes": 12984,
+      "bytes": 12976,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -160,7 +160,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 11553,
+      "bytes": 12372,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -185,7 +185,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 12985,
+      "bytes": 12983,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -197,43 +197,52 @@
       "bytes": 2572,
       "imports": []
     },
-    "dist/gravity/none.js": {
-      "bytes": 5847,
+    "dist/gravity/gravity.js": {
+      "bytes": 5894,
       "imports": []
     },
     "dist/gravity/p2p.js": {
-      "bytes": 1417,
+      "bytes": 1430,
       "imports": [
         {
-          "path": "dist/gravity/none.js",
+          "path": "dist/gravity/gravity.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/fmm.js": {
-      "bytes": 4227,
+      "bytes": 4226,
       "imports": [
         {
-          "path": "dist/gravity/none.js",
+          "path": "dist/gravity/gravity.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/gravity/none.js": {
+      "bytes": 447,
+      "imports": [
+        {
+          "path": "dist/gravity/gravity.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/p2p-threaded.js": {
-      "bytes": 2075,
+      "bytes": 2121,
       "imports": [
         {
           "path": "_snowpack/env.js",
           "kind": "import-statement"
         },
         {
-          "path": "dist/gravity/none.js",
+          "path": "dist/gravity/gravity.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/p2p-threaded-sab.js": {
-      "bytes": 2973,
+      "bytes": 2697,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -244,13 +253,13 @@
           "kind": "import-statement"
         },
         {
-          "path": "dist/gravity/none.js",
+          "path": "dist/gravity/gravity.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/index.js": {
-      "bytes": 9630,
+      "bytes": 9718,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -388,7 +397,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 12054
+          "bytesInOutput": 11701
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -400,7 +409,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 11426
+          "bytesInOutput": 12238
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -409,31 +418,34 @@
           "bytesInOutput": 186
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 10575
+          "bytesInOutput": 10573
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
-        "dist/gravity/none.js": {
-          "bytesInOutput": 5676
+        "dist/gravity/gravity.js": {
+          "bytesInOutput": 5748
         },
         "dist/gravity/p2p.js": {
-          "bytesInOutput": 1424
+          "bytesInOutput": 1443
         },
         "dist/gravity/fmm.js": {
-          "bytesInOutput": 3695
+          "bytesInOutput": 3698
+        },
+        "dist/gravity/none.js": {
+          "bytesInOutput": 447
         },
         "dist/gravity/p2p-threaded.js": {
-          "bytesInOutput": 1895
+          "bytesInOutput": 1947
         },
         "dist/gravity/p2p-threaded-sab.js": {
-          "bytesInOutput": 2689
+          "bytesInOutput": 2435
         },
         "dist/index.js": {
-          "bytesInOutput": 7779
+          "bytesInOutput": 7864
         }
       },
-      "bytes": 1011478
+      "bytes": 1012387
     }
   }
 }
