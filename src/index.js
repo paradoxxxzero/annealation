@@ -11,6 +11,8 @@ import {
   Vector2,
   WebGLRenderer,
   DynamicDrawUsage,
+  Raycaster,
+  Vector3,
 } from 'three'
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -36,8 +38,9 @@ import FMMGravity from './gravity/fmm'
 import NoGravity from './gravity/none'
 import P2PThreadedGravity from './gravity/p2p-threaded'
 import P2PThreadedSABGravity from './gravity/p2p-threaded-sab'
+import { massToTemperature } from './helpers'
 let raf = null
-
+let newOrb = null
 const colorModes = {
   Temperature: 0.5,
   Rainbow: 1,
@@ -72,7 +75,16 @@ const getPreset = () =>
   decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
 const preset = getPreset()
 
-const params = { ...presets.remembered[preset][0] }
+const params = new Proxy(
+  { ...presets.remembered[preset][0] },
+  {
+    set(target, key, value) {
+      target[key] = value
+      gravity?.params_change(target, key, value)
+      return true
+    },
+  }
+)
 
 const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -166,6 +178,30 @@ async function render() {
   }
   particles.geometry.attributes.position.needsUpdate = true
   controls.update()
+
+  if (newOrb !== null) {
+    newOrb.iter !== 0 && gravity.shrink(1)
+    newOrb.iter++
+    raycaster.setFromCamera(mouse, camera)
+    const position = new Vector3()
+    position.copy(raycaster.ray.origin)
+    position.addScaledVector(raycaster.ray.direction, 1000)
+
+    const speed = new Vector3()
+    speed.copy(raycaster.ray.direction)
+    speed.multiplyScalar(newOrb.speed)
+    const mass = Math.pow(newOrb.iter / 50, 4) * params.mass
+    gravity.grow([
+      {
+        position,
+        speed,
+        mass: mass,
+        temperature: massToTemperature(mass),
+      },
+    ])
+    particles.geometry.attributes.temperature.needsUpdate = true
+    particles.geometry.attributes.mass.needsUpdate = true
+  }
   composer.render()
 }
 
@@ -180,20 +216,22 @@ function init() {
   const orbs = configurations[configuration](params)
   let positions, masses, temperatures
   const Backend = backends[backend] || backends[fallbacks[backend]]
-  gravity = new Backend(orbs, params)
+  const allocLength = orbs.length + 1000
+
+  gravity = new Backend(orbs, params, allocLength)
 
   if (backend.startsWith('rust')) {
     const { buffer } = wasm_memory()
     positions = new Float32Array(
       buffer,
       gravity.positions_ptr(),
-      3 * orbs.length
+      3 * allocLength
     )
-    masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length)
+    masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength)
     temperatures = new Float32Array(
       buffer,
       gravity.temperatures_ptr(),
-      orbs.length
+      allocLength
     )
     // gravity.precalc(softening)
   } else {
@@ -247,7 +285,9 @@ function initGUI() {
   gui.add(params, 'resolution', 1, 9, 1).onChange(restart)
   gui.add(params, 'threads', 1, 128, 1).onChange(restart)
   const fx = gui.addFolder('Render fx')
-  fx.add(params, 'autoRotate').onChange(on => (controls.autoRotate = on))
+  fx.add(params, 'autoRotate')
+    .onChange(on => (controls.autoRotate = on))
+    .listen()
   fx.add(params, 'fxaa').onChange(on => (fxaaPass.enabled = on))
   fx.add(params, 'bloom').onChange(on => {
     bloomPass.enabled = on
@@ -319,6 +359,50 @@ function initGUI() {
     restart()
   })
 }
+
+const raycaster = new Raycaster()
+const mouse = new Vector2()
+let delay = null
+window.addEventListener('pointerdown', function (event) {
+  mouse.set(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -(event.clientY / window.innerHeight) * 2 + 1
+  )
+  const activateNewOrb = () => {
+    params.autoRotate = false
+    controls.autoRotate = false
+    delay = null
+    newOrb = {
+      iter: 0,
+      speed: 20 * (1 + event.button),
+    }
+  }
+  if (event.shiftKey) {
+    activateNewOrb()
+  } else {
+    delay = setTimeout(activateNewOrb, 125)
+  }
+})
+
+window.addEventListener('pointermove', function (event) {
+  if (delay) {
+    clearTimeout(delay)
+    delay = null
+  } else if (newOrb !== null) {
+    mouse.set(
+      (event.clientX / window.innerWidth) * 2 - 1,
+      -(event.clientY / window.innerHeight) * 2 + 1
+    )
+  }
+})
+
+window.addEventListener('pointerup', function () {
+  if (delay) {
+    clearTimeout(delay)
+    delay = null
+  }
+  newOrb = null
+})
 
 const wasmPromise = wasmInit('./dist/wasm/index_bg.wasm')
 

@@ -1,28 +1,20 @@
 export default class Gravity {
-  constructor(orbs, params) {
+  constructor(orbs, params, allocLen) {
     this.alive = true
     this.params = params
 
     this.len = orbs.length
-    this.positions = new Float32Array(3 * this.len)
-    this.speeds = new Float32Array(3 * this.len)
-    this.accelerations = new Float32Array(3 * this.len)
-    this.masses = new Float32Array(this.len)
-    this.temperatures = new Float32Array(this.len)
 
-    orbs.forEach(({ position, mass, speed, temperature }, i) => {
-      this.positions[i * 3] = position.x
-      this.positions[i * 3 + 1] = position.y
-      this.positions[i * 3 + 2] = position.z
-      this.speeds[i * 3] = speed.x
-      this.speeds[i * 3 + 1] = speed.y
-      this.speeds[i * 3 + 2] = speed.z
-      this.masses[i] = mass
-      this.temperatures[i] = temperature
-    })
+    this.positions = new Float32Array(3 * allocLen)
+    this.speeds = new Float32Array(3 * allocLen)
+    this.accelerations = new Float32Array(3 * allocLen)
+    this.masses = new Float32Array(allocLen)
+    this.temperatures = new Float32Array(allocLen)
+
+    orbs.forEach((orb, i) => this.setOrb(i, orb))
   }
 
-  paramsChange() {}
+  params_change(obj, key, value) {}
 
   frog_leap() {
     const dt = this.params.simulationSpeed
@@ -192,6 +184,34 @@ export default class Gravity {
       this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt
       this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt
     }
+  }
+
+  setOrb(i, { position, mass, speed, temperature }) {
+    this.positions[i * 3] = position.x
+    this.positions[i * 3 + 1] = position.y
+    this.positions[i * 3 + 2] = position.z
+    this.speeds[i * 3] = speed.x
+    this.speeds[i * 3 + 1] = speed.y
+    this.speeds[i * 3 + 2] = speed.z
+    this.masses[i] = mass
+    this.temperatures[i] = temperature
+  }
+
+  grow(orbs) {
+    if (this.len + orbs.length > this.temperatures.length) {
+      console.warn("Can't grow")
+      return
+    }
+    orbs.forEach((orb, i) => this.setOrb(this.len + i, orb))
+    this.len += orbs.length
+  }
+
+  shrink(n) {
+    if (this.len - n < 0) {
+      console.warn("Can't shrink")
+      return
+    }
+    this.len -= n
   }
 
   free() {

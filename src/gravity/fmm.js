@@ -1,15 +1,17 @@
 import Gravity from './gravity'
 
 export default class FMMGravity extends Gravity {
-  constructor(orbs, params) {
-    super(orbs, params)
-    this.paramsChange()
-  }
-
-  paramsChange() {
+  constructor(orbs, params, allocLen) {
+    super(orbs, params, allocLen)
+    // this.params_change()
     this.grid_dimension_size = 1 << (3 * ~~this.params.resolution)
     this.grid = new Float32Array(this.grid_dimension_size * 3)
   }
+
+  // params_change(params, key, value) {
+  //   this.grid_dimension_size = 1 << (3 * ~~this.params.resolution)
+  //   this.grid = new Float32Array(this.grid_dimension_size * 3)
+  // }
 
   getCells(i) {
     const cells = []

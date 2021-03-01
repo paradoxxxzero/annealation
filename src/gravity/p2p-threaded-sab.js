@@ -3,8 +3,8 @@ import { workerPromise } from './p2p-threaded'
 import Gravity from './gravity'
 
 export default class P2PThreadedSABGravity extends Gravity {
-  constructor(orbs, params) {
-    super(orbs, params)
+  constructor(orbs, params, allocLen) {
+    super(orbs, params, allocLen)
     this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
     this.positions = new Float32Array(this.positionsBuffer)
     this.speedsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8

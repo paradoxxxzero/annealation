@@ -1,34 +1,6 @@
 import { Spherical, Vector3, Euler } from 'three'
 import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
-
-const colorEncode = (r, g, b, l = 256) =>
-  ~~(Math.min(r, 0.99) * l) +
-  ~~(Math.min(g, 0.99) * l) * l +
-  ~~(Math.min(b, 0.99) * l) * l * l
-
-// const normalGauss = x => {
-//   // [0, 1] -> [0, 1] max at 1/2
-//   return Math.exp(-Math.pow((x - 0.5) * 4, 2))
-// }
-const centeredGauss = x => {
-  // [-1, 1] -> [0, 1] max at 0
-  return Math.exp(-Math.pow(x * 2, 2))
-}
-
-const massToTemperature = mass =>
-  mass < 5 ? (mass + 1.09611) * 1900 : (mass + 1.7) * 1700
-
-const rngTemperatureMass = maxMass => {
-  const mass = maxMass * Math.pow(Math.random(), 15)
-  const theoricTemperature = massToTemperature(mass)
-  const variance = 0.75
-  return {
-    mass,
-    temperature:
-      theoricTemperature *
-      (1 + variance * centeredGauss(1 - 2 * Math.random())),
-  }
-}
+import { colorEncode, rngTemperatureMass } from './helpers'
 
 const blackHole = blackHoleMass =>
   blackHoleMass

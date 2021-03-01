@@ -2440,7 +2440,7 @@ function updateDisplays(controllerArray) {
 }
 var GUI$1 = GUI;
 
-// _snowpack/pkg/common/three.module-9b911f17.js
+// _snowpack/pkg/common/three.module-295f7415.js
 var REVISION = "126";
 var MOUSE = {LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2};
 var TOUCH = {ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3};
@@ -8762,7 +8762,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
       }
     }
   },
-  raycast: function(raycaster, intersects) {
+  raycast: function(raycaster2, intersects) {
     const geometry = this.geometry;
     const material = this.material;
     const matrixWorld = this.matrixWorld;
@@ -8772,10 +8772,10 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
       geometry.computeBoundingSphere();
     _sphere.copy(geometry.boundingSphere);
     _sphere.applyMatrix4(matrixWorld);
-    if (raycaster.ray.intersectsSphere(_sphere) === false)
+    if (raycaster2.ray.intersectsSphere(_sphere) === false)
       return;
     _inverseMatrix.copy(matrixWorld).invert();
-    _ray.copy(raycaster.ray).applyMatrix4(_inverseMatrix);
+    _ray.copy(raycaster2.ray).applyMatrix4(_inverseMatrix);
     if (geometry.boundingBox !== null) {
       if (_ray.intersectsBox(geometry.boundingBox) === false)
         return;
@@ -8801,7 +8801,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
               const a = index.getX(j);
               const b = index.getX(j + 1);
               const c = index.getX(j + 2);
-              intersection = checkBufferGeometryIntersection(this, groupMaterial, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
+              intersection = checkBufferGeometryIntersection(this, groupMaterial, raycaster2, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
               if (intersection) {
                 intersection.faceIndex = Math.floor(j / 3);
                 intersection.face.materialIndex = group.materialIndex;
@@ -8816,7 +8816,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
             const a = index.getX(i);
             const b = index.getX(i + 1);
             const c = index.getX(i + 2);
-            intersection = checkBufferGeometryIntersection(this, material, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
+            intersection = checkBufferGeometryIntersection(this, material, raycaster2, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
             if (intersection) {
               intersection.faceIndex = Math.floor(i / 3);
               intersects.push(intersection);
@@ -8834,7 +8834,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
               const a = j;
               const b = j + 1;
               const c = j + 2;
-              intersection = checkBufferGeometryIntersection(this, groupMaterial, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
+              intersection = checkBufferGeometryIntersection(this, groupMaterial, raycaster2, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
               if (intersection) {
                 intersection.faceIndex = Math.floor(j / 3);
                 intersection.face.materialIndex = group.materialIndex;
@@ -8849,7 +8849,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
             const a = i;
             const b = i + 1;
             const c = i + 2;
-            intersection = checkBufferGeometryIntersection(this, material, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
+            intersection = checkBufferGeometryIntersection(this, material, raycaster2, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c);
             if (intersection) {
               intersection.faceIndex = Math.floor(i / 3);
               intersects.push(intersection);
@@ -8862,7 +8862,7 @@ Mesh.prototype = Object.assign(Object.create(Object3D.prototype), {
     }
   }
 });
-function checkIntersection(object, material, raycaster, ray, pA, pB, pC, point) {
+function checkIntersection(object, material, raycaster2, ray, pA, pB, pC, point) {
   let intersect;
   if (material.side === BackSide) {
     intersect = ray.intersectTriangle(pC, pB, pA, true, point);
@@ -8873,8 +8873,8 @@ function checkIntersection(object, material, raycaster, ray, pA, pB, pC, point) 
     return null;
   _intersectionPointWorld.copy(point);
   _intersectionPointWorld.applyMatrix4(object.matrixWorld);
-  const distance = raycaster.ray.origin.distanceTo(_intersectionPointWorld);
-  if (distance < raycaster.near || distance > raycaster.far)
+  const distance = raycaster2.ray.origin.distanceTo(_intersectionPointWorld);
+  if (distance < raycaster2.near || distance > raycaster2.far)
     return null;
   return {
     distance,
@@ -8882,7 +8882,7 @@ function checkIntersection(object, material, raycaster, ray, pA, pB, pC, point) 
     object
   };
 }
-function checkBufferGeometryIntersection(object, material, raycaster, ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c) {
+function checkBufferGeometryIntersection(object, material, raycaster2, ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c) {
   _vA.fromBufferAttribute(position, a);
   _vB.fromBufferAttribute(position, b);
   _vC.fromBufferAttribute(position, c);
@@ -8918,7 +8918,7 @@ function checkBufferGeometryIntersection(object, material, raycaster, ray, posit
     object.boneTransform(b, _vB);
     object.boneTransform(c, _vC);
   }
-  const intersection = checkIntersection(object, material, raycaster, ray, _vA, _vB, _vC, _intersectionPoint);
+  const intersection = checkIntersection(object, material, raycaster2, ray, _vA, _vB, _vC, _intersectionPoint);
   if (intersection) {
     if (uv) {
       _uvA.fromBufferAttribute(uv, a);
@@ -17168,12 +17168,12 @@ var LOD = class extends Object3D {
     }
     return null;
   }
-  raycast(raycaster, intersects) {
+  raycast(raycaster2, intersects) {
     const levels = this.levels;
     if (levels.length > 0) {
       _v1$4.setFromMatrixPosition(this.matrixWorld);
-      const distance = raycaster.ray.origin.distanceTo(_v1$4);
-      this.getObjectForDistance(distance).raycast(raycaster, intersects);
+      const distance = raycaster2.ray.origin.distanceTo(_v1$4);
+      this.getObjectForDistance(distance).raycast(raycaster2, intersects);
     }
   }
   update(camera2) {
@@ -17459,7 +17459,7 @@ InstancedMesh.prototype = Object.assign(Object.create(Mesh.prototype), {
   getMatrixAt: function(index, matrix) {
     matrix.fromArray(this.instanceMatrix.array, index * 16);
   },
-  raycast: function(raycaster, intersects) {
+  raycast: function(raycaster2, intersects) {
     const matrixWorld = this.matrixWorld;
     const raycastTimes = this.count;
     _mesh.geometry = this.geometry;
@@ -17470,7 +17470,7 @@ InstancedMesh.prototype = Object.assign(Object.create(Mesh.prototype), {
       this.getMatrixAt(instanceId, _instanceLocalMatrix);
       _instanceWorldMatrix.multiplyMatrices(matrixWorld, _instanceLocalMatrix);
       _mesh.matrixWorld = _instanceWorldMatrix;
-      _mesh.raycast(raycaster, _instanceIntersects);
+      _mesh.raycast(raycaster2, _instanceIntersects);
       for (let i = 0, l = _instanceIntersects.length; i < l; i++) {
         const intersect = _instanceIntersects[i];
         intersect.instanceId = instanceId;
@@ -17559,19 +17559,19 @@ Line.prototype = Object.assign(Object.create(Object3D.prototype), {
     }
     return this;
   },
-  raycast: function(raycaster, intersects) {
+  raycast: function(raycaster2, intersects) {
     const geometry = this.geometry;
     const matrixWorld = this.matrixWorld;
-    const threshold = raycaster.params.Line.threshold;
+    const threshold = raycaster2.params.Line.threshold;
     if (geometry.boundingSphere === null)
       geometry.computeBoundingSphere();
     _sphere$2.copy(geometry.boundingSphere);
     _sphere$2.applyMatrix4(matrixWorld);
     _sphere$2.radius += threshold;
-    if (raycaster.ray.intersectsSphere(_sphere$2) === false)
+    if (raycaster2.ray.intersectsSphere(_sphere$2) === false)
       return;
     _inverseMatrix$1.copy(matrixWorld).invert();
-    _ray$1.copy(raycaster.ray).applyMatrix4(_inverseMatrix$1);
+    _ray$1.copy(raycaster2.ray).applyMatrix4(_inverseMatrix$1);
     const localThreshold = threshold / ((this.scale.x + this.scale.y + this.scale.z) / 3);
     const localThresholdSq = localThreshold * localThreshold;
     const vStart = new Vector3();
@@ -17594,8 +17594,8 @@ Line.prototype = Object.assign(Object.create(Object3D.prototype), {
           if (distSq > localThresholdSq)
             continue;
           interRay.applyMatrix4(this.matrixWorld);
-          const distance = raycaster.ray.origin.distanceTo(interRay);
-          if (distance < raycaster.near || distance > raycaster.far)
+          const distance = raycaster2.ray.origin.distanceTo(interRay);
+          if (distance < raycaster2.near || distance > raycaster2.far)
             continue;
           intersects.push({
             distance,
@@ -17614,8 +17614,8 @@ Line.prototype = Object.assign(Object.create(Object3D.prototype), {
           if (distSq > localThresholdSq)
             continue;
           interRay.applyMatrix4(this.matrixWorld);
-          const distance = raycaster.ray.origin.distanceTo(interRay);
-          if (distance < raycaster.near || distance > raycaster.far)
+          const distance = raycaster2.ray.origin.distanceTo(interRay);
+          if (distance < raycaster2.near || distance > raycaster2.far)
             continue;
           intersects.push({
             distance,
@@ -17731,19 +17731,19 @@ Points.prototype = Object.assign(Object.create(Object3D.prototype), {
     this.geometry = source.geometry;
     return this;
   },
-  raycast: function(raycaster, intersects) {
+  raycast: function(raycaster2, intersects) {
     const geometry = this.geometry;
     const matrixWorld = this.matrixWorld;
-    const threshold = raycaster.params.Points.threshold;
+    const threshold = raycaster2.params.Points.threshold;
     if (geometry.boundingSphere === null)
       geometry.computeBoundingSphere();
     _sphere$3.copy(geometry.boundingSphere);
     _sphere$3.applyMatrix4(matrixWorld);
     _sphere$3.radius += threshold;
-    if (raycaster.ray.intersectsSphere(_sphere$3) === false)
+    if (raycaster2.ray.intersectsSphere(_sphere$3) === false)
       return;
     _inverseMatrix$2.copy(matrixWorld).invert();
-    _ray$2.copy(raycaster.ray).applyMatrix4(_inverseMatrix$2);
+    _ray$2.copy(raycaster2.ray).applyMatrix4(_inverseMatrix$2);
     const localThreshold = threshold / ((this.scale.x + this.scale.y + this.scale.z) / 3);
     const localThresholdSq = localThreshold * localThreshold;
     if (geometry.isBufferGeometry) {
@@ -17755,12 +17755,12 @@ Points.prototype = Object.assign(Object.create(Object3D.prototype), {
         for (let i = 0, il = indices.length; i < il; i++) {
           const a = indices[i];
           _position$1.fromBufferAttribute(positionAttribute, a);
-          testPoint(_position$1, a, localThresholdSq, matrixWorld, raycaster, intersects, this);
+          testPoint(_position$1, a, localThresholdSq, matrixWorld, raycaster2, intersects, this);
         }
       } else {
         for (let i = 0, l = positionAttribute.count; i < l; i++) {
           _position$1.fromBufferAttribute(positionAttribute, i);
-          testPoint(_position$1, i, localThresholdSq, matrixWorld, raycaster, intersects, this);
+          testPoint(_position$1, i, localThresholdSq, matrixWorld, raycaster2, intersects, this);
         }
       }
     } else {
@@ -17792,14 +17792,14 @@ Points.prototype = Object.assign(Object.create(Object3D.prototype), {
     }
   }
 });
-function testPoint(point, index, localThresholdSq, matrixWorld, raycaster, intersects, object) {
+function testPoint(point, index, localThresholdSq, matrixWorld, raycaster2, intersects, object) {
   const rayPointDistanceSq = _ray$2.distanceSqToPoint(point);
   if (rayPointDistanceSq < localThresholdSq) {
     const intersectPoint = new Vector3();
     _ray$2.closestPointToPoint(point, intersectPoint);
     intersectPoint.applyMatrix4(matrixWorld);
-    const distance = raycaster.ray.origin.distanceTo(intersectPoint);
-    if (distance < raycaster.near || distance > raycaster.far)
+    const distance = raycaster2.ray.origin.distanceTo(intersectPoint);
+    if (distance < raycaster2.near || distance > raycaster2.far)
       return;
     intersects.push({
       distance,
@@ -19402,7 +19402,7 @@ var Audio = class extends Object3D {
       this.play();
     return this;
   }
-  play(delay = 0) {
+  play(delay2 = 0) {
     if (this.isPlaying === true) {
       console.warn("THREE.Audio: Audio is already playing.");
       return;
@@ -19411,7 +19411,7 @@ var Audio = class extends Object3D {
       console.warn("THREE.Audio: this Audio has no playback control.");
       return;
     }
-    this._startedAt = this.context.currentTime + delay;
+    this._startedAt = this.context.currentTime + delay2;
     const source = this.context.createBufferSource();
     source.buffer = this.buffer;
     source.loop = this.loop;
@@ -19992,14 +19992,14 @@ function Raycaster(origin, direction, near = 0, far = Infinity) {
 function ascSort(a, b) {
   return a.distance - b.distance;
 }
-function intersectObject(object, raycaster, intersects, recursive) {
-  if (object.layers.test(raycaster.layers)) {
-    object.raycast(raycaster, intersects);
+function intersectObject(object, raycaster2, intersects, recursive) {
+  if (object.layers.test(raycaster2.layers)) {
+    object.raycast(raycaster2, intersects);
   }
   if (recursive === true) {
     const children = object.children;
     for (let i = 0, l = children.length; i < l; i++) {
-      intersectObject(children[i], raycaster, intersects, true);
+      intersectObject(children[i], raycaster2, intersects, true);
     }
   }
 }
@@ -21093,7 +21093,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-// _snowpack/pkg/common/Pass-699dd0f0.js
+// _snowpack/pkg/common/Pass-38ef430e.js
 function Pass() {
   this.enabled = true;
   this.needsSwap = true;
@@ -21888,7 +21888,7 @@ var CopyShader = {
   ].join("\n")
 };
 
-// _snowpack/pkg/common/ShaderPass-dd4a9692.js
+// _snowpack/pkg/common/ShaderPass-23d3234c.js
 var ShaderPass = function(shader, textureID) {
   Pass.call(this);
   this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
@@ -25109,7 +25109,7 @@ var TeapotGeometry = function(size, segments, bottom, lid, body, fitLid, blinn) 
 TeapotGeometry.prototype = Object.create(BufferGeometry.prototype);
 TeapotGeometry.prototype.constructor = TeapotGeometry;
 
-// dist/configurations.js
+// dist/helpers.js
 var colorEncode = (r, g, b, l = 256) => ~~(Math.min(r, 0.99) * l) + ~~(Math.min(g, 0.99) * l) * l + ~~(Math.min(b, 0.99) * l) * l * l;
 var centeredGauss = (x) => {
   return Math.exp(-Math.pow(x * 2, 2));
@@ -25124,6 +25124,8 @@ var rngTemperatureMass = (maxMass) => {
     temperature: theoricTemperature * (1 + variance * centeredGauss(1 - 2 * Math.random()))
   };
 };
+
+// dist/configurations.js
 var blackHole = (blackHoleMass) => blackHoleMass ? [
   {
     temperature: 0,
@@ -26036,9 +26038,9 @@ var FMMRustGravity = class {
     this.ptr = 0;
     wasm.__wbg_fmmrustgravity_free(ptr);
   }
-  constructor(orbs, params2) {
+  constructor(orbs, params2, alloc_len) {
     try {
-      var ret = wasm.fmmrustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      var ret = wasm.fmmrustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
       return FMMRustGravity.__wrap(ret);
     } finally {
       heap[stack_pointer++] = void 0;
@@ -26071,6 +26073,25 @@ var FMMRustGravity = class {
   frog_drop() {
     wasm.fmmrustgravity_frog_drop(this.ptr);
   }
+  grow(orbs) {
+    try {
+      wasm.fmmrustgravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.fmmrustgravity_shrink(this.ptr, n);
+  }
+  params_change(params2, key, value) {
+    try {
+      wasm.fmmrustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
 };
 var P2PRustGravity = class {
   static __wrap(ptr) {
@@ -26083,9 +26104,9 @@ var P2PRustGravity = class {
     this.ptr = 0;
     wasm.__wbg_p2prustgravity_free(ptr);
   }
-  constructor(orbs, params2) {
+  constructor(orbs, params2, alloc_len) {
     try {
-      var ret = wasm.p2prustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      var ret = wasm.p2prustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
       return P2PRustGravity.__wrap(ret);
     } finally {
       heap[stack_pointer++] = void 0;
@@ -26118,6 +26139,25 @@ var P2PRustGravity = class {
   frog_drop() {
     wasm.fmmrustgravity_frog_drop(this.ptr);
   }
+  grow(orbs) {
+    try {
+      wasm.p2prustgravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.fmmrustgravity_shrink(this.ptr, n);
+  }
+  params_change(params2, key, value) {
+    try {
+      wasm.p2prustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
 };
 var RustNoGravity = class {
   static __wrap(ptr) {
@@ -26130,9 +26170,9 @@ var RustNoGravity = class {
     this.ptr = 0;
     wasm.__wbg_rustnogravity_free(ptr);
   }
-  constructor(orbs, params2) {
+  constructor(orbs, params2, alloc_len) {
     try {
-      var ret = wasm.rustnogravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      var ret = wasm.rustnogravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
       return RustNoGravity.__wrap(ret);
     } finally {
       heap[stack_pointer++] = void 0;
@@ -26161,6 +26201,25 @@ var RustNoGravity = class {
   frog_drop() {
     wasm.rustnogravity_frog_drop(this.ptr);
   }
+  grow(orbs) {
+    try {
+      wasm.rustnogravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.fmmrustgravity_shrink(this.ptr, n);
+  }
+  params_change(params2, key, value) {
+    try {
+      wasm.rustnogravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
 };
 var TreeRustGravity = class {
   static __wrap(ptr) {
@@ -26173,9 +26232,9 @@ var TreeRustGravity = class {
     this.ptr = 0;
     wasm.__wbg_treerustgravity_free(ptr);
   }
-  constructor(orbs, params2) {
+  constructor(orbs, params2, alloc_len) {
     try {
-      var ret = wasm.treerustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2));
+      var ret = wasm.treerustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
       return TreeRustGravity.__wrap(ret);
     } finally {
       heap[stack_pointer++] = void 0;
@@ -26207,6 +26266,25 @@ var TreeRustGravity = class {
   }
   frog_drop() {
     wasm.fmmrustgravity_frog_drop(this.ptr);
+  }
+  grow(orbs) {
+    try {
+      wasm.fmmrustgravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.fmmrustgravity_shrink(this.ptr, n);
+  }
+  params_change(params2, key, value) {
+    try {
+      wasm.fmmrustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
   }
 };
 async function load2(module, imports) {
@@ -26391,27 +26469,18 @@ var statsjs_default = stats_min;
 
 // dist/gravity/gravity.js
 var Gravity = class {
-  constructor(orbs, params2) {
+  constructor(orbs, params2, allocLen) {
     this.alive = true;
     this.params = params2;
     this.len = orbs.length;
-    this.positions = new Float32Array(3 * this.len);
-    this.speeds = new Float32Array(3 * this.len);
-    this.accelerations = new Float32Array(3 * this.len);
-    this.masses = new Float32Array(this.len);
-    this.temperatures = new Float32Array(this.len);
-    orbs.forEach(({position, mass, speed, temperature}, i) => {
-      this.positions[i * 3] = position.x;
-      this.positions[i * 3 + 1] = position.y;
-      this.positions[i * 3 + 2] = position.z;
-      this.speeds[i * 3] = speed.x;
-      this.speeds[i * 3 + 1] = speed.y;
-      this.speeds[i * 3 + 2] = speed.z;
-      this.masses[i] = mass;
-      this.temperatures[i] = temperature;
-    });
+    this.positions = new Float32Array(3 * allocLen);
+    this.speeds = new Float32Array(3 * allocLen);
+    this.accelerations = new Float32Array(3 * allocLen);
+    this.masses = new Float32Array(allocLen);
+    this.temperatures = new Float32Array(allocLen);
+    orbs.forEach((orb, i) => this.setOrb(i, orb));
   }
-  paramsChange() {
+  params_change(obj, key, value) {
   }
   frog_leap() {
     const dt = this.params.simulationSpeed;
@@ -26545,6 +26614,31 @@ var Gravity = class {
       this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
     }
   }
+  setOrb(i, {position, mass, speed, temperature}) {
+    this.positions[i * 3] = position.x;
+    this.positions[i * 3 + 1] = position.y;
+    this.positions[i * 3 + 2] = position.z;
+    this.speeds[i * 3] = speed.x;
+    this.speeds[i * 3 + 1] = speed.y;
+    this.speeds[i * 3 + 2] = speed.z;
+    this.masses[i] = mass;
+    this.temperatures[i] = temperature;
+  }
+  grow(orbs) {
+    if (this.len + orbs.length > this.temperatures.length) {
+      console.warn("Can't grow");
+      return;
+    }
+    orbs.forEach((orb, i) => this.setOrb(this.len + i, orb));
+    this.len += orbs.length;
+  }
+  shrink(n) {
+    if (this.len - n < 0) {
+      console.warn("Can't shrink");
+      return;
+    }
+    this.len -= n;
+  }
   free() {
     this.alive = false;
     delete this.temperatures;
@@ -26604,11 +26698,8 @@ var p2p_default = P2PGravity;
 
 // dist/gravity/fmm.js
 var FMMGravity = class extends gravity_default {
-  constructor(orbs, params2) {
-    super(orbs, params2);
-    this.paramsChange();
-  }
-  paramsChange() {
+  constructor(orbs, params2, allocLen) {
+    super(orbs, params2, allocLen);
     this.grid_dimension_size = 1 << 3 * ~~this.params.resolution;
     this.grid = new Float32Array(this.grid_dimension_size * 3);
   }
@@ -26724,8 +26815,8 @@ var workerPromise = (worker, ...args) => {
   });
 };
 var P2PThreadedGravity = class extends gravity_default {
-  constructor(orbs, params2) {
-    super(orbs, params2);
+  constructor(orbs, params2, allocLen) {
+    super(orbs, params2, allocLen);
     this.pool = new Array(~~params2.threads).fill().map(() => {
       const url = import.meta.url;
       return new Worker(url.includes("gravity") ? new URL("../../worker/p2p-thread.js", import.meta.url) : new URL("./gravity/worker/p2p-thread.js", import.meta.url));
@@ -26779,8 +26870,8 @@ var p2p_threaded_default = P2PThreadedGravity;
 // dist/gravity/p2p-threaded-sab.js
 import.meta.env = env_exports;
 var P2PThreadedSABGravity = class extends gravity_default {
-  constructor(orbs, params2) {
-    super(orbs, params2);
+  constructor(orbs, params2, allocLen) {
+    super(orbs, params2, allocLen);
     this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4);
     this.positions = new Float32Array(this.positionsBuffer);
     this.speedsBuffer = new SharedArrayBuffer(3 * this.len * 4);
@@ -26848,6 +26939,7 @@ var p2p_threaded_sab_default = P2PThreadedSABGravity;
 
 // dist/index.js
 var raf = null;
+var newOrb = null;
 var colorModes = {
   Temperature: 0.5,
   Rainbow: 1,
@@ -26877,7 +26969,13 @@ if (typeof SharedArrayBuffer === "undefined") {
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
-var params = {...presets_default.remembered[preset][0]};
+var params = new Proxy({...presets_default.remembered[preset][0]}, {
+  set(target, key, value) {
+    target[key] = value;
+    gravity?.params_change(target, key, value);
+    return true;
+  }
+});
 var renderer = new WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -26936,6 +27034,28 @@ async function render() {
   }
   particles.geometry.attributes.position.needsUpdate = true;
   controls.update();
+  if (newOrb !== null) {
+    newOrb.iter !== 0 && gravity.shrink(1);
+    newOrb.iter++;
+    raycaster.setFromCamera(mouse, camera);
+    const position = new Vector3();
+    position.copy(raycaster.ray.origin);
+    position.addScaledVector(raycaster.ray.direction, 1e3);
+    const speed = new Vector3();
+    speed.copy(raycaster.ray.direction);
+    speed.multiplyScalar(newOrb.speed);
+    const mass = Math.pow(newOrb.iter / 50, 4) * params.mass;
+    gravity.grow([
+      {
+        position,
+        speed,
+        mass,
+        temperature: massToTemperature(mass)
+      }
+    ]);
+    particles.geometry.attributes.temperature.needsUpdate = true;
+    particles.geometry.attributes.mass.needsUpdate = true;
+  }
   composer.render();
 }
 function init2() {
@@ -26949,12 +27069,13 @@ function init2() {
   const orbs = configurations_exports[configuration](params);
   let positions, masses, temperatures;
   const Backend = backends[backend] || backends[fallbacks[backend]];
-  gravity = new Backend(orbs, params);
+  const allocLength = orbs.length + 1e3;
+  gravity = new Backend(orbs, params, allocLength);
   if (backend.startsWith("rust")) {
     const {buffer} = wasm_memory();
-    positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * orbs.length);
-    masses = new Float32Array(buffer, gravity.masses_ptr(), orbs.length);
-    temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), orbs.length);
+    positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * allocLength);
+    masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength);
+    temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), allocLength);
   } else {
     ;
     ({positions, masses, temperatures} = gravity);
@@ -26993,7 +27114,7 @@ function initGUI() {
   gui.add(params, "resolution", 1, 9, 1).onChange(restart);
   gui.add(params, "threads", 1, 128, 1).onChange(restart);
   const fx = gui.addFolder("Render fx");
-  fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on);
+  fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on).listen();
   fx.add(params, "fxaa").onChange((on) => fxaaPass.enabled = on);
   fx.add(params, "bloom").onChange((on) => {
     bloomPass.enabled = on;
@@ -27037,6 +27158,41 @@ function initGUI() {
     restart();
   });
 }
+var raycaster = new Raycaster();
+var mouse = new Vector2();
+var delay = null;
+window.addEventListener("pointerdown", function(event) {
+  mouse.set(event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+  const activateNewOrb = () => {
+    params.autoRotate = false;
+    controls.autoRotate = false;
+    delay = null;
+    newOrb = {
+      iter: 0,
+      speed: 20 * (1 + event.button)
+    };
+  };
+  if (event.shiftKey) {
+    activateNewOrb();
+  } else {
+    delay = setTimeout(activateNewOrb, 125);
+  }
+});
+window.addEventListener("pointermove", function(event) {
+  if (delay) {
+    clearTimeout(delay);
+    delay = null;
+  } else if (newOrb !== null) {
+    mouse.set(event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+  }
+});
+window.addEventListener("pointerup", function() {
+  if (delay) {
+    clearTimeout(delay);
+    delay = null;
+  }
+  newOrb = null;
+});
 var wasmPromise = wasm_default("./dist/wasm/index_bg.wasm");
 wasmPromise.then(() => {
   init2();

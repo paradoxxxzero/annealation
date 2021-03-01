@@ -12,6 +12,7 @@ pub struct P2PRustGravity {
     masses: Vec<f32>,
     temperatures: Vec<f32>,
     len: usize,
+    alloc_len: usize,
 }
 
 impl Gravity for P2PRustGravity {
@@ -23,6 +24,9 @@ impl Gravity for P2PRustGravity {
     }
     fn _params(&self) -> &Params {
         &self.params
+    }
+    fn _params_set(&mut self, params: Params) {
+        self.params = params
     }
     fn _accelerations(&mut self) -> &mut Vec<f32> {
         &mut self.accelerations
@@ -44,17 +48,21 @@ impl Gravity for P2PRustGravity {
 #[wasm_bindgen]
 impl P2PRustGravity {
     #[wasm_bindgen(constructor)]
-    pub fn new(orbs: &Array, params: &JsValue) -> Result<P2PRustGravity, JsValue> {
+    pub fn new(
+        orbs: &Array,
+        params: &JsValue,
+        alloc_len: usize,
+    ) -> Result<P2PRustGravity, JsValue> {
         console_error_panic_hook::set_once();
         let params = params
             .into_serde()
             .map_err(|e| JsValue::from(e.to_string()))?;
         let len = orbs.length() as usize;
-        let mut positions = vec![0f32; 3 * len];
-        let mut speeds = vec![0f32; 3 * len];
-        let accelerations = vec![0f32; 3 * len];
-        let mut masses = vec![0f32; len];
-        let mut temperatures = vec![0f32; len];
+        let mut positions = vec![0f32; 3 * alloc_len];
+        let mut speeds = vec![0f32; 3 * alloc_len];
+        let accelerations = vec![0f32; 3 * alloc_len];
+        let mut masses = vec![0f32; alloc_len];
+        let mut temperatures = vec![0f32; alloc_len];
 
         for (i, orb) in orbs.iter().enumerate() {
             let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
@@ -76,6 +84,7 @@ impl P2PRustGravity {
             masses,
             temperatures,
             len,
+            alloc_len,
         })
     }
 
@@ -141,5 +150,20 @@ impl P2PRustGravity {
     }
     pub fn frog_drop(&mut self) {
         self.drop();
+    }
+
+    pub fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {
+        Gravity::grow(self, orbs)
+    }
+    pub fn shrink(&mut self, n: usize) -> Result<(), JsValue> {
+        Gravity::shrink(self, n)
+    }
+    pub fn params_change(
+        &mut self,
+        params: &JsValue,
+        key: &JsValue,
+        value: &JsValue,
+    ) -> Result<(), JsValue> {
+        Gravity::params_change(self, params, key, value)
     }
 }

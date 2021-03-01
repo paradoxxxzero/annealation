@@ -8,8 +8,8 @@ export const workerPromise = (worker, ...args) => {
 }
 
 export default class P2PThreadedGravity extends Gravity {
-  constructor(orbs, params) {
-    super(orbs, params)
+  constructor(orbs, params, allocLen) {
+    super(orbs, params, allocLen)
 
     this.pool = new Array(~~params.threads).fill().map(() => {
       const url = import.meta.url

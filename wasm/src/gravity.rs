@@ -1,9 +1,12 @@
-use crate::Params;
+use crate::{Orb, Params};
+use js_sys::Array;
+use wasm_bindgen::prelude::*;
 
 pub trait Gravity {
   fn _len(&self) -> usize;
   fn _len_set(&mut self, len: usize);
   fn _params(&self) -> &Params;
+  fn _params_set(&mut self, params: Params);
   fn _accelerations(&mut self) -> &mut Vec<f32>;
   fn _speeds(&mut self) -> &mut Vec<f32>;
   fn _positions(&mut self) -> &mut Vec<f32>;
@@ -146,5 +149,53 @@ pub trait Gravity {
       self._len_set(new_len);
     }
     self._len()
+  }
+
+  fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
+    let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+    self._positions()[i * 3] = orb.position.x;
+    self._positions()[i * 3 + 1] = orb.position.y;
+    self._positions()[i * 3 + 2] = orb.position.z;
+    self._speeds()[i * 3] = orb.speed.x;
+    self._speeds()[i * 3 + 1] = orb.speed.y;
+    self._speeds()[i * 3 + 2] = orb.speed.z;
+    self._masses()[i] = orb.mass;
+    self._temperatures()[i] = orb.temperature;
+    Ok(())
+  }
+
+  fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {
+    if self._len() + orbs.length() as usize > self._temperatures().len() {
+      return Err(JsValue::from("Can't grow"));
+    }
+
+    for (i, orb) in orbs.iter().enumerate() {
+      self.set_orb(self._len() + i, orb)?;
+    }
+    self._len_set(self._len() + orbs.length() as usize);
+    Ok(())
+  }
+
+  fn shrink(&mut self, n: usize) -> Result<(), JsValue> {
+    if (self._len() as i32 - n as i32) < 0 {
+      return Err(JsValue::from("Can't shrink"));
+    }
+
+    self._len_set(self._len() - n);
+    Ok(())
+  }
+
+  fn params_change(
+    &mut self,
+    params: &JsValue,
+    key: &JsValue,
+    value: &JsValue,
+  ) -> Result<(), JsValue> {
+    self._params_set(
+      params
+        .into_serde()
+        .map_err(|e| JsValue::from(e.to_string()))?,
+    );
+    Ok(())
   }
 }
