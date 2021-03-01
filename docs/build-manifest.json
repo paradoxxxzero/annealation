@@ -168,7 +168,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 12372,
+      "bytes": 13180,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -267,7 +267,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 11703,
+      "bytes": 11690,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -424,7 +424,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 12238
+          "bytesInOutput": 13036
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -457,10 +457,10 @@
           "bytesInOutput": 2455
         },
         "dist/index.js": {
-          "bytesInOutput": 9728
+          "bytesInOutput": 9717
         }
       },
-      "bytes": 1016958
+      "bytes": 1017745
     }
   }
 }

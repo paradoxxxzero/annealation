@@ -312,7 +312,7 @@ function initGUI() {
 
   const config = gui.addFolder('Configuration')
   config.add(params, 'configuration', Object.keys(configurations))
-  config.add(params, 'number', 0, 50000, 1)
+  config.add(params, 'number')
   config.add(params, 'range', 0, 5000, 1).name('range (1e15m)')
   config.add(params, 'speed', 0, 1000).name('speed (1e2m.s)')
   config.add(params, 'mass', 0, 1000).name('mass (1e30kg)')

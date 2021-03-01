@@ -25833,6 +25833,37 @@ var presets_default = {
         blackHoleMassThreshold: 1e4
       }
     },
+    Ekusupuroshon2: {
+      0: {
+        backend: "js_none",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 3,
+        autoRotate: true,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "expandingSphere",
+        number: 1e6,
+        range: 10,
+        speed: 50,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 5,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 10,
+        escapeDistance: 1e4,
+        blackHoleMassThreshold: 1e4
+      }
+    },
     LittleExpand: {
       0: {
         backend: "js_p2p_sab",
@@ -27128,7 +27159,7 @@ function initGUI() {
   fx.add(params, "afterImageDamp", 0, 1).onChange((v) => afterImagePass.uniforms.damp.value = v);
   const config = gui.addFolder("Configuration");
   config.add(params, "configuration", Object.keys(configurations_exports));
-  config.add(params, "number", 0, 5e4, 1);
+  config.add(params, "number");
   config.add(params, "range", 0, 5e3, 1).name("range (1e15m)");
   config.add(params, "speed", 0, 1e3).name("speed (1e2m.s)");
   config.add(params, "mass", 0, 1e3).name("mass (1e30kg)");
