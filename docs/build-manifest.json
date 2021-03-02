@@ -267,7 +267,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 11690,
+      "bytes": 11831,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -457,10 +457,10 @@
           "bytesInOutput": 2455
         },
         "dist/index.js": {
-          "bytesInOutput": 9717
+          "bytesInOutput": 9840
         }
       },
-      "bytes": 1017745
+      "bytes": 1017868
     }
   }
 }

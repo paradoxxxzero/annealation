@@ -348,7 +348,14 @@ function initGUI() {
       v => (particles.material.uniforms.blackHoleMassThreshold.value = v)
     )
   simulation.open()
-
+  gui.add(
+    {
+      'Go 4d': () => {
+        window.open('https://paradoxxxzero.github.io/katannealation')
+      },
+    },
+    'Go 4d'
+  )
   gui.remember(params)
   gui.revert()
   gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
