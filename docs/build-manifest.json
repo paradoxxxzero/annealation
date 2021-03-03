@@ -267,7 +267,7 @@
       ]
     },
     "dist/gravity/bh.js": {
-      "bytes": 6148,
+      "bytes": 6156,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -275,8 +275,50 @@
         }
       ]
     },
+    "dist/gravity/bh-threaded.js": {
+      "bytes": 5816,
+      "imports": [
+        {
+          "path": "_snowpack/env.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/p2p-threaded.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/gravity.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/bh.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/gravity/bh-threaded-sab.js": {
+      "bytes": 6573,
+      "imports": [
+        {
+          "path": "_snowpack/env.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/p2p-threaded.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/gravity.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/bh.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
     "dist/index.js": {
-      "bytes": 11994,
+      "bytes": 12288,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -364,6 +406,14 @@
         },
         {
           "path": "dist/gravity/bh.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/bh-threaded.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/gravity/bh-threaded-sab.js",
           "kind": "import-statement"
         }
       ]
@@ -470,13 +520,19 @@
           "bytesInOutput": 2455
         },
         "dist/gravity/bh.js": {
-          "bytesInOutput": 4984
+          "bytesInOutput": 4992
+        },
+        "dist/gravity/bh-threaded.js": {
+          "bytesInOutput": 5068
+        },
+        "dist/gravity/bh-threaded-sab.js": {
+          "bytesInOutput": 5787
         },
         "dist/index.js": {
-          "bytesInOutput": 9950
+          "bytesInOutput": 10087
         }
       },
-      "bytes": 1026252
+      "bytes": 1037320
     }
   }
 }

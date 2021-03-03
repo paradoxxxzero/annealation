@@ -27037,13 +27037,13 @@ import.meta.env = env_exports;
 var P2PThreadedSABGravity = class extends gravity_default {
   constructor(orbs, params2, allocLen) {
     super(orbs, params2, allocLen);
-    this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4);
+    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
     this.positions = new Float32Array(this.positionsBuffer);
-    this.speedsBuffer = new SharedArrayBuffer(3 * this.len * 4);
+    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
     this.speeds = new Float32Array(this.speedsBuffer);
-    this.accelerationsBuffer = new SharedArrayBuffer(3 * this.len * 4);
+    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
     this.accelerations = new Float32Array(this.accelerationsBuffer);
-    this.massesBuffer = new SharedArrayBuffer(this.len * 4);
+    this.massesBuffer = new SharedArrayBuffer(allocLen * 4);
     this.masses = new Float32Array(this.massesBuffer);
     this.pool = new Array(~~params2.threads).fill().map(() => {
       const url = import.meta.url;
@@ -27113,7 +27113,7 @@ var OCTANTS = [
   [1, 1, 1],
   [0, 1, 1]
 ];
-var BHGravity = class extends gravity_default {
+var BarnesHutGravity = class extends gravity_default {
   subdivide(cell) {
     const size = cell.size / 2;
     cell.leaf = false;
@@ -27153,7 +27153,7 @@ var BHGravity = class extends gravity_default {
     newSubCell.index = index;
   }
   makeOctree(origin, range) {
-    const root_cell = {
+    const rootCell = {
       x: origin,
       y: origin,
       z: origin,
@@ -27167,13 +27167,13 @@ var BHGravity = class extends gravity_default {
       leaf: true
     };
     for (let i = 0; i < this.len; i++) {
-      let cell = root_cell;
+      let cell = rootCell;
       while (!cell.leaf) {
         cell = this.getSubCell(cell, i);
       }
       this.addParticle(cell, i);
     }
-    return root_cell;
+    return rootCell;
   }
   massDistribution(cell) {
     if (cell.leaf) {
@@ -27250,14 +27250,14 @@ var BHGravity = class extends gravity_default {
     const threshold2 = collisionThreshold * collisionThreshold;
     const min = Math.min.apply(null, this.positions);
     const max = Math.max.apply(null, this.positions);
-    const root_cell = this.makeOctree(min, max - min);
-    this.massDistribution(root_cell);
+    const rootCell = this.makeOctree(min, max - min);
+    this.massDistribution(rootCell);
     for (let i = 0; i < this.len; i++) {
       let i3 = i * 3;
       this.accelerations[i3] = 0;
       this.accelerations[i3 + 1] = 0;
       this.accelerations[i3 + 2] = 0;
-      this.getAccelerations(root_cell, i, theta, softening2, collisions, collided, threshold2);
+      this.getAccelerations(rootCell, i, theta, softening2, collisions, collided, threshold2);
       this.accelerations[i3] *= gravitationalConstant;
       this.accelerations[i3 + 1] *= gravitationalConstant;
       this.accelerations[i3 + 2] *= gravitationalConstant;
@@ -27265,7 +27265,363 @@ var BHGravity = class extends gravity_default {
     return this.solve(collided);
   }
 };
-var bh_default = BHGravity;
+var bh_default = BarnesHutGravity;
+
+// dist/gravity/bh-threaded.js
+import.meta.env = env_exports;
+var BarnesHutThreadedGravity = class extends gravity_default {
+  constructor(orbs, params2, allocLen) {
+    super(orbs, params2, allocLen);
+    this.pool = new Array(~~params2.threads).fill().map(() => {
+      const url = import.meta.url;
+      return new Worker(url.includes("gravity") ? new URL("../../worker/bh-thread.js", import.meta.url) : new URL("./gravity/worker/bh-thread.js", import.meta.url));
+    });
+  }
+  subdivide(cell) {
+    const size = cell.size / 2;
+    cell.leaf = false;
+    cell.octants = OCTANTS.map(([x, y, z]) => ({
+      x: cell.x + x * size,
+      y: cell.y + y * size,
+      z: cell.z + z * size,
+      size,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    }));
+  }
+  getSubCell(cell, index) {
+    let i3 = index * 3;
+    const x = this.positions[i3] > cell.octants[6].x;
+    const y = this.positions[i3 + 1] > cell.octants[6].y;
+    const z = this.positions[i3 + 2] > cell.octants[6].z;
+    return cell.octants[OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)];
+  }
+  addParticle(cell, index) {
+    if (cell.index === null) {
+      cell.index = index;
+      return;
+    }
+    this.subdivide(cell);
+    const existingSubCell = this.getSubCell(cell, cell.index);
+    existingSubCell.index = cell.index;
+    const newSubCell = this.getSubCell(cell, index);
+    if (existingSubCell === newSubCell) {
+      this.addParticle(existingSubCell, index);
+    }
+    newSubCell.index = index;
+  }
+  makeOctree(origin, range) {
+    const rootCell = {
+      x: origin,
+      y: origin,
+      z: origin,
+      size: range,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    };
+    for (let i = 0; i < this.len; i++) {
+      let cell = rootCell;
+      while (!cell.leaf) {
+        cell = this.getSubCell(cell, i);
+      }
+      this.addParticle(cell, i);
+    }
+    return rootCell;
+  }
+  massDistribution(cell) {
+    if (cell.leaf) {
+      let i3 = cell.index * 3;
+      cell.cx = this.positions[i3];
+      cell.cy = this.positions[i3 + 1];
+      cell.cz = this.positions[i3 + 2];
+      cell.mass = this.masses[cell.index];
+    } else {
+      for (let i = 0, n = cell.octants.length; i < n; i++) {
+        const subCell = cell.octants[i];
+        if (subCell.index !== null) {
+          this.massDistribution(subCell);
+          cell.mass += subCell.mass;
+          cell.cx += subCell.cx * subCell.mass;
+          cell.cy += subCell.cy * subCell.mass;
+          cell.cz += subCell.cz * subCell.mass;
+        }
+      }
+      cell.cx /= cell.mass;
+      cell.cy /= cell.mass;
+      cell.cz /= cell.mass;
+    }
+  }
+  fill(cell, cells, flag) {
+    const s = flag.shift;
+    cells[0 + s] = cell.size;
+    cells[1 + s] = cell.index;
+    cells[2 + s] = cell.mass;
+    cells[3 + s] = cell.cx;
+    cells[4 + s] = cell.cy;
+    cells[5 + s] = cell.cz;
+    if (cell.leaf) {
+      for (let i = 0; i < 8; i++) {
+        cells[6 + i + s] = NaN;
+      }
+    } else {
+      for (let i = 0; i < 8; i++) {
+        flag.shift += 14;
+        cells[6 + i + s] = flag.shift;
+        this.fill(cell.octants[i], cells, flag);
+      }
+    }
+    return s;
+  }
+  async simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      theta
+    } = this.params;
+    let collided = [];
+    const softening2 = softening * softening;
+    const threshold2 = collisionThreshold * collisionThreshold;
+    const min = Math.min.apply(null, this.positions);
+    const max = Math.max.apply(null, this.positions);
+    const rootCell = this.makeOctree(min, max - min);
+    this.massDistribution(rootCell);
+    const count = (c) => c.octants ? c.octants.length + c.octants.map(count).reduce((a, b) => a + b, 0) : 0;
+    const cellCount = count(rootCell) + 1;
+    const cells = new Float32Array(cellCount * 14);
+    this.fill(rootCell, cells, {shift: 0});
+    let parts = ~~(this.len / this.pool.length);
+    const workersResults = await Promise.all(this.pool.map((worker, i) => workerPromise(worker, [
+      i * parts,
+      i == this.pool.length - 1 ? this.len : (i + 1) * parts,
+      theta,
+      gravitationalConstant,
+      softening2,
+      collisions,
+      threshold2,
+      this.accelerations.buffer,
+      this.positions.buffer,
+      this.masses.buffer,
+      cells.buffer
+    ])));
+    if (!this.alive) {
+      return;
+    }
+    workersResults.forEach(([accelerationBuffer, start, end, collidedPart]) => {
+      const accelerations = new Float32Array(accelerationBuffer);
+      for (let i = start; i < end; i++) {
+        let i3 = i * 3;
+        this.accelerations[i3] = accelerations[i3];
+        this.accelerations[i3 + 1] = accelerations[i3 + 1];
+        this.accelerations[i3 + 2] = accelerations[i3 + 2];
+      }
+      collided.push(...collidedPart);
+    });
+    return this.solve(collided);
+  }
+  free() {
+    super.free();
+    this.pool.forEach((worker) => worker.terminate());
+  }
+};
+var bh_threaded_default = BarnesHutThreadedGravity;
+
+// dist/gravity/bh-threaded-sab.js
+import.meta.env = env_exports;
+var BarnesHutThreadedSABGravity = class extends gravity_default {
+  constructor(orbs, params2, allocLen) {
+    super(orbs, params2, allocLen);
+    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
+    this.positions = new Float32Array(this.positionsBuffer);
+    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
+    this.speeds = new Float32Array(this.speedsBuffer);
+    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
+    this.accelerations = new Float32Array(this.accelerationsBuffer);
+    this.massesBuffer = new SharedArrayBuffer(allocLen * 4);
+    this.masses = new Float32Array(this.massesBuffer);
+    this.pool = new Array(~~params2.threads).fill().map(() => {
+      const url = import.meta.url;
+      return new Worker(url.includes("gravity") ? new URL("../../worker/bh-thread-sab.js", import.meta.url) : new URL("./gravity/worker/bh-thread-sab.js", import.meta.url));
+    });
+    this.pool.forEach((worker) => {
+      worker.postMessage([
+        this.accelerationsBuffer,
+        this.positionsBuffer,
+        this.massesBuffer
+      ]);
+    });
+    orbs.forEach(({position, mass, speed, temperature}, i) => {
+      this.positions[i * 3] = position.x;
+      this.positions[i * 3 + 1] = position.y;
+      this.positions[i * 3 + 2] = position.z;
+      this.speeds[i * 3] = speed.x;
+      this.speeds[i * 3 + 1] = speed.y;
+      this.speeds[i * 3 + 2] = speed.z;
+      this.masses[i] = mass;
+      this.temperatures[i] = temperature;
+    });
+  }
+  subdivide(cell) {
+    const size = cell.size / 2;
+    cell.leaf = false;
+    cell.octants = OCTANTS.map(([x, y, z]) => ({
+      x: cell.x + x * size,
+      y: cell.y + y * size,
+      z: cell.z + z * size,
+      size,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    }));
+  }
+  getSubCell(cell, index) {
+    let i3 = index * 3;
+    const x = this.positions[i3] > cell.octants[6].x;
+    const y = this.positions[i3 + 1] > cell.octants[6].y;
+    const z = this.positions[i3 + 2] > cell.octants[6].z;
+    return cell.octants[OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)];
+  }
+  addParticle(cell, index) {
+    if (cell.index === null) {
+      cell.index = index;
+      return;
+    }
+    this.subdivide(cell);
+    const existingSubCell = this.getSubCell(cell, cell.index);
+    existingSubCell.index = cell.index;
+    const newSubCell = this.getSubCell(cell, index);
+    if (existingSubCell === newSubCell) {
+      this.addParticle(existingSubCell, index);
+    }
+    newSubCell.index = index;
+  }
+  makeOctree(origin, range) {
+    const rootCell = {
+      x: origin,
+      y: origin,
+      z: origin,
+      size: range,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    };
+    for (let i = 0; i < this.len; i++) {
+      let cell = rootCell;
+      while (!cell.leaf) {
+        cell = this.getSubCell(cell, i);
+      }
+      this.addParticle(cell, i);
+    }
+    return rootCell;
+  }
+  massDistribution(cell) {
+    if (cell.leaf) {
+      let i3 = cell.index * 3;
+      cell.cx = this.positions[i3];
+      cell.cy = this.positions[i3 + 1];
+      cell.cz = this.positions[i3 + 2];
+      cell.mass = this.masses[cell.index];
+    } else {
+      for (let i = 0, n = cell.octants.length; i < n; i++) {
+        const subCell = cell.octants[i];
+        if (subCell.index !== null) {
+          this.massDistribution(subCell);
+          cell.mass += subCell.mass;
+          cell.cx += subCell.cx * subCell.mass;
+          cell.cy += subCell.cy * subCell.mass;
+          cell.cz += subCell.cz * subCell.mass;
+        }
+      }
+      cell.cx /= cell.mass;
+      cell.cy /= cell.mass;
+      cell.cz /= cell.mass;
+    }
+  }
+  fill(cell, cells, flag) {
+    const s = flag.shift;
+    cells[0 + s] = cell.size;
+    cells[1 + s] = cell.index;
+    cells[2 + s] = cell.mass;
+    cells[3 + s] = cell.cx;
+    cells[4 + s] = cell.cy;
+    cells[5 + s] = cell.cz;
+    if (cell.leaf) {
+      for (let i = 0; i < 8; i++) {
+        cells[6 + i + s] = NaN;
+      }
+    } else {
+      for (let i = 0; i < 8; i++) {
+        flag.shift += 14;
+        cells[6 + i + s] = flag.shift;
+        this.fill(cell.octants[i], cells, flag);
+      }
+    }
+    return s;
+  }
+  async simulate() {
+    const {
+      gravitationalConstant,
+      softening,
+      collisions,
+      collisionThreshold,
+      theta
+    } = this.params;
+    let collided = [];
+    const softening2 = softening * softening;
+    const threshold2 = collisionThreshold * collisionThreshold;
+    const min = Math.min.apply(null, this.positions);
+    const max = Math.max.apply(null, this.positions);
+    const rootCell = this.makeOctree(min, max - min);
+    this.massDistribution(rootCell);
+    const count = (c) => c.octants ? c.octants.length + c.octants.map(count).reduce((a, b) => a + b, 0) : 0;
+    const cellCount = count(rootCell) + 1;
+    const cellsBuffer = new SharedArrayBuffer(cellCount * 14 * 4);
+    const cells = new Float32Array(cellsBuffer);
+    this.fill(rootCell, cells, {shift: 0});
+    let parts = ~~(this.len / this.pool.length);
+    const workersResults = await Promise.all(this.pool.map((worker, i) => workerPromise(worker, [
+      i * parts,
+      i == this.pool.length - 1 ? this.len : (i + 1) * parts,
+      theta,
+      gravitationalConstant,
+      softening2,
+      collisions,
+      threshold2,
+      cellsBuffer
+    ])));
+    if (!this.alive) {
+      return;
+    }
+    workersResults.forEach(([collidedPart]) => {
+      collided.push(...collidedPart);
+    });
+    return this.solve(collided);
+  }
+  free() {
+    super.free();
+    this.pool.forEach((worker) => worker.terminate());
+  }
+};
+var bh_threaded_sab_default = BarnesHutThreadedSABGravity;
 
 // dist/index.js
 var raf = null;
@@ -27285,6 +27641,8 @@ var backends = {
   js_p2p_threaded: p2p_threaded_default,
   js_p2p_sab: p2p_threaded_sab_default,
   js_bh: bh_default,
+  js_bh_threaded: bh_threaded_default,
+  js_bh_sab: bh_threaded_sab_default,
   js_fmm: fmm_default,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
@@ -27292,10 +27650,12 @@ var backends = {
   rust_none: RustNoGravity
 };
 var fallbacks = {
-  js_p2p_sab: "js_p2p_threaded"
+  js_p2p_sab: "js_p2p_threaded",
+  js_bh_sab: "js_bh_threaded"
 };
 if (typeof SharedArrayBuffer === "undefined") {
   delete backends.js_p2p_sab;
+  delete backends.js_bh_sab;
 }
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
