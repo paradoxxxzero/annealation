@@ -168,7 +168,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 15089,
+      "bytes": 15088,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -267,7 +267,7 @@
       ]
     },
     "dist/gravity/bh.js": {
-      "bytes": 6561,
+      "bytes": 6148,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -276,7 +276,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 12003,
+      "bytes": 11994,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -470,13 +470,13 @@
           "bytesInOutput": 2455
         },
         "dist/gravity/bh.js": {
-          "bytesInOutput": 5247
+          "bytesInOutput": 4984
         },
         "dist/index.js": {
-          "bytesInOutput": 9959
+          "bytesInOutput": 9950
         }
       },
-      "bytes": 1026524
+      "bytes": 1026252
     }
   }
 }

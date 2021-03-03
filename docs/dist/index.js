@@ -25544,7 +25544,7 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
+        escapeDistance: 1e3,
         blackHoleMassThreshold: 1e4
       }
     },
@@ -27103,23 +27103,6 @@ var P2PThreadedSABGravity = class extends gravity_default {
 var p2p_threaded_sab_default = P2PThreadedSABGravity;
 
 // dist/gravity/bh.js
-var Cell = class {
-  constructor(width, height, depth, x, y, z) {
-    this.mass = 0;
-    this.index = null;
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.cx = 0;
-    this.cy = 0;
-    this.cz = 0;
-    this.width = width;
-    this.height = height;
-    this.depth = depth;
-    this.octants = null;
-    this.leaf = true;
-  }
-};
 var OCTANTS = [
   [0, 0, 0],
   [1, 0, 0],
@@ -27132,11 +27115,21 @@ var OCTANTS = [
 ];
 var BHGravity = class extends gravity_default {
   subdivide(cell) {
-    const width = cell.width / 2;
-    const height = cell.height / 2;
-    const depth = cell.depth / 2;
+    const size = cell.size / 2;
     cell.leaf = false;
-    cell.octants = OCTANTS.map(([x, y, z]) => new Cell(width, height, depth, cell.x + x * width, cell.y + y * height, cell.z + z * depth));
+    cell.octants = OCTANTS.map(([x, y, z]) => ({
+      x: cell.x + x * size,
+      y: cell.y + y * size,
+      z: cell.z + z * size,
+      size,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    }));
   }
   getSubCell(cell, index) {
     let i3 = index * 3;
@@ -27160,7 +27153,19 @@ var BHGravity = class extends gravity_default {
     newSubCell.index = index;
   }
   makeOctree(origin, range) {
-    const root_cell = new Cell(range.x, range.y, range.z, origin.x, origin.y, origin.z);
+    const root_cell = {
+      x: origin,
+      y: origin,
+      z: origin,
+      size: range,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true
+    };
     for (let i = 0; i < this.len; i++) {
       let cell = root_cell;
       while (!cell.leaf) {
@@ -27219,7 +27224,7 @@ var BHGravity = class extends gravity_default {
       const y = cell.cy - this.positions[i3 + 1];
       const z = cell.cz - this.positions[i3 + 2];
       const r = Math.sqrt(x * x + y * y + z * z);
-      const d = cell.width;
+      const d = cell.size;
       if (d / r < theta) {
         const fact = cell.mass / (r * r * r);
         this.accelerations[i3] += fact * x;
@@ -27241,18 +27246,11 @@ var BHGravity = class extends gravity_default {
       collisionThreshold
     } = this.params;
     const collided = [];
-    const bounds = this.getBounds();
     const softening2 = softening * softening;
     const threshold2 = collisionThreshold * collisionThreshold;
-    const root_cell = this.makeOctree({
-      x: bounds.xmin,
-      y: bounds.ymin,
-      z: bounds.zmin
-    }, {
-      x: bounds.xmax - bounds.xmin,
-      y: bounds.ymax - bounds.ymin,
-      z: bounds.zmax - bounds.zmin
-    });
+    const min = Math.min.apply(null, this.positions);
+    const max = Math.max.apply(null, this.positions);
+    const root_cell = this.makeOctree(min, max - min);
     this.massDistribution(root_cell);
     for (let i = 0; i < this.len; i++) {
       let i3 = i * 3;
@@ -27297,7 +27295,7 @@ var fallbacks = {
   js_p2p_sab: "js_p2p_threaded"
 };
 if (typeof SharedArrayBuffer === "undefined") {
-  delete backends.js_p2p_threaded_sab;
+  delete backends.js_p2p_sab;
 }
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
