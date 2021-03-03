@@ -209,8 +209,8 @@ export default class BHGravity extends Gravity {
     const collided = []
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
-    const min = Math.min(...this.positions)
-    const max = Math.max(...this.positions)
+    const min = Math.min.apply(null, this.positions)
+    const max = Math.max.apply(null, this.positions)
 
     const root_cell = this.makeOctree(min, max - min)
     this.massDistribution(root_cell)
