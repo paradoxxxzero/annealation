@@ -5,13 +5,13 @@ import Gravity from './gravity'
 export default class P2PThreadedSABGravity extends Gravity {
   constructor(orbs, params, allocLen) {
     super(orbs, params, allocLen)
-    this.positionsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
+    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
     this.positions = new Float32Array(this.positionsBuffer)
-    this.speedsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
+    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
     this.speeds = new Float32Array(this.speedsBuffer)
-    this.accelerationsBuffer = new SharedArrayBuffer(3 * this.len * 4) // 32 / 8
+    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
     this.accelerations = new Float32Array(this.accelerationsBuffer)
-    this.massesBuffer = new SharedArrayBuffer(this.len * 4) // 32 / 8
+    this.massesBuffer = new SharedArrayBuffer(allocLen * 4) // 32 / 8
     this.masses = new Float32Array(this.massesBuffer)
 
     this.pool = new Array(~~params.threads).fill().map(() => {

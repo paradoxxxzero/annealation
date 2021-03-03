@@ -39,7 +39,9 @@ import NoGravity from './gravity/none'
 import P2PThreadedGravity from './gravity/p2p-threaded'
 import P2PThreadedSABGravity from './gravity/p2p-threaded-sab'
 import { massToTemperature } from './helpers'
-import BHGravity from './gravity/bh'
+import BarnesHutGravity from './gravity/bh'
+import BarnesHutThreadedGravity from './gravity/bh-threaded'
+import BarnesHutThreadedSABGravity from './gravity/bh-threaded-sab'
 let raf = null
 let newOrb = null
 const colorModes = {
@@ -55,7 +57,9 @@ const backends = {
   rust_p2p: P2PRustGravity,
   js_p2p_threaded: P2PThreadedGravity,
   js_p2p_sab: P2PThreadedSABGravity,
-  js_bh: BHGravity,
+  js_bh: BarnesHutGravity,
+  js_bh_threaded: BarnesHutThreadedGravity,
+  js_bh_sab: BarnesHutThreadedSABGravity,
   js_fmm: FMMGravity,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
@@ -65,10 +69,12 @@ const backends = {
 
 const fallbacks = {
   js_p2p_sab: 'js_p2p_threaded',
+  js_bh_sab: 'js_bh_threaded',
 }
 
 if (typeof SharedArrayBuffer === 'undefined') {
   delete backends.js_p2p_sab
+  delete backends.js_bh_sab
 }
 
 const stats = new Stats()

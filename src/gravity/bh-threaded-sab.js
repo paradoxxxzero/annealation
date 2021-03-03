@@ -1,17 +1,49 @@
+/* global SharedArrayBuffer */
+import { workerPromise } from './p2p-threaded'
 import Gravity from './gravity'
+import { OCTANTS } from './bh'
 
-export const OCTANTS = [
-  [0, 0, 0],
-  [1, 0, 0],
-  [1, 0, 1],
-  [0, 0, 1],
-  [0, 1, 0],
-  [1, 1, 0],
-  [1, 1, 1],
-  [0, 1, 1],
-]
+export default class BarnesHutThreadedSABGravity extends Gravity {
+  constructor(orbs, params, allocLen) {
+    super(orbs, params, allocLen)
 
-export default class BarnesHutGravity extends Gravity {
+    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.positions = new Float32Array(this.positionsBuffer)
+    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.speeds = new Float32Array(this.speedsBuffer)
+    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.accelerations = new Float32Array(this.accelerationsBuffer)
+    this.massesBuffer = new SharedArrayBuffer(allocLen * 4) // 32 / 8
+    this.masses = new Float32Array(this.massesBuffer)
+
+    this.pool = new Array(~~params.threads).fill().map(() => {
+      const url = import.meta.url
+      return new Worker(
+        // Handle bundling
+        url.includes('gravity')
+          ? new URL('../../worker/bh-thread-sab.js', import.meta.url)
+          : new URL('./gravity/worker/bh-thread-sab.js', import.meta.url)
+      )
+    })
+    this.pool.forEach(worker => {
+      worker.postMessage([
+        this.accelerationsBuffer,
+        this.positionsBuffer,
+        this.massesBuffer,
+      ])
+    })
+    orbs.forEach(({ position, mass, speed, temperature }, i) => {
+      this.positions[i * 3] = position.x
+      this.positions[i * 3 + 1] = position.y
+      this.positions[i * 3 + 2] = position.z
+      this.speeds[i * 3] = speed.x
+      this.speeds[i * 3 + 1] = speed.y
+      this.speeds[i * 3 + 2] = speed.z
+      this.masses[i] = mass
+      this.temperatures[i] = temperature
+    })
+  }
+
   subdivide(cell) {
     const size = cell.size / 2.0
 
@@ -130,112 +162,81 @@ export default class BarnesHutGravity extends Gravity {
     }
   }
 
-  getAccelerations(
-    cell,
-    index,
-    theta,
-    softening2,
-    collisions,
-    collided,
-    threshold2
-  ) {
-    // If it's a leaf and cell is not containing cell
+  fill(cell, cells, flag) {
+    const s = flag.shift
+    cells[0 + s] = cell.size
+    cells[1 + s] = cell.index
+    cells[2 + s] = cell.mass
+    cells[3 + s] = cell.cx
+    cells[4 + s] = cell.cy
+    cells[5 + s] = cell.cz
     if (cell.leaf) {
-      if (cell.index !== null && cell.index !== index) {
-        // Compute classical interactions between index particle and cell particle
-        const i3 = index * 3
-        const j3 = cell.index * 3
-        const x = this.positions[j3] - this.positions[i3]
-        const y = this.positions[j3 + 1] - this.positions[i3 + 1]
-        const z = this.positions[j3 + 2] - this.positions[i3 + 2]
-        const d2 = x * x + y * y + z * z
-        const d = Math.sqrt(d2 + softening2)
-        if (collisions) {
-          if (d2 < threshold2) {
-            collided.push([index, cell.index])
-          }
-        }
-        const fact = this.masses[cell.index] / (d * d * d)
-
-        this.accelerations[i3] += fact * x
-        this.accelerations[i3 + 1] += fact * y
-        this.accelerations[i3 + 2] += fact * z
+      for (let i = 0; i < 8; i++) {
+        cells[6 + i + s] = NaN
       }
     } else {
-      // If this cell contains octants
-      // Compute distance between this particle and the cell center of mass
-      const i3 = index * 3
-      const x = cell.cx - this.positions[i3]
-      const y = cell.cy - this.positions[i3 + 1]
-      const z = cell.cz - this.positions[i3 + 2]
-      const r = Math.sqrt(x * x + y * y + z * z)
-      const d = cell.size
-
-      if (d / r < theta) {
-        // If the ratio of distance and radius is below theta, use approximation
-        // Compute interaction between this particle and this cell
-        const fact = cell.mass / (r * r * r)
-
-        this.accelerations[i3] += fact * x
-        this.accelerations[i3 + 1] += fact * y
-        this.accelerations[i3 + 2] += fact * z
-      } else {
-        // Otherwise compute accelerations for each octant
-        for (let i = 0, n = cell.octants.length; i < n; i++) {
-          this.getAccelerations(
-            cell.octants[i],
-            index,
-            theta,
-            softening2,
-            collisions,
-            collided,
-            threshold2
-          )
-        }
+      for (let i = 0; i < 8; i++) {
+        flag.shift += 14
+        cells[6 + i + s] = flag.shift
+        this.fill(cell.octants[i], cells, flag)
       }
     }
+
+    return s
   }
 
   async simulate() {
     const {
-      theta,
-      softening,
       gravitationalConstant,
+      softening,
       collisions,
       collisionThreshold,
+      theta,
     } = this.params
-    // TODO: implement collisions somehow
+    let collided = []
 
-    const collided = []
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
     const min = Math.min.apply(null, this.positions)
     const max = Math.max.apply(null, this.positions)
-
     const rootCell = this.makeOctree(min, max - min)
     this.massDistribution(rootCell)
+    const count = c =>
+      c.octants
+        ? c.octants.length + c.octants.map(count).reduce((a, b) => a + b, 0)
+        : 0
+    const cellCount = count(rootCell) + 1
+    const cellsBuffer = new SharedArrayBuffer(cellCount * 14 * 4)
+    const cells = new Float32Array(cellsBuffer)
+    this.fill(rootCell, cells, { shift: 0 })
+    let parts = ~~(this.len / this.pool.length)
 
-    for (let i = 0; i < this.len; i++) {
-      let i3 = i * 3
-      this.accelerations[i3] = 0
-      this.accelerations[i3 + 1] = 0
-      this.accelerations[i3 + 2] = 0
-
-      this.getAccelerations(
-        rootCell,
-        i,
-        theta,
-        softening2,
-        collisions,
-        collided,
-        threshold2
+    const workersResults = await Promise.all(
+      this.pool.map((worker, i) =>
+        workerPromise(worker, [
+          i * parts,
+          i == this.pool.length - 1 ? this.len : (i + 1) * parts,
+          theta,
+          gravitationalConstant,
+          softening2,
+          collisions,
+          threshold2,
+          cellsBuffer,
+        ])
       )
-
-      this.accelerations[i3] *= gravitationalConstant
-      this.accelerations[i3 + 1] *= gravitationalConstant
-      this.accelerations[i3 + 2] *= gravitationalConstant
+    )
+    if (!this.alive) {
+      return
     }
+    workersResults.forEach(([collidedPart]) => {
+      collided.push(...collidedPart)
+    })
 
     return this.solve(collided)
+  }
+
+  free() {
+    super.free()
+    this.pool.forEach(worker => worker.terminate())
   }
 }
