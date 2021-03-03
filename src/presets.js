@@ -93,7 +93,7 @@ export default {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 10000,
+        escapeDistance: 1000,
         blackHoleMassThreshold: 10000,
       },
     },

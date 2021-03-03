@@ -1,23 +1,5 @@
 import Gravity from './gravity'
 
-class Cell {
-  constructor(width, height, depth, x, y, z) {
-    this.mass = 0
-    this.index = null
-    this.x = x
-    this.y = y
-    this.z = z
-    this.cx = 0
-    this.cy = 0
-    this.cz = 0
-    this.width = width
-    this.height = height
-    this.depth = depth
-    this.octants = null
-    this.leaf = true
-  }
-}
-
 const OCTANTS = [
   [0, 0, 0],
   [1, 0, 0],
@@ -31,9 +13,7 @@ const OCTANTS = [
 
 export default class BHGravity extends Gravity {
   subdivide(cell) {
-    const width = cell.width / 2.0
-    const height = cell.height / 2.0
-    const depth = cell.depth / 2.0
+    const size = cell.size / 2.0
 
     //   y |
     //    0 --- x
@@ -44,17 +24,19 @@ export default class BHGravity extends Gravity {
     //   0 1
     //  3 2
     cell.leaf = false
-    cell.octants = OCTANTS.map(
-      ([x, y, z]) =>
-        new Cell(
-          width,
-          height,
-          depth,
-          cell.x + x * width,
-          cell.y + y * height,
-          cell.z + z * depth
-        )
-    )
+    cell.octants = OCTANTS.map(([x, y, z]) => ({
+      x: cell.x + x * size,
+      y: cell.y + y * size,
+      z: cell.z + z * size,
+      size,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true,
+    }))
   }
 
   getSubCell(cell, index) {
@@ -91,14 +73,19 @@ export default class BHGravity extends Gravity {
   }
 
   makeOctree(origin, range) {
-    const root_cell = new Cell(
-      range.x,
-      range.y,
-      range.z,
-      origin.x,
-      origin.y,
-      origin.z
-    )
+    const root_cell = {
+      x: origin,
+      y: origin,
+      z: origin,
+      size: range,
+      index: null,
+      mass: 0,
+      cx: 0,
+      cy: 0,
+      cz: 0,
+      octants: null,
+      leaf: true,
+    }
 
     // Let's insert every particles:
     for (let i = 0; i < this.len; i++) {
@@ -182,7 +169,7 @@ export default class BHGravity extends Gravity {
       const y = cell.cy - this.positions[i3 + 1]
       const z = cell.cz - this.positions[i3 + 2]
       const r = Math.sqrt(x * x + y * y + z * z)
-      const d = cell.width
+      const d = cell.size
 
       if (d / r < theta) {
         // If the ratio of distance and radius is below theta, use approximation
@@ -220,22 +207,12 @@ export default class BHGravity extends Gravity {
     // TODO: implement collisions somehow
 
     const collided = []
-    const bounds = this.getBounds()
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
+    const min = Math.min(...this.positions)
+    const max = Math.max(...this.positions)
 
-    const root_cell = this.makeOctree(
-      {
-        x: bounds.xmin,
-        y: bounds.ymin,
-        z: bounds.zmin,
-      },
-      {
-        x: bounds.xmax - bounds.xmin,
-        y: bounds.ymax - bounds.ymin,
-        z: bounds.zmax - bounds.zmin,
-      }
-    )
+    const root_cell = this.makeOctree(min, max - min)
     this.massDistribution(root_cell)
 
     for (let i = 0; i < this.len; i++) {

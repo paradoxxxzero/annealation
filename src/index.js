@@ -68,7 +68,7 @@ const fallbacks = {
 }
 
 if (typeof SharedArrayBuffer === 'undefined') {
-  delete backends.js_p2p_threaded_sab
+  delete backends.js_p2p_sab
 }
 
 const stats = new Stats()
