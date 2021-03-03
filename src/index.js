@@ -39,6 +39,7 @@ import NoGravity from './gravity/none'
 import P2PThreadedGravity from './gravity/p2p-threaded'
 import P2PThreadedSABGravity from './gravity/p2p-threaded-sab'
 import { massToTemperature } from './helpers'
+import BHGravity from './gravity/bh'
 let raf = null
 let newOrb = null
 const colorModes = {
@@ -54,6 +55,7 @@ const backends = {
   rust_p2p: P2PRustGravity,
   js_p2p_threaded: P2PThreadedGravity,
   js_p2p_sab: P2PThreadedSABGravity,
+  js_bh: BHGravity,
   js_fmm: FMMGravity,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
@@ -282,7 +284,11 @@ function initGUI() {
     preset,
   })
   gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
-  gui.add(params, 'resolution', 1, 9, 1).onChange(restart)
+  gui
+    .add(params, 'resolution', 1, 9, 1)
+    .name('fmm resolution')
+    .onChange(restart)
+  gui.add(params, 'theta', 0, 4, 0.01).name('bh theta').onChange(restart)
   gui.add(params, 'threads', 1, 128, 1).onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate')

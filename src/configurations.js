@@ -180,13 +180,56 @@ export const disc = ({
 }) => {
   const spherical = new Spherical()
   range *= 0.5
-  const minRange = range / 10
+  const minRange = range / 12
   return new Array(number)
     .fill()
     .map(() => {
       spherical.radius = minRange + (range - minRange) * Math.random()
       spherical.theta = Math.random() * 2 * Math.PI
-      spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
+      spherical.phi = Math.PI / 2
+      const position = new Vector3().setFromSpherical(spherical)
+      const speedVector = new Vector3(
+        Math.cos(spherical.theta),
+        0,
+        -Math.sin(spherical.theta)
+      )
+        .normalize()
+        .multiplyScalar(
+          speed *
+            Math.sqrt(
+              (gravitationalConstant * blackHoleMass) / spherical.radius
+            )
+        )
+      return {
+        ...rngTemperatureMass(mass),
+        position,
+        speed: speedVector,
+      }
+    })
+    .concat(blackHole(blackHoleMass))
+}
+
+export const bulb = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  gravitationalConstant,
+}) => {
+  const spherical = new Spherical()
+  range *= 0.5
+  return new Array(number)
+    .fill()
+    .map(() => {
+      spherical.radius = range * Math.random()
+      spherical.theta = Math.random() * 2 * Math.PI
+      spherical.phi =
+        (Math.PI / 2) *
+        (1 +
+          Math.pow(1 - spherical.radius / range, 3) * 2 * (0.5 - Math.random()))
+
+      spherical.radius += (Math.abs(Math.cos(spherical.phi)) * range) / 8
       const position = new Vector3().setFromSpherical(spherical)
       const speedVector = new Vector3(
         Math.cos(spherical.theta),
@@ -292,57 +335,45 @@ export const collidingDisc = ({
   number,
   range,
   mass,
+  speed,
   blackHoleMass,
   gravitationalConstant,
 }) => {
-  const spherical = new Spherical()
-  const minRange = range / 10
-  // TODO orient galaxies
-  const orbs = new Array(number).fill().map((_, i) => {
-    if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3(),
-      }
-    }
-    spherical.radius = 0.2 * (minRange + (range - minRange) * Math.random())
-    spherical.theta = Math.random() * 2 * Math.PI
-    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2)
-    const position = new Vector3().setFromSpherical(spherical)
-    const speed = new Vector3(
-      Math.cos(spherical.theta),
-      0,
-      -Math.sin(spherical.theta)
-    )
-      .normalize()
-      .multiplyScalar(
-        Math.sqrt((gravitationalConstant * blackHoleMass) / spherical.radius)
-      )
-    const tilt =
-      i > number / 2
-        ? new Euler(-Math.PI / 8, 0, Math.PI / 6)
-        : new Euler(Math.PI / 4, 0, 0)
-    position.applyEuler(tilt)
-    speed.applyEuler(tilt)
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed,
-    }
-  })
+  const halfNumber = ~~(number / 2)
+
   const firstShift = new Vector3(range * 0.15, range * 0.15, -range * 0.25)
+  const firstEuler = new Euler(Math.PI / 4, 0, 0)
+  const firstSpeed = new Vector3(-speed, -speed, 0)
+  const firstDisc = disc({
+    number: halfNumber,
+    range: range / 3,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant,
+  })
+  firstDisc.forEach(({ position, speed }) => {
+    position.applyEuler(firstEuler).add(firstShift)
+    speed.applyEuler(firstEuler).add(firstSpeed)
+  })
+
   const secondShift = new Vector3(-range * 0.15, -range * 0.15, range * 0.25)
-  const firstDisc = orbs.slice(0, ~~(number / 2))
-  const secondDisc = orbs.slice(~~(number / 2))
-  firstDisc.forEach(orb => {
-    orb.position.add(firstShift)
+  const secondEuler = new Euler(-Math.PI / 8, 0, 0)
+  const secondSpeed = new Vector3(speed, 0, 0)
+  const secondDisc = disc({
+    number: halfNumber,
+    range: range / 2,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant,
   })
-  secondDisc.forEach(orb => {
-    orb.position.add(secondShift)
+  secondDisc.forEach(({ position, speed }) => {
+    position.applyEuler(secondEuler).add(secondShift)
+    speed.applyEuler(secondEuler).add(secondSpeed)
   })
-  return orbs
+
+  return [...firstDisc, ...secondDisc]
 }
 
 export const fountain = ({ number, range, mass, speed, blackHoleMass }) => {

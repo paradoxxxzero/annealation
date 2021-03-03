@@ -16,6 +16,39 @@ export default class Gravity {
 
   params_change(obj, key, value) {}
 
+  getBounds() {
+    const bounds = {
+      xmin: Infinity,
+      xmax: -Infinity,
+      ymin: Infinity,
+      ymax: -Infinity,
+      zmin: Infinity,
+      zmax: -Infinity,
+    }
+    for (let i = 0; i < this.len; i++) {
+      let i3 = i * 3
+      if (this.positions[i3] < bounds.xmin) {
+        bounds.xmin = this.positions[i3]
+      }
+      if (this.positions[i3] > bounds.xmax) {
+        bounds.xmax = this.positions[i3]
+      }
+      if (this.positions[i3 + 1] < bounds.ymin) {
+        bounds.ymin = this.positions[i3 + 1]
+      }
+      if (this.positions[i3 + 1] > bounds.ymax) {
+        bounds.ymax = this.positions[i3 + 1]
+      }
+      if (this.positions[i3 + 2] < bounds.zmin) {
+        bounds.zmin = this.positions[i3 + 2]
+      }
+      if (this.positions[i3 + 2] > bounds.zmax) {
+        bounds.zmax = this.positions[i3 + 2]
+      }
+    }
+    return bounds
+  }
+
   frog_leap() {
     const dt = this.params.simulationSpeed
     const half_dt = dt * 0.5
