@@ -23538,6 +23538,7 @@ var FXAAShader = {
 // dist/configurations.js
 var configurations_exports = {};
 __export(configurations_exports, {
+  bulb: () => bulb,
   collidingDisc: () => collidingDisc,
   cube: () => cube,
   disc: () => disc,
@@ -25234,11 +25235,35 @@ var disc = ({
 }) => {
   const spherical = new Spherical();
   range *= 0.5;
-  const minRange = range / 10;
+  const minRange = range / 12;
   return new Array(number).fill().map(() => {
     spherical.radius = minRange + (range - minRange) * Math.random();
     spherical.theta = Math.random() * 2 * Math.PI;
-    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
+    spherical.phi = Math.PI / 2;
+    const position = new Vector3().setFromSpherical(spherical);
+    const speedVector = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(speed * Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
+    return {
+      ...rngTemperatureMass(mass),
+      position,
+      speed: speedVector
+    };
+  }).concat(blackHole(blackHoleMass));
+};
+var bulb = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  gravitationalConstant
+}) => {
+  const spherical = new Spherical();
+  range *= 0.5;
+  return new Array(number).fill().map(() => {
+    spherical.radius = range * Math.random();
+    spherical.theta = Math.random() * 2 * Math.PI;
+    spherical.phi = Math.PI / 2 * (1 + Math.pow(1 - spherical.radius / range, 3) * 2 * (0.5 - Math.random()));
+    spherical.radius += Math.abs(Math.cos(spherical.phi)) * range / 8;
     const position = new Vector3().setFromSpherical(spherical);
     const speedVector = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(speed * Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
     return {
@@ -25317,45 +25342,42 @@ var collidingDisc = ({
   number,
   range,
   mass,
+  speed,
   blackHoleMass,
   gravitationalConstant
 }) => {
-  const spherical = new Spherical();
-  const minRange = range / 10;
-  const orbs = new Array(number).fill().map((_, i) => {
-    if (blackHoleMass && (i === 0 || i === ~~(number / 2 + 1))) {
-      return {
-        temperature: 0,
-        mass: blackHoleMass,
-        position: new Vector3(),
-        speed: new Vector3()
-      };
-    }
-    spherical.radius = 0.2 * (minRange + (range - minRange) * Math.random());
-    spherical.theta = Math.random() * 2 * Math.PI;
-    spherical.phi = Math.PI / 2 + (0.1 - Math.random() * 0.2);
-    const position = new Vector3().setFromSpherical(spherical);
-    const speed = new Vector3(Math.cos(spherical.theta), 0, -Math.sin(spherical.theta)).normalize().multiplyScalar(Math.sqrt(gravitationalConstant * blackHoleMass / spherical.radius));
-    const tilt = i > number / 2 ? new Euler(-Math.PI / 8, 0, Math.PI / 6) : new Euler(Math.PI / 4, 0, 0);
-    position.applyEuler(tilt);
-    speed.applyEuler(tilt);
-    return {
-      ...rngTemperatureMass(mass),
-      position,
-      speed
-    };
-  });
+  const halfNumber = ~~(number / 2);
   const firstShift = new Vector3(range * 0.15, range * 0.15, -range * 0.25);
+  const firstEuler = new Euler(Math.PI / 4, 0, 0);
+  const firstSpeed = new Vector3(-speed, -speed, 0);
+  const firstDisc = disc({
+    number: halfNumber,
+    range: range / 3,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant
+  });
+  firstDisc.forEach(({position, speed: speed2}) => {
+    position.applyEuler(firstEuler).add(firstShift);
+    speed2.applyEuler(firstEuler).add(firstSpeed);
+  });
   const secondShift = new Vector3(-range * 0.15, -range * 0.15, range * 0.25);
-  const firstDisc = orbs.slice(0, ~~(number / 2));
-  const secondDisc = orbs.slice(~~(number / 2));
-  firstDisc.forEach((orb) => {
-    orb.position.add(firstShift);
+  const secondEuler = new Euler(-Math.PI / 8, 0, 0);
+  const secondSpeed = new Vector3(speed, 0, 0);
+  const secondDisc = disc({
+    number: halfNumber,
+    range: range / 2,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant
   });
-  secondDisc.forEach((orb) => {
-    orb.position.add(secondShift);
+  secondDisc.forEach(({position, speed: speed2}) => {
+    position.applyEuler(secondEuler).add(secondShift);
+    speed2.applyEuler(secondEuler).add(secondSpeed);
   });
-  return orbs;
+  return [...firstDisc, ...secondDisc];
 };
 var fountain = ({number, range, mass, speed, blackHoleMass}) => {
   const spherical = new Spherical();
@@ -25435,6 +25457,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25466,6 +25489,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25494,9 +25518,10 @@ var presets_default = {
     },
     Galaxy: {
       0: {
-        backend: "rust_p2p",
+        backend: "js_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25507,7 +25532,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "disc",
-        number: 1e3,
+        number: 2e3,
         range: 1500,
         speed: 1,
         mass: 10,
@@ -25523,11 +25548,76 @@ var presets_default = {
         blackHoleMassThreshold: 1e4
       }
     },
+    BulbGalaxy: {
+      0: {
+        backend: "js_bh",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 7,
+        theta: 1,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "bulb",
+        number: 2e3,
+        range: 1500,
+        speed: 1,
+        mass: 10,
+        blackHoleMass: 1e5,
+        scale: 30,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: true,
+        collisionThreshold: 2,
+        escapeDistance: 800,
+        blackHoleMassThreshold: 1e4
+      }
+    },
+    SlowGalaxy: {
+      0: {
+        backend: "js_bh",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 7,
+        theta: 1,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "disc",
+        number: 2e3,
+        range: 1500,
+        speed: 0.75,
+        mass: 10,
+        blackHoleMass: 1e5,
+        scale: 30,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.25,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 2,
+        escapeDistance: 1e3,
+        blackHoleMassThreshold: 1e4
+      }
+    },
     Sphere: {
       0: {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25559,6 +25649,7 @@ var presets_default = {
         backend: "js_p2p_threaded",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25590,6 +25681,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: false,
@@ -25618,9 +25710,10 @@ var presets_default = {
     },
     CollidingGalaxies: {
       0: {
-        backend: "rust_p2p",
+        backend: "js_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25631,15 +25724,15 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "collidingDisc",
-        number: 1250,
+        number: 4e3,
         range: 3e3,
-        speed: 15,
+        speed: 10,
         mass: 10,
         blackHoleMass: 5e5,
         scale: 30,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
-        simulationSpeed: 0.1,
+        simulationSpeed: 0.075,
         softening: 10,
         collisions: true,
         collisionThreshold: 10,
@@ -25652,6 +25745,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25683,6 +25777,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25714,6 +25809,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25745,6 +25841,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25776,6 +25873,7 @@ var presets_default = {
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25807,6 +25905,7 @@ var presets_default = {
         backend: "js_none",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25838,6 +25937,7 @@ var presets_default = {
         backend: "js_none",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
+        theta: 1,
         autoRotate: true,
         fxaa: true,
         bloom: true,
@@ -25869,6 +25969,7 @@ var presets_default = {
         backend: "js_p2p_sab",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -25900,6 +26001,7 @@ var presets_default = {
         backend: "js_fmm",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
+        theta: 1,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -26513,6 +26615,38 @@ var Gravity = class {
   }
   params_change(obj, key, value) {
   }
+  getBounds() {
+    const bounds = {
+      xmin: Infinity,
+      xmax: -Infinity,
+      ymin: Infinity,
+      ymax: -Infinity,
+      zmin: Infinity,
+      zmax: -Infinity
+    };
+    for (let i = 0; i < this.len; i++) {
+      let i3 = i * 3;
+      if (this.positions[i3] < bounds.xmin) {
+        bounds.xmin = this.positions[i3];
+      }
+      if (this.positions[i3] > bounds.xmax) {
+        bounds.xmax = this.positions[i3];
+      }
+      if (this.positions[i3 + 1] < bounds.ymin) {
+        bounds.ymin = this.positions[i3 + 1];
+      }
+      if (this.positions[i3 + 1] > bounds.ymax) {
+        bounds.ymax = this.positions[i3 + 1];
+      }
+      if (this.positions[i3 + 2] < bounds.zmin) {
+        bounds.zmin = this.positions[i3 + 2];
+      }
+      if (this.positions[i3 + 2] > bounds.zmax) {
+        bounds.zmax = this.positions[i3 + 2];
+      }
+    }
+    return bounds;
+  }
   frog_leap() {
     const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
@@ -26968,6 +27102,173 @@ var P2PThreadedSABGravity = class extends gravity_default {
 };
 var p2p_threaded_sab_default = P2PThreadedSABGravity;
 
+// dist/gravity/bh.js
+var Cell = class {
+  constructor(width, height, depth, x, y, z) {
+    this.mass = 0;
+    this.index = null;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.cx = 0;
+    this.cy = 0;
+    this.cz = 0;
+    this.width = width;
+    this.height = height;
+    this.depth = depth;
+    this.octants = null;
+    this.leaf = true;
+  }
+};
+var OCTANTS = [
+  [0, 0, 0],
+  [1, 0, 0],
+  [1, 0, 1],
+  [0, 0, 1],
+  [0, 1, 0],
+  [1, 1, 0],
+  [1, 1, 1],
+  [0, 1, 1]
+];
+var BHGravity = class extends gravity_default {
+  subdivide(cell) {
+    const width = cell.width / 2;
+    const height = cell.height / 2;
+    const depth = cell.depth / 2;
+    cell.leaf = false;
+    cell.octants = OCTANTS.map(([x, y, z]) => new Cell(width, height, depth, cell.x + x * width, cell.y + y * height, cell.z + z * depth));
+  }
+  getSubCell(cell, index) {
+    let i3 = index * 3;
+    const x = this.positions[i3] > cell.octants[6].x;
+    const y = this.positions[i3 + 1] > cell.octants[6].y;
+    const z = this.positions[i3 + 2] > cell.octants[6].z;
+    return cell.octants[OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)];
+  }
+  addParticle(cell, index) {
+    if (cell.index === null) {
+      cell.index = index;
+      return;
+    }
+    this.subdivide(cell);
+    const existingSubCell = this.getSubCell(cell, cell.index);
+    existingSubCell.index = cell.index;
+    const newSubCell = this.getSubCell(cell, index);
+    if (existingSubCell === newSubCell) {
+      this.addParticle(existingSubCell, index);
+    }
+    newSubCell.index = index;
+  }
+  makeOctree(origin, range) {
+    const root_cell = new Cell(range.x, range.y, range.z, origin.x, origin.y, origin.z);
+    for (let i = 0; i < this.len; i++) {
+      let cell = root_cell;
+      while (!cell.leaf) {
+        cell = this.getSubCell(cell, i);
+      }
+      this.addParticle(cell, i);
+    }
+    return root_cell;
+  }
+  massDistribution(cell) {
+    if (cell.leaf) {
+      let i3 = cell.index * 3;
+      cell.cx = this.positions[i3];
+      cell.cy = this.positions[i3 + 1];
+      cell.cz = this.positions[i3 + 2];
+      cell.mass = this.masses[cell.index];
+    } else {
+      for (let i = 0, n = cell.octants.length; i < n; i++) {
+        const subCell = cell.octants[i];
+        if (subCell.index !== null) {
+          this.massDistribution(subCell);
+          cell.mass += subCell.mass;
+          cell.cx += subCell.cx * subCell.mass;
+          cell.cy += subCell.cy * subCell.mass;
+          cell.cz += subCell.cz * subCell.mass;
+        }
+      }
+      cell.cx /= cell.mass;
+      cell.cy /= cell.mass;
+      cell.cz /= cell.mass;
+    }
+  }
+  getAccelerations(cell, index, theta, softening2, collisions, collided, threshold2) {
+    if (cell.leaf) {
+      if (cell.index !== null && cell.index !== index) {
+        const i3 = index * 3;
+        const j3 = cell.index * 3;
+        const x = this.positions[j3] - this.positions[i3];
+        const y = this.positions[j3 + 1] - this.positions[i3 + 1];
+        const z = this.positions[j3 + 2] - this.positions[i3 + 2];
+        const d2 = x * x + y * y + z * z;
+        const d = Math.sqrt(d2 + softening2);
+        if (collisions) {
+          if (d2 < threshold2) {
+            collided.push([index, cell.index]);
+          }
+        }
+        const fact = this.masses[cell.index] / (d * d * d);
+        this.accelerations[i3] += fact * x;
+        this.accelerations[i3 + 1] += fact * y;
+        this.accelerations[i3 + 2] += fact * z;
+      }
+    } else {
+      const i3 = index * 3;
+      const x = cell.cx - this.positions[i3];
+      const y = cell.cy - this.positions[i3 + 1];
+      const z = cell.cz - this.positions[i3 + 2];
+      const r = Math.sqrt(x * x + y * y + z * z);
+      const d = cell.width;
+      if (d / r < theta) {
+        const fact = cell.mass / (r * r * r);
+        this.accelerations[i3] += fact * x;
+        this.accelerations[i3 + 1] += fact * y;
+        this.accelerations[i3 + 2] += fact * z;
+      } else {
+        for (let i = 0, n = cell.octants.length; i < n; i++) {
+          this.getAccelerations(cell.octants[i], index, theta, softening2, collisions, collided, threshold2);
+        }
+      }
+    }
+  }
+  async simulate() {
+    const {
+      theta,
+      softening,
+      gravitationalConstant,
+      collisions,
+      collisionThreshold
+    } = this.params;
+    const collided = [];
+    const bounds = this.getBounds();
+    const softening2 = softening * softening;
+    const threshold2 = collisionThreshold * collisionThreshold;
+    const root_cell = this.makeOctree({
+      x: bounds.xmin,
+      y: bounds.ymin,
+      z: bounds.zmin
+    }, {
+      x: bounds.xmax - bounds.xmin,
+      y: bounds.ymax - bounds.ymin,
+      z: bounds.zmax - bounds.zmin
+    });
+    this.massDistribution(root_cell);
+    for (let i = 0; i < this.len; i++) {
+      let i3 = i * 3;
+      this.accelerations[i3] = 0;
+      this.accelerations[i3 + 1] = 0;
+      this.accelerations[i3 + 2] = 0;
+      this.getAccelerations(root_cell, i, theta, softening2, collisions, collided, threshold2);
+      this.accelerations[i3] *= gravitationalConstant;
+      this.accelerations[i3 + 1] *= gravitationalConstant;
+      this.accelerations[i3 + 2] *= gravitationalConstant;
+    }
+    return this.solve(collided);
+  }
+};
+var bh_default = BHGravity;
+
 // dist/index.js
 var raf = null;
 var newOrb = null;
@@ -26985,6 +27286,7 @@ var backends = {
   rust_p2p: P2PRustGravity,
   js_p2p_threaded: p2p_threaded_default,
   js_p2p_sab: p2p_threaded_sab_default,
+  js_bh: bh_default,
   js_fmm: fmm_default,
   rust_fmm: FMMRustGravity,
   rust_tree: TreeRustGravity,
@@ -27142,7 +27444,8 @@ function initGUI() {
     preset
   });
   gui.add(params, "backend", Object.keys(backends)).onChange(restart);
-  gui.add(params, "resolution", 1, 9, 1).onChange(restart);
+  gui.add(params, "resolution", 1, 9, 1).name("fmm resolution").onChange(restart);
+  gui.add(params, "theta", 0, 4, 0.01).name("bh theta").onChange(restart);
   gui.add(params, "threads", 1, 128, 1).onChange(restart);
   const fx = gui.addFolder("Render fx");
   fx.add(params, "autoRotate").onChange((on) => controls.autoRotate = on).listen();
