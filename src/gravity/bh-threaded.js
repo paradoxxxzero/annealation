@@ -1,138 +1,14 @@
-import { workerPromise } from './p2p-threaded'
-import Gravity from './gravity'
-import { OCTANTS } from './bh'
+import P2PThreadedGravity from './p2p-threaded'
+import BarnesHutGravity from './bh'
+import { mix } from '../utils'
+import { workerPromise } from '../utils'
 
-export default class BarnesHutThreadedGravity extends Gravity {
-  constructor(orbs, params, allocLen) {
-    super(orbs, params, allocLen)
-
-    this.pool = new Array(~~params.threads).fill().map(() => {
-      const url = import.meta.url
-      return new Worker(
-        // Handle bundling
-        url.includes('gravity')
-          ? new URL('../../worker/bh-thread.js', import.meta.url)
-          : new URL('./gravity/worker/bh-thread.js', import.meta.url)
-      )
-    })
-  }
-
-  subdivide(cell) {
-    const size = cell.size / 2.0
-
-    //   y |
-    //    0 --- x
-    // z /
-
-    //   4 5
-    //  7 6
-    //   0 1
-    //  3 2
-    cell.leaf = false
-    cell.octants = OCTANTS.map(([x, y, z]) => ({
-      x: cell.x + x * size,
-      y: cell.y + y * size,
-      z: cell.z + z * size,
-      size,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true,
-    }))
-  }
-
-  getSubCell(cell, index) {
-    let i3 = index * 3
-    const x = this.positions[i3] > cell.octants[6].x
-    const y = this.positions[i3 + 1] > cell.octants[6].y
-    const z = this.positions[i3 + 2] > cell.octants[6].z
-    return cell.octants[
-      OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)
-    ]
-  }
-
-  addParticle(cell, index) {
-    // If this cell is empty, add particle to it
-    if (cell.index === null) {
-      cell.index = index
-      return
-    }
-
-    // Subdivide this cell
-    this.subdivide(cell)
-
-    // Inserting existing particle to subCell
-    const existingSubCell = this.getSubCell(cell, cell.index)
-    existingSubCell.index = cell.index
-
-    const newSubCell = this.getSubCell(cell, index)
-    // If both cells end up in same octant, subdivide again
-    if (existingSubCell === newSubCell) {
-      this.addParticle(existingSubCell, index)
-    }
-
-    newSubCell.index = index
-  }
-
-  makeOctree(origin, range) {
-    const rootCell = {
-      x: origin,
-      y: origin,
-      z: origin,
-      size: range,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true,
-    }
-
-    // Let's insert every particles:
-    for (let i = 0; i < this.len; i++) {
-      let cell = rootCell
-
-      while (!cell.leaf) {
-        cell = this.getSubCell(cell, i)
-      }
-
-      this.addParticle(cell, i)
-    }
-    return rootCell
-  }
-
-  massDistribution(cell) {
-    if (cell.leaf) {
-      // If this cell is a leaf set particle mass to it
-      let i3 = cell.index * 3
-      cell.cx = this.positions[i3]
-      cell.cy = this.positions[i3 + 1]
-      cell.cz = this.positions[i3 + 2]
-      cell.mass = this.masses[cell.index]
-    } else {
-      // For each octant
-      for (let i = 0, n = cell.octants.length; i < n; i++) {
-        const subCell = cell.octants[i]
-        // If it has particles
-        if (subCell.index !== null) {
-          // Compute its distribution
-          this.massDistribution(subCell)
-          cell.mass += subCell.mass
-          cell.cx += subCell.cx * subCell.mass
-          cell.cy += subCell.cy * subCell.mass
-          cell.cz += subCell.cz * subCell.mass
-        }
-      }
-
-      // Compute center of mass
-      cell.cx /= cell.mass
-      cell.cy /= cell.mass
-      cell.cz /= cell.mass
-    }
+export default class BarnesHutThreadedGravity extends mix(
+  P2PThreadedGravity,
+  BarnesHutGravity
+) {
+  constructor(orbs, params, allocLen, workerName = 'bh-thread') {
+    super(orbs, params, allocLen, workerName)
   }
 
   fill(cell, cells, flag) {
@@ -216,10 +92,5 @@ export default class BarnesHutThreadedGravity extends Gravity {
     })
 
     return this.solve(collided)
-  }
-
-  free() {
-    super.free()
-    this.pool.forEach(worker => worker.terminate())
   }
 }

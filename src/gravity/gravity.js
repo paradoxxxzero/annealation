@@ -11,10 +11,8 @@ export default class Gravity {
     this.masses = new Float32Array(allocLen)
     this.temperatures = new Float32Array(allocLen)
 
-    orbs.forEach((orb, i) => this.setOrb(i, orb))
+    orbs.forEach((orb, i) => this.set_orb(i, orb))
   }
-
-  params_change(obj, key, value) {}
 
   getBounds() {
     const bounds = {
@@ -219,7 +217,7 @@ export default class Gravity {
     }
   }
 
-  setOrb(i, { position, mass, speed, temperature }) {
+  set_orb(i, { position, mass, speed, temperature }) {
     this.positions[i * 3] = position.x
     this.positions[i * 3 + 1] = position.y
     this.positions[i * 3 + 2] = position.z
@@ -235,7 +233,7 @@ export default class Gravity {
       console.warn("Can't grow")
       return
     }
-    orbs.forEach((orb, i) => this.setOrb(this.len + i, orb))
+    orbs.forEach((orb, i) => this.set_orb(this.len + i, orb))
     this.len += orbs.length
   }
 

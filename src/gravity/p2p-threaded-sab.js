@@ -1,10 +1,10 @@
 /* global SharedArrayBuffer */
-import { workerPromise } from './p2p-threaded'
-import Gravity from './gravity'
+import P2PThreadedGravity from './p2p-threaded'
+import { workerPromise } from '../utils'
 
-export default class P2PThreadedSABGravity extends Gravity {
-  constructor(orbs, params, allocLen) {
-    super(orbs, params, allocLen)
+export default class P2PThreadedSABGravity extends P2PThreadedGravity {
+  constructor(orbs, params, allocLen, workerName = 'p2p-thread-sab') {
+    super(orbs, params, allocLen, workerName)
     this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
     this.positions = new Float32Array(this.positionsBuffer)
     this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
@@ -14,15 +14,6 @@ export default class P2PThreadedSABGravity extends Gravity {
     this.massesBuffer = new SharedArrayBuffer(allocLen * 4) // 32 / 8
     this.masses = new Float32Array(this.massesBuffer)
 
-    this.pool = new Array(~~params.threads).fill().map(() => {
-      const url = import.meta.url
-      return new Worker(
-        // Handle bundling
-        url.includes('gravity')
-          ? new URL('../../worker/p2p-thread-sab.js', import.meta.url)
-          : new URL('./gravity/worker/p2p-thread-sab.js', import.meta.url)
-      )
-    })
     this.pool.forEach(worker => {
       worker.postMessage([
         this.accelerationsBuffer,
@@ -78,10 +69,5 @@ export default class P2PThreadedSABGravity extends Gravity {
     })
 
     return this.solve(collided)
-  }
-
-  free() {
-    super.free()
-    this.pool.forEach(worker => worker.terminate())
   }
 }

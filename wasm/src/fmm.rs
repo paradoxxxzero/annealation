@@ -1852,13 +1852,8 @@ impl FMMRustGravity {
   pub fn shrink(&mut self, n: usize) -> Result<(), JsValue> {
     Gravity::shrink(self, n)
   }
-  pub fn params_change(
-    &mut self,
-    params: &JsValue,
-    key: &JsValue,
-    value: &JsValue,
-  ) -> Result<(), JsValue> {
-    Gravity::params_change(self, params, key, value)
+  pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
+    Gravity::set_orb(self, i, orb)
   }
 }
 
@@ -2164,12 +2159,7 @@ impl TreeRustGravity {
   pub fn shrink(&mut self, n: usize) -> Result<(), JsValue> {
     Gravity::shrink(self, n)
   }
-  pub fn params_change(
-    &mut self,
-    params: &JsValue,
-    key: &JsValue,
-    value: &JsValue,
-  ) -> Result<(), JsValue> {
-    Gravity::params_change(self, params, key, value)
+  pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
+    Gravity::set_orb(self, i, orb)
   }
 }

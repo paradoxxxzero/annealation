@@ -27,8 +27,8 @@ import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, {
   P2PRustGravity,
-  FMMRustGravity,
-  TreeRustGravity,
+  // FMMRustGravity,
+  // TreeRustGravity,
   RustNoGravity,
   wasm_memory,
 } from 'wasm'
@@ -51,7 +51,7 @@ const colorModes = {
   White: 0,
   ColorCoded: 0.75,
 }
-let particles, gravity
+let particles, gravity, gui
 const backends = {
   js_p2p: P2PGravity,
   rust_p2p: P2PRustGravity,
@@ -61,8 +61,9 @@ const backends = {
   js_bh_threaded: BarnesHutThreadedGravity,
   js_bh_sab: BarnesHutThreadedSABGravity,
   js_fmm: FMMGravity,
-  rust_fmm: FMMRustGravity,
-  rust_tree: TreeRustGravity,
+  // Disabled because of broken / ineficient
+  // rust_fmm: FMMRustGravity,
+  // rust_tree: TreeRustGravity,
   js_none: NoGravity,
   rust_none: RustNoGravity,
 }
@@ -83,16 +84,7 @@ const getPreset = () =>
   decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
 const preset = getPreset()
 
-const params = new Proxy(
-  { ...presets.remembered[preset][0] },
-  {
-    set(target, key, value) {
-      target[key] = value
-      gravity?.params_change(target, key, value)
-      return true
-    },
-  }
-)
+const params = { ...presets.remembered[preset][0] }
 
 const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -175,6 +167,41 @@ async function animate() {
 }
 
 async function render() {
+  if (newOrb !== null) {
+    raycaster.setFromCamera(mouse, camera)
+    if (newOrb.iter === 0) {
+      const { escapeDistance } = params
+
+      const position = new Vector3()
+      position.copy(raycaster.ray.origin)
+      position.addScaledVector(raycaster.ray.direction, 2000)
+      if (position.length() > escapeDistance) {
+        position.normalize().multiplyScalar(escapeDistance * 0.9)
+      }
+      newOrb.iter++
+      const speed = new Vector3()
+      speed.copy(raycaster.ray.direction)
+      speed.multiplyScalar(newOrb.speed)
+      const mass = Math.pow(newOrb.iter / 50, 4) * params.mass
+      newOrb.orb = {
+        position,
+        speed,
+        mass: mass,
+        temperature: massToTemperature(mass),
+      }
+      gravity.grow([newOrb.orb])
+    } else {
+      newOrb.iter++
+      newOrb.orb.speed.copy(raycaster.ray.direction)
+      newOrb.orb.speed.multiplyScalar(newOrb.speed)
+      newOrb.orb.mass = Math.pow(newOrb.iter / 50, 4) * params.mass
+      newOrb.orb.temperature = massToTemperature(newOrb.orb.mass)
+      gravity.set_orb(gravity.len - 1, newOrb.orb)
+    }
+    particles.geometry.attributes.temperature.needsUpdate = true
+    particles.geometry.attributes.mass.needsUpdate = true
+  }
+
   gravity.frog_leap()
   const newLen = await gravity.simulate()
   gravity.frog_drop()
@@ -186,30 +213,6 @@ async function render() {
   }
   particles.geometry.attributes.position.needsUpdate = true
   controls.update()
-
-  if (newOrb !== null) {
-    newOrb.iter !== 0 && gravity.shrink(1)
-    newOrb.iter++
-    raycaster.setFromCamera(mouse, camera)
-    const position = new Vector3()
-    position.copy(raycaster.ray.origin)
-    position.addScaledVector(raycaster.ray.direction, 1000)
-
-    const speed = new Vector3()
-    speed.copy(raycaster.ray.direction)
-    speed.multiplyScalar(newOrb.speed)
-    const mass = Math.pow(newOrb.iter / 50, 4) * params.mass
-    gravity.grow([
-      {
-        position,
-        speed,
-        mass: mass,
-        temperature: massToTemperature(mass),
-      },
-    ])
-    particles.geometry.attributes.temperature.needsUpdate = true
-    particles.geometry.attributes.mass.needsUpdate = true
-  }
   composer.render()
 }
 
@@ -285,7 +288,7 @@ function restart() {
 }
 
 function initGUI() {
-  const gui = new GUI({
+  gui = new GUI({
     load: presets,
     preset,
   })
@@ -360,6 +363,7 @@ function initGUI() {
       v => (particles.material.uniforms.blackHoleMassThreshold.value = v)
     )
   simulation.open()
+  gui.add(params, 'creationMode')
   gui.add(
     {
       'Go 4d': () => {
@@ -381,33 +385,29 @@ function initGUI() {
 
 const raycaster = new Raycaster()
 const mouse = new Vector2()
-let delay = null
 window.addEventListener('pointerdown', function (event) {
+  if (
+    gui.domElement.contains(event.target) ||
+    stats.dom.contains(event.target)
+  ) {
+    return
+  }
   mouse.set(
     (event.clientX / window.innerWidth) * 2 - 1,
     -(event.clientY / window.innerHeight) * 2 + 1
   )
-  const activateNewOrb = () => {
+  if (params.creationMode) {
     params.autoRotate = false
     controls.autoRotate = false
-    delay = null
     newOrb = {
       iter: 0,
       speed: 20 * (1 + event.button),
     }
   }
-  if (event.shiftKey) {
-    activateNewOrb()
-  } else {
-    delay = setTimeout(activateNewOrb, 125)
-  }
 })
 
 window.addEventListener('pointermove', function (event) {
-  if (delay) {
-    clearTimeout(delay)
-    delay = null
-  } else if (newOrb !== null) {
+  if (newOrb !== null) {
     mouse.set(
       (event.clientX / window.innerWidth) * 2 - 1,
       -(event.clientY / window.innerHeight) * 2 + 1
@@ -416,10 +416,6 @@ window.addEventListener('pointermove', function (event) {
 })
 
 window.addEventListener('pointerup', function () {
-  if (delay) {
-    clearTimeout(delay)
-    delay = null
-  }
   newOrb = null
 })
 

@@ -1,23 +1,21 @@
 import Gravity from './gravity'
-
-export const workerPromise = (worker, ...args) => {
-  return new Promise(resolve => {
-    worker.postMessage(...args)
-    worker.onmessage = e => resolve(e.data)
-  })
-}
+import { workerPromise } from '../utils'
 
 export default class P2PThreadedGravity extends Gravity {
-  constructor(orbs, params, allocLen) {
+  constructor(orbs, params, allocLen, workerName = 'p2p-thread') {
     super(orbs, params, allocLen)
 
-    this.pool = new Array(~~params.threads).fill().map(() => {
+    this.initThreadPool(workerName)
+  }
+
+  initThreadPool(workerName) {
+    this.pool = new Array(~~this.params.threads).fill().map(() => {
       const url = import.meta.url
       return new Worker(
         // Handle bundling
         url.includes('gravity')
-          ? new URL('../../worker/p2p-thread.js', import.meta.url)
-          : new URL('./gravity/worker/p2p-thread.js', import.meta.url)
+          ? new URL(`../../worker/${workerName}.js`, import.meta.url)
+          : new URL(`./gravity/worker/${workerName}.js`, import.meta.url)
       )
     })
   }

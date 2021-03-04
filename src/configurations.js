@@ -482,3 +482,21 @@ export const teapot = ({ number, range, mass, blackHoleMass }) => {
     })
     .concat(blackHole(blackHoleMass))
 }
+
+export const test = ({ mass }) => [
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1, 2, 3),
+    speed: new Vector3(),
+  },
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1000, 1000, -500),
+    speed: new Vector3(),
+  },
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1000, 1000, -500),
+    speed: new Vector3(),
+  },
+]

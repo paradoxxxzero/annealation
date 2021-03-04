@@ -184,18 +184,4 @@ pub trait Gravity {
     self._len_set(self._len() - n);
     Ok(())
   }
-
-  fn params_change(
-    &mut self,
-    params: &JsValue,
-    key: &JsValue,
-    value: &JsValue,
-  ) -> Result<(), JsValue> {
-    self._params_set(
-      params
-        .into_serde()
-        .map_err(|e| JsValue::from(e.to_string()))?,
-    );
-    Ok(())
-  }
 }

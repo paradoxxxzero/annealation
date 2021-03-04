@@ -66,7 +66,16 @@ export default class BarnesHutGravity extends Gravity {
     const newSubCell = this.getSubCell(cell, index)
     // If both cells end up in same octant, subdivide again
     if (existingSubCell === newSubCell) {
-      this.addParticle(existingSubCell, index)
+      // Prevent same position infinite loop
+      let i3 = index * 3
+      let ci3 = cell.index * 3
+      if (
+        this.positions[ci3] !== this.positions[i3] &&
+        this.positions[ci3 + 1] !== this.positions[i3 + 1] &&
+        this.positions[ci3 + 2] !== this.positions[i3 + 2]
+      ) {
+        this.addParticle(existingSubCell, index)
+      }
     }
 
     newSubCell.index = index
@@ -171,7 +180,7 @@ export default class BarnesHutGravity extends Gravity {
       const r = Math.sqrt(x * x + y * y + z * z)
       const d = cell.size
 
-      if (d / r < theta) {
+      if (d < theta * r) {
         // If the ratio of distance and radius is below theta, use approximation
         // Compute interaction between this particle and this cell
         const fact = cell.mass / (r * r * r)
