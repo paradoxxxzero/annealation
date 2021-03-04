@@ -3,7 +3,7 @@ export default {
   remembered: {
     Cube: {
       0: {
-        backend: 'rust_p2p',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -17,12 +17,12 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'cube',
-        number: 1250,
+        number: 3000,
         range: 1000,
         speed: 5,
         mass: 10,
         blackHoleMass: 0,
-        scale: 50,
+        scale: 35,
         colorMode: 'Temperature',
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
@@ -69,7 +69,7 @@ export default {
     },
     Galaxy: {
       0: {
-        backend: 'js_bh',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -102,7 +102,7 @@ export default {
     },
     BulbGalaxy: {
       0: {
-        backend: 'js_bh',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -135,7 +135,7 @@ export default {
     },
     SlowGalaxy: {
       0: {
-        backend: 'js_bh',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -168,7 +168,7 @@ export default {
     },
     Sphere: {
       0: {
-        backend: 'rust_p2p',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -182,7 +182,7 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'sphere',
-        number: 1000,
+        number: 4000,
         range: 1500,
         speed: 1,
         mass: 10,
@@ -201,7 +201,7 @@ export default {
     },
     HarmonicSphere: {
       0: {
-        backend: 'js_p2p_threaded',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -215,7 +215,7 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'harmonicSphere',
-        number: 4000,
+        number: 5000,
         range: 1500,
         speed: 15,
         mass: 10,
@@ -267,7 +267,7 @@ export default {
     },
     CollidingGalaxies: {
       0: {
-        backend: 'js_bh',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -357,7 +357,7 @@ export default {
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         softening: 10,
-        collisions: true,
+        collisions: false,
         collisionThreshold: 10,
         escapeDistance: 2000,
         blackHoleMassThreshold: 2500,
@@ -531,7 +531,7 @@ export default {
     },
     LittleExpand: {
       0: {
-        backend: 'js_p2p_sab',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
         theta: 1,
@@ -564,10 +564,10 @@ export default {
     },
     BigSphere: {
       0: {
-        backend: 'js_fmm',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
-        theta: 1,
+        theta: 2,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -578,7 +578,7 @@ export default {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: 'sphere',
-        number: 15000,
+        number: 20000,
         range: 2000,
         speed: 0,
         mass: 10,
@@ -586,7 +586,7 @@ export default {
         scale: 30,
         colorMode: 'Temperature',
         gravitationalConstant: 6.67,
-        simulationSpeed: 2.0,
+        simulationSpeed: 1.0,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,

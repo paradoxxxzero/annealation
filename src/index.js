@@ -27,6 +27,7 @@ import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import wasmInit, {
   P2PRustGravity,
+  BarnesHutRustGravity,
   // FMMRustGravity,
   // TreeRustGravity,
   RustNoGravity,
@@ -51,7 +52,10 @@ const colorModes = {
   White: 0,
   ColorCoded: 0.75,
 }
-let particles, gravity, gui
+let particles,
+  gravity,
+  gui,
+  started = false
 const backends = {
   js_p2p: P2PGravity,
   rust_p2p: P2PRustGravity,
@@ -60,6 +64,7 @@ const backends = {
   js_bh: BarnesHutGravity,
   js_bh_threaded: BarnesHutThreadedGravity,
   js_bh_sab: BarnesHutThreadedSABGravity,
+  rust_bh: BarnesHutRustGravity,
   js_fmm: FMMGravity,
   // Disabled because of broken / ineficient
   // rust_fmm: FMMRustGravity,
@@ -206,6 +211,17 @@ async function render() {
   const newLen = await gravity.simulate()
   gravity.frog_drop()
 
+  if (
+    params.backend.startsWith('rust') &&
+    !particles.geometry.attributes.temperature.array.buffer.byteLength
+  ) {
+    console.warn('Bad rust memory')
+    setRustMemory(
+      particles.geometry,
+      particles.geometry.attributes.temperature.count
+    )
+  }
+
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen)
     particles.geometry.attributes.temperature.needsUpdate = true
@@ -216,41 +232,19 @@ async function render() {
   composer.render()
 }
 
-function init() {
-  const {
-    backend,
-    configuration,
-    scale,
-    blackHoleMassThreshold,
-    colorMode,
-  } = params
-  const orbs = configurations[configuration](params)
-  let positions, masses, temperatures
-  const Backend = backends[backend] || backends[fallbacks[backend]]
-  const allocLength = orbs.length + 1000
-
-  gravity = new Backend(orbs, params, allocLength)
-
-  if (backend.startsWith('rust')) {
-    const { buffer } = wasm_memory()
-    positions = new Float32Array(
-      buffer,
-      gravity.positions_ptr(),
-      3 * allocLength
-    )
-    masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength)
-    temperatures = new Float32Array(
-      buffer,
-      gravity.temperatures_ptr(),
-      allocLength
-    )
-    // gravity.precalc(softening)
-  } else {
-    ;({ positions, masses, temperatures } = gravity)
-  }
-
-  const geometry = new BufferGeometry()
-  geometry.setDrawRange(0, orbs.length)
+function setRustMemory(geometry, allocLength) {
+  const { buffer } = wasm_memory()
+  const positions = new Float32Array(
+    buffer,
+    gravity.positions_ptr(),
+    3 * allocLength
+  )
+  const masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength)
+  const temperatures = new Float32Array(
+    buffer,
+    gravity.temperatures_ptr(),
+    allocLength
+  )
   geometry.setAttribute(
     'position',
     new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage)
@@ -263,6 +257,42 @@ function init() {
     'temperature',
     new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage)
   )
+}
+
+function init() {
+  const {
+    backend,
+    configuration,
+    scale,
+    blackHoleMassThreshold,
+    colorMode,
+  } = params
+  const orbs = configurations[configuration](params)
+  const Backend = backends[backend] || backends[fallbacks[backend]]
+  const allocLength = orbs.length + 1000
+
+  gravity = new Backend(orbs, params, allocLength)
+
+  const geometry = new BufferGeometry()
+  geometry.setDrawRange(0, orbs.length)
+
+  if (backend.startsWith('rust')) {
+    setRustMemory(geometry, allocLength)
+  } else {
+    geometry.setAttribute(
+      'position',
+      new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage)
+    )
+    geometry.setAttribute(
+      'mass',
+      new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage)
+    )
+    geometry.setAttribute(
+      'temperature',
+      new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage)
+    )
+  }
+
   geometry.setDrawRange(0, orbs.length)
 
   const material = new ShaderMaterial({
@@ -280,6 +310,9 @@ function init() {
 }
 
 function restart() {
+  if (!started) {
+    return
+  }
   cancelAnimationFrame(raf)
   scene.clear()
   gravity.free()
@@ -424,5 +457,6 @@ const wasmPromise = wasmInit('./dist/wasm/index_bg.wasm')
 wasmPromise.then(() => {
   init()
   initGUI()
+  started = true
   raf = requestAnimationFrame(animate)
 })
