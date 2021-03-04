@@ -23539,6 +23539,7 @@ var FXAAShader = {
 var configurations_exports = {};
 __export(configurations_exports, {
   bulb: () => bulb,
+  collidingBulb: () => collidingBulb,
   collidingDisc: () => collidingDisc,
   cube: () => cube,
   disc: () => disc,
@@ -25380,6 +25381,47 @@ var collidingDisc = ({
   });
   return [...firstDisc, ...secondDisc];
 };
+var collidingBulb = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  gravitationalConstant
+}) => {
+  const halfNumber = ~~(number / 2);
+  const firstShift = new Vector3(range * 0.15, range * 0.15, -range * 0.25);
+  const firstEuler = new Euler(Math.PI / 4, 0, 0);
+  const firstSpeed = new Vector3(-speed, -speed, 0);
+  const firstDisc = bulb({
+    number: halfNumber,
+    range: range / 3,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant
+  });
+  firstDisc.forEach(({position, speed: speed2}) => {
+    position.applyEuler(firstEuler).add(firstShift);
+    speed2.applyEuler(firstEuler).add(firstSpeed);
+  });
+  const secondShift = new Vector3(-range * 0.15, -range * 0.15, range * 0.25);
+  const secondEuler = new Euler(-Math.PI / 8, 0, 0);
+  const secondSpeed = new Vector3(speed, 0, 0);
+  const secondDisc = bulb({
+    number: halfNumber,
+    range: range / 2,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant
+  });
+  secondDisc.forEach(({position, speed: speed2}) => {
+    position.applyEuler(secondEuler).add(secondShift);
+    speed2.applyEuler(secondEuler).add(secondSpeed);
+  });
+  return [...firstDisc, ...secondDisc];
+};
 var fountain = ({number, range, mass, speed, blackHoleMass}) => {
   const spherical = new Spherical();
   range *= 0.5;
@@ -25761,6 +25803,39 @@ var presets_default = {
         simulationSpeed: 0.075,
         softening: 10,
         collisions: true,
+        collisionThreshold: 10,
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 5e5,
+        creationMode: false
+      }
+    },
+    CollidingGalaxiesBulb: {
+      0: {
+        backend: "rust_bh",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 7,
+        theta: 1,
+        autoRotate: false,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 2,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "collidingBulb",
+        number: 8e3,
+        range: 3e3,
+        speed: 10,
+        mass: 10,
+        blackHoleMass: 5e5,
+        scale: 20,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.05,
+        softening: 10,
+        collisions: false,
         collisionThreshold: 10,
         escapeDistance: 2e3,
         blackHoleMassThreshold: 5e5,
