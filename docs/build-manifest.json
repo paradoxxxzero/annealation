@@ -143,7 +143,7 @@
       "imports": []
     },
     "dist/configurations.js": {
-      "bytes": 12831,
+      "bytes": 13200,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -168,7 +168,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 15088,
+      "bytes": 15595,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -193,7 +193,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 16385,
+      "bytes": 10881,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -206,7 +206,7 @@
       "imports": []
     },
     "dist/gravity/gravity.js": {
-      "bytes": 7156,
+      "bytes": 7122,
       "imports": []
     },
     "dist/gravity/p2p.js": {
@@ -219,7 +219,7 @@
       ]
     },
     "dist/gravity/fmm.js": {
-      "bytes": 4411,
+      "bytes": 4198,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -236,8 +236,12 @@
         }
       ]
     },
+    "dist/utils.js": {
+      "bytes": 1256,
+      "imports": []
+    },
     "dist/gravity/p2p-threaded.js": {
-      "bytes": 2141,
+      "bytes": 2125,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -245,29 +249,29 @@
         },
         {
           "path": "dist/gravity/gravity.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/utils.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/p2p-threaded-sab.js": {
-      "bytes": 2717,
+      "bytes": 2257,
       "imports": [
-        {
-          "path": "_snowpack/env.js",
-          "kind": "import-statement"
-        },
         {
           "path": "dist/gravity/p2p-threaded.js",
           "kind": "import-statement"
         },
         {
-          "path": "dist/gravity/gravity.js",
+          "path": "dist/utils.js",
           "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/bh.js": {
-      "bytes": 6156,
+      "bytes": 6463,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -276,39 +280,35 @@
       ]
     },
     "dist/gravity/bh-threaded.js": {
-      "bytes": 5816,
+      "bytes": 2677,
       "imports": [
         {
-          "path": "_snowpack/env.js",
-          "kind": "import-statement"
-        },
-        {
           "path": "dist/gravity/p2p-threaded.js",
-          "kind": "import-statement"
-        },
-        {
-          "path": "dist/gravity/gravity.js",
           "kind": "import-statement"
         },
         {
           "path": "dist/gravity/bh.js",
           "kind": "import-statement"
+        },
+        {
+          "path": "dist/utils.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/utils.js",
+          "kind": "import-statement"
         }
       ]
     },
     "dist/gravity/bh-threaded-sab.js": {
-      "bytes": 6573,
+      "bytes": 2403,
       "imports": [
         {
-          "path": "_snowpack/env.js",
+          "path": "dist/gravity/p2p-threaded-sab.js",
           "kind": "import-statement"
         },
         {
-          "path": "dist/gravity/p2p-threaded.js",
-          "kind": "import-statement"
-        },
-        {
-          "path": "dist/gravity/gravity.js",
+          "path": "dist/utils.js",
           "kind": "import-statement"
         },
         {
@@ -318,7 +318,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 12288,
+      "bytes": 12581,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -436,7 +436,7 @@
       "entryPoint": "dist/index.js",
       "inputs": {
         "_snowpack/pkg/dat.gui.js": {
-          "bytesInOutput": 85977
+          "bytesInOutput": 86100
         },
         "_snowpack/pkg/common/three.module-295f7415.js": {
           "bytesInOutput": 738987
@@ -472,7 +472,7 @@
           "bytesInOutput": 54260
         },
         "dist/configurations.js": {
-          "bytesInOutput": 11606
+          "bytesInOutput": 11976
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 19135
@@ -487,7 +487,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 14927
+          "bytesInOutput": 15449
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -496,13 +496,13 @@
           "bytesInOutput": 186
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 12807
+          "bytesInOutput": 8939
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
         "dist/gravity/gravity.js": {
-          "bytesInOutput": 7020
+          "bytesInOutput": 6984
         },
         "dist/gravity/p2p.js": {
           "bytesInOutput": 1446
@@ -513,26 +513,29 @@
         "dist/gravity/none.js": {
           "bytesInOutput": 447
         },
+        "dist/utils.js": {
+          "bytesInOutput": 874
+        },
         "dist/gravity/p2p-threaded.js": {
-          "bytesInOutput": 1967
+          "bytesInOutput": 1908
         },
         "dist/gravity/p2p-threaded-sab.js": {
-          "bytesInOutput": 2455
+          "bytesInOutput": 2101
         },
         "dist/gravity/bh.js": {
-          "bytesInOutput": 4992
+          "bytesInOutput": 5224
         },
         "dist/gravity/bh-threaded.js": {
-          "bytesInOutput": 5068
+          "bytesInOutput": 2474
         },
         "dist/gravity/bh-threaded-sab.js": {
-          "bytesInOutput": 5787
+          "bytesInOutput": 2211
         },
         "dist/index.js": {
-          "bytesInOutput": 10087
+          "bytesInOutput": 10273
         }
       },
-      "bytes": 1037320
+      "bytes": 1029158
     }
   }
 }

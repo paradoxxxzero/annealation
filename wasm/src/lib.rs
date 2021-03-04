@@ -30,7 +30,7 @@ pub struct Params {
   collisionThreshold: f32,
   escapeDistance: f32,
 }
-mod fmm;
+// mod fmm;
 mod gravity;
 mod none;
 mod p2p;

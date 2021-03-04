@@ -180,57 +180,57 @@ var INTERPRETATIONS = [
     conversions: {
       THREE_CHAR_HEX: {
         read: function read(original) {
-          var test = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
-          if (test === null) {
+          var test2 = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
+          if (test2 === null) {
             return false;
           }
           return {
             space: "HEX",
-            hex: parseInt("0x" + test[1].toString() + test[1].toString() + test[2].toString() + test[2].toString() + test[3].toString() + test[3].toString(), 0)
+            hex: parseInt("0x" + test2[1].toString() + test2[1].toString() + test2[2].toString() + test2[2].toString() + test2[3].toString() + test2[3].toString(), 0)
           };
         },
         write: colorToString
       },
       SIX_CHAR_HEX: {
         read: function read2(original) {
-          var test = original.match(/^#([A-F0-9]{6})$/i);
-          if (test === null) {
+          var test2 = original.match(/^#([A-F0-9]{6})$/i);
+          if (test2 === null) {
             return false;
           }
           return {
             space: "HEX",
-            hex: parseInt("0x" + test[1].toString(), 0)
+            hex: parseInt("0x" + test2[1].toString(), 0)
           };
         },
         write: colorToString
       },
       CSS_RGB: {
         read: function read3(original) {
-          var test = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
-          if (test === null) {
+          var test2 = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+          if (test2 === null) {
             return false;
           }
           return {
             space: "RGB",
-            r: parseFloat(test[1]),
-            g: parseFloat(test[2]),
-            b: parseFloat(test[3])
+            r: parseFloat(test2[1]),
+            g: parseFloat(test2[2]),
+            b: parseFloat(test2[3])
           };
         },
         write: colorToString
       },
       CSS_RGBA: {
         read: function read4(original) {
-          var test = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
-          if (test === null) {
+          var test2 = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+          if (test2 === null) {
             return false;
           }
           return {
             space: "RGB",
-            r: parseFloat(test[1]),
-            g: parseFloat(test[2]),
-            b: parseFloat(test[3]),
-            a: parseFloat(test[4])
+            r: parseFloat(test2[1]),
+            g: parseFloat(test2[2]),
+            b: parseFloat(test2[3]),
+            a: parseFloat(test2[4])
           };
         },
         write: colorToString
@@ -1861,8 +1861,8 @@ var GUI = function GUI2(pars) {
 };
 GUI.toggleHide = function() {
   hide = !hide;
-  Common.each(hideableGuis, function(gui) {
-    gui.domElement.style.display = hide ? "none" : "";
+  Common.each(hideableGuis, function(gui2) {
+    gui2.domElement.style.display = hide ? "none" : "";
   });
 };
 GUI.CLASS_AUTO_PLACE = "a";
@@ -1927,11 +1927,11 @@ Common.extend(GUI.prototype, {
       newGuiParams.closed = this.load.folders[name].closed;
       newGuiParams.load = this.load.folders[name];
     }
-    var gui = new GUI(newGuiParams);
-    this.__folders[name] = gui;
-    var li = addRow(this, gui.domElement);
+    var gui2 = new GUI(newGuiParams);
+    this.__folders[name] = gui2;
+    var li = addRow(this, gui2.domElement);
     dom.addClass(li, "folder");
-    return gui;
+    return gui2;
   },
   removeFolder: function removeFolder(folder) {
     this.__ul.removeChild(folder.domElement.parentElement);
@@ -2012,11 +2012,11 @@ Common.extend(GUI.prototype, {
     }
   },
   getRoot: function getRoot() {
-    var gui = this;
-    while (gui.parent) {
-      gui = gui.parent;
+    var gui2 = this;
+    while (gui2.parent) {
+      gui2 = gui2.parent;
     }
-    return gui;
+    return gui2;
   },
   getSaveObject: function getSaveObject() {
     var toReturn2 = this.load;
@@ -2052,12 +2052,12 @@ Common.extend(GUI.prototype, {
     addPresetOption(this, presetName, true);
     this.saveToLocalStorageIfPossible();
   },
-  revert: function revert(gui) {
+  revert: function revert(gui2) {
     Common.each(this.__controllers, function(controller) {
       if (!this.getRoot().load.remembered) {
         controller.setValue(controller.initialValue);
       } else {
-        recallSavedValue(gui || this.getRoot(), controller);
+        recallSavedValue(gui2 || this.getRoot(), controller);
       }
       if (controller.__onFinishChange) {
         controller.__onFinishChange.call(controller, controller.getValue());
@@ -2066,7 +2066,7 @@ Common.extend(GUI.prototype, {
     Common.each(this.__folders, function(folder) {
       folder.revert(folder);
     });
-    if (!gui) {
+    if (!gui2) {
       markPresetModified(this.getRoot(), false);
     }
   },
@@ -2086,42 +2086,42 @@ Common.extend(GUI.prototype, {
     });
   }
 });
-function addRow(gui, newDom, liBefore) {
+function addRow(gui2, newDom, liBefore) {
   var li = document.createElement("li");
   if (newDom) {
     li.appendChild(newDom);
   }
   if (liBefore) {
-    gui.__ul.insertBefore(li, liBefore);
+    gui2.__ul.insertBefore(li, liBefore);
   } else {
-    gui.__ul.appendChild(li);
+    gui2.__ul.appendChild(li);
   }
-  gui.onResize();
+  gui2.onResize();
   return li;
 }
-function removeListeners(gui) {
-  dom.unbind(window, "resize", gui.__resizeHandler);
-  if (gui.saveToLocalStorageIfPossible) {
-    dom.unbind(window, "unload", gui.saveToLocalStorageIfPossible);
+function removeListeners(gui2) {
+  dom.unbind(window, "resize", gui2.__resizeHandler);
+  if (gui2.saveToLocalStorageIfPossible) {
+    dom.unbind(window, "unload", gui2.saveToLocalStorageIfPossible);
   }
 }
-function markPresetModified(gui, modified) {
-  var opt = gui.__preset_select[gui.__preset_select.selectedIndex];
+function markPresetModified(gui2, modified) {
+  var opt = gui2.__preset_select[gui2.__preset_select.selectedIndex];
   if (modified) {
     opt.innerHTML = opt.value + "*";
   } else {
     opt.innerHTML = opt.value;
   }
 }
-function augmentController(gui, li, controller) {
+function augmentController(gui2, li, controller) {
   controller.__li = li;
-  controller.__gui = gui;
+  controller.__gui = gui2;
   Common.extend(controller, {
     options: function options(_options) {
       if (arguments.length > 1) {
         var nextSibling = controller.__li.nextElementSibling;
         controller.remove();
-        return _add(gui, controller.object, controller.property, {
+        return _add(gui2, controller.object, controller.property, {
           before: nextSibling,
           factoryArgs: [Common.toArray(arguments)]
         });
@@ -2129,7 +2129,7 @@ function augmentController(gui, li, controller) {
       if (Common.isArray(_options) || Common.isObject(_options)) {
         var _nextSibling = controller.__li.nextElementSibling;
         controller.remove();
-        return _add(gui, controller.object, controller.property, {
+        return _add(gui2, controller.object, controller.property, {
           before: _nextSibling,
           factoryArgs: [_options]
         });
@@ -2167,7 +2167,7 @@ function augmentController(gui, li, controller) {
         var oldName = controller.__li.firstElementChild.firstElementChild.innerHTML;
         var wasListening = controller.__gui.__listening.indexOf(controller) > -1;
         controller.remove();
-        var newController = _add(gui, controller.object, controller.property, {
+        var newController = _add(gui2, controller.object, controller.property, {
           before: controller.__li.nextElementSibling,
           factoryArgs: [controller.__min, controller.__max, controller.__step]
         });
@@ -2206,14 +2206,14 @@ function augmentController(gui, li, controller) {
     controller.updateDisplay();
   }
   controller.setValue = Common.compose(function(val) {
-    if (gui.getRoot().__preset_select && controller.isModified()) {
-      markPresetModified(gui.getRoot(), true);
+    if (gui2.getRoot().__preset_select && controller.isModified()) {
+      markPresetModified(gui2.getRoot(), true);
     }
     return val;
   }, controller.setValue);
 }
-function recallSavedValue(gui, controller) {
-  var root = gui.getRoot();
+function recallSavedValue(gui2, controller) {
+  var root = gui2.getRoot();
   var matchedIndex = root.__rememberedObjects.indexOf(controller.object);
   if (matchedIndex !== -1) {
     var controllerMap = root.__rememberedObjectIndecesToControllers[matchedIndex];
@@ -2225,8 +2225,8 @@ function recallSavedValue(gui, controller) {
     if (root.load && root.load.remembered) {
       var presetMap = root.load.remembered;
       var preset2 = void 0;
-      if (presetMap[gui.preset]) {
-        preset2 = presetMap[gui.preset];
+      if (presetMap[gui2.preset]) {
+        preset2 = presetMap[gui2.preset];
       } else if (presetMap[DEFAULT_DEFAULT_PRESET_NAME]) {
         preset2 = presetMap[DEFAULT_DEFAULT_PRESET_NAME];
       } else {
@@ -2240,7 +2240,7 @@ function recallSavedValue(gui, controller) {
     }
   }
 }
-function _add(gui, object, property, params2) {
+function _add(gui2, object, property, params2) {
   if (object[property] === void 0) {
     throw new Error('Object "' + object + '" has no property "' + property + '"');
   }
@@ -2249,12 +2249,12 @@ function _add(gui, object, property, params2) {
     controller = new ColorController(object, property);
   } else {
     var factoryArgs = [object, property].concat(params2.factoryArgs);
-    controller = ControllerFactory.apply(gui, factoryArgs);
+    controller = ControllerFactory.apply(gui2, factoryArgs);
   }
   if (params2.before instanceof Controller) {
     params2.before = params2.before.__li;
   }
-  recallSavedValue(gui, controller);
+  recallSavedValue(gui2, controller);
   dom.addClass(controller.domElement, "c");
   var name = document.createElement("span");
   dom.addClass(name, "property-name");
@@ -2262,36 +2262,36 @@ function _add(gui, object, property, params2) {
   var container = document.createElement("div");
   container.appendChild(name);
   container.appendChild(controller.domElement);
-  var li = addRow(gui, container, params2.before);
+  var li = addRow(gui2, container, params2.before);
   dom.addClass(li, GUI.CLASS_CONTROLLER_ROW);
   if (controller instanceof ColorController) {
     dom.addClass(li, "color");
   } else {
     dom.addClass(li, _typeof(controller.getValue()));
   }
-  augmentController(gui, li, controller);
-  gui.__controllers.push(controller);
+  augmentController(gui2, li, controller);
+  gui2.__controllers.push(controller);
   return controller;
 }
-function getLocalStorageHash(gui, key) {
+function getLocalStorageHash(gui2, key) {
   return document.location.href + "." + key;
 }
-function addPresetOption(gui, name, setSelected) {
+function addPresetOption(gui2, name, setSelected) {
   var opt = document.createElement("option");
   opt.innerHTML = name;
   opt.value = name;
-  gui.__preset_select.appendChild(opt);
+  gui2.__preset_select.appendChild(opt);
   if (setSelected) {
-    gui.__preset_select.selectedIndex = gui.__preset_select.length - 1;
+    gui2.__preset_select.selectedIndex = gui2.__preset_select.length - 1;
   }
 }
-function showHideExplain(gui, explain) {
-  explain.style.display = gui.useLocalStorage ? "block" : "none";
+function showHideExplain(gui2, explain) {
+  explain.style.display = gui2.useLocalStorage ? "block" : "none";
 }
-function addSaveMenu(gui) {
-  var div = gui.__save_row = document.createElement("li");
-  dom.addClass(gui.domElement, "has-save");
-  gui.__ul.insertBefore(div, gui.__ul.firstChild);
+function addSaveMenu(gui2) {
+  var div = gui2.__save_row = document.createElement("li");
+  dom.addClass(gui2.domElement, "has-save");
+  gui2.__ul.insertBefore(div, gui2.__ul.firstChild);
   dom.addClass(div, "save-row");
   var gears = document.createElement("span");
   gears.innerHTML = "&nbsp;";
@@ -2308,19 +2308,19 @@ function addSaveMenu(gui) {
   button3.innerHTML = "Revert";
   dom.addClass(button3, "button");
   dom.addClass(button3, "revert");
-  var select = gui.__preset_select = document.createElement("select");
-  if (gui.load && gui.load.remembered) {
-    Common.each(gui.load.remembered, function(value, key) {
-      addPresetOption(gui, key, key === gui.preset);
+  var select = gui2.__preset_select = document.createElement("select");
+  if (gui2.load && gui2.load.remembered) {
+    Common.each(gui2.load.remembered, function(value, key) {
+      addPresetOption(gui2, key, key === gui2.preset);
     });
   } else {
-    addPresetOption(gui, DEFAULT_DEFAULT_PRESET_NAME, false);
+    addPresetOption(gui2, DEFAULT_DEFAULT_PRESET_NAME, false);
   }
   dom.bind(select, "change", function() {
-    for (var index = 0; index < gui.__preset_select.length; index++) {
-      gui.__preset_select[index].innerHTML = gui.__preset_select[index].value;
+    for (var index = 0; index < gui2.__preset_select.length; index++) {
+      gui2.__preset_select[index].innerHTML = gui2.__preset_select[index].value;
     }
-    gui.preset = this.value;
+    gui2.preset = this.value;
   });
   div.appendChild(select);
   div.appendChild(gears);
@@ -2332,13 +2332,13 @@ function addSaveMenu(gui) {
     var localStorageCheckBox = document.getElementById("dg-local-storage");
     var saveLocally = document.getElementById("dg-save-locally");
     saveLocally.style.display = "block";
-    if (localStorage.getItem(getLocalStorageHash(gui, "isLocal")) === "true") {
+    if (localStorage.getItem(getLocalStorageHash(gui2, "isLocal")) === "true") {
       localStorageCheckBox.setAttribute("checked", "checked");
     }
-    showHideExplain(gui, explain);
+    showHideExplain(gui2, explain);
     dom.bind(localStorageCheckBox, "change", function() {
-      gui.useLocalStorage = !gui.useLocalStorage;
-      showHideExplain(gui, explain);
+      gui2.useLocalStorage = !gui2.useLocalStorage;
+      showHideExplain(gui2, explain);
     });
   }
   var newConstructorTextArea = document.getElementById("dg-new-constructor");
@@ -2348,28 +2348,28 @@ function addSaveMenu(gui) {
     }
   });
   dom.bind(gears, "click", function() {
-    newConstructorTextArea.innerHTML = JSON.stringify(gui.getSaveObject(), void 0, 2);
+    newConstructorTextArea.innerHTML = JSON.stringify(gui2.getSaveObject(), void 0, 2);
     SAVE_DIALOGUE.show();
     newConstructorTextArea.focus();
     newConstructorTextArea.select();
   });
   dom.bind(button, "click", function() {
-    gui.save();
+    gui2.save();
   });
   dom.bind(button2, "click", function() {
     var presetName = prompt("Enter a new preset name.");
     if (presetName) {
-      gui.saveAs(presetName);
+      gui2.saveAs(presetName);
     }
   });
   dom.bind(button3, "click", function() {
-    gui.revert();
+    gui2.revert();
   });
 }
-function addResizeHandle(gui) {
+function addResizeHandle(gui2) {
   var pmouseX = void 0;
-  gui.__resize_handle = document.createElement("div");
-  Common.extend(gui.__resize_handle.style, {
+  gui2.__resize_handle = document.createElement("div");
+  Common.extend(gui2.__resize_handle.style, {
     width: "6px",
     marginLeft: "-3px",
     height: "200px",
@@ -2378,42 +2378,42 @@ function addResizeHandle(gui) {
   });
   function drag(e) {
     e.preventDefault();
-    gui.width += pmouseX - e.clientX;
-    gui.onResize();
+    gui2.width += pmouseX - e.clientX;
+    gui2.onResize();
     pmouseX = e.clientX;
     return false;
   }
   function dragStop() {
-    dom.removeClass(gui.__closeButton, GUI.CLASS_DRAG);
+    dom.removeClass(gui2.__closeButton, GUI.CLASS_DRAG);
     dom.unbind(window, "mousemove", drag);
     dom.unbind(window, "mouseup", dragStop);
   }
   function dragStart(e) {
     e.preventDefault();
     pmouseX = e.clientX;
-    dom.addClass(gui.__closeButton, GUI.CLASS_DRAG);
+    dom.addClass(gui2.__closeButton, GUI.CLASS_DRAG);
     dom.bind(window, "mousemove", drag);
     dom.bind(window, "mouseup", dragStop);
     return false;
   }
-  dom.bind(gui.__resize_handle, "mousedown", dragStart);
-  dom.bind(gui.__closeButton, "mousedown", dragStart);
-  gui.domElement.insertBefore(gui.__resize_handle, gui.domElement.firstElementChild);
+  dom.bind(gui2.__resize_handle, "mousedown", dragStart);
+  dom.bind(gui2.__closeButton, "mousedown", dragStart);
+  gui2.domElement.insertBefore(gui2.__resize_handle, gui2.domElement.firstElementChild);
 }
-function setWidth(gui, w) {
-  gui.domElement.style.width = w + "px";
-  if (gui.__save_row && gui.autoPlace) {
-    gui.__save_row.style.width = w + "px";
+function setWidth(gui2, w) {
+  gui2.domElement.style.width = w + "px";
+  if (gui2.__save_row && gui2.autoPlace) {
+    gui2.__save_row.style.width = w + "px";
   }
-  if (gui.__closeButton) {
-    gui.__closeButton.style.width = w + "px";
+  if (gui2.__closeButton) {
+    gui2.__closeButton.style.width = w + "px";
   }
 }
-function getCurrentPreset(gui, useInitialValues) {
+function getCurrentPreset(gui2, useInitialValues) {
   var toReturn2 = {};
-  Common.each(gui.__rememberedObjects, function(val, index) {
+  Common.each(gui2.__rememberedObjects, function(val, index) {
     var savedValues = {};
-    var controllerMap = gui.__rememberedObjectIndecesToControllers[index];
+    var controllerMap = gui2.__rememberedObjectIndecesToControllers[index];
     Common.each(controllerMap, function(controller, property) {
       savedValues[property] = useInitialValues ? controller.initialValue : controller.getValue();
     });
@@ -2421,10 +2421,10 @@ function getCurrentPreset(gui, useInitialValues) {
   });
   return toReturn2;
 }
-function setPresetSelectIndex(gui) {
-  for (var index = 0; index < gui.__preset_select.length; index++) {
-    if (gui.__preset_select[index].value === gui.preset) {
-      gui.__preset_select.selectedIndex = index;
+function setPresetSelectIndex(gui2) {
+  for (var index = 0; index < gui2.__preset_select.length; index++) {
+    if (gui2.__preset_select[index].value === gui2.preset) {
+      gui2.__preset_select.selectedIndex = index;
     }
   }
 }
@@ -8423,8 +8423,8 @@ BufferGeometry.prototype = Object.assign(Object.create(EventDispatcher.prototype
       tmp.copy(t);
       tmp.sub(n.multiplyScalar(n.dot(t))).normalize();
       tmp2.crossVectors(n2, t);
-      const test = tmp2.dot(tan2[v]);
-      const w = test < 0 ? -1 : 1;
+      const test2 = tmp2.dot(tan2[v]);
+      const w = test2 < 0 ? -1 : 1;
       tangents[v * 4] = tmp.x;
       tangents[v * 4 + 1] = tmp.y;
       tangents[v * 4 + 2] = tmp.z;
@@ -19402,7 +19402,7 @@ var Audio = class extends Object3D {
       this.play();
     return this;
   }
-  play(delay2 = 0) {
+  play(delay = 0) {
     if (this.isPlaying === true) {
       console.warn("THREE.Audio: Audio is already playing.");
       return;
@@ -19411,7 +19411,7 @@ var Audio = class extends Object3D {
       console.warn("THREE.Audio: this Audio has no playback control.");
       return;
     }
-    this._startedAt = this.context.currentTime + delay2;
+    this._startedAt = this.context.currentTime + delay;
     const source = this.context.createBufferSource();
     source.buffer = this.buffer;
     source.loop = this.loop;
@@ -23550,7 +23550,8 @@ __export(configurations_exports, {
   regularCube: () => regularCube,
   solarSystem: () => solarSystem,
   sphere: () => sphere,
-  teapot: () => teapot
+  teapot: () => teapot,
+  test: () => test
 });
 
 // _snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js
@@ -25441,6 +25442,23 @@ var teapot = ({number, range, mass, blackHoleMass}) => {
     };
   }).concat(blackHole(blackHoleMass));
 };
+var test = ({mass}) => [
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1, 2, 3),
+    speed: new Vector3()
+  },
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1e3, 1e3, -500),
+    speed: new Vector3()
+  },
+  {
+    ...rngTemperatureMass(mass),
+    position: new Vector3(1e3, 1e3, -500),
+    speed: new Vector3()
+  }
+];
 
 // dist/fragmentShader.js
 var fragmentShader_default = "varying float blackHole;\nvarying vec3 tColor;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(tColor) == 0.0) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(tColor, 1.0 );\n  }\n}";
@@ -25480,8 +25498,9 @@ var presets_default = {
         softening: 10,
         collisions: true,
         collisionThreshold: 25,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     RegularCube: {
@@ -25512,8 +25531,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 25,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     Galaxy: {
@@ -25545,7 +25565,8 @@ var presets_default = {
         collisions: false,
         collisionThreshold: 10,
         escapeDistance: 1e3,
-        blackHoleMassThreshold: 1e4
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     BulbGalaxy: {
@@ -25577,7 +25598,8 @@ var presets_default = {
         collisions: true,
         collisionThreshold: 2,
         escapeDistance: 800,
-        blackHoleMassThreshold: 1e4
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     SlowGalaxy: {
@@ -25609,7 +25631,8 @@ var presets_default = {
         collisions: false,
         collisionThreshold: 2,
         escapeDistance: 1e3,
-        blackHoleMassThreshold: 1e4
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     Sphere: {
@@ -25640,8 +25663,9 @@ var presets_default = {
         softening: 50,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 5e5
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 5e5,
+        creationMode: false
       }
     },
     HarmonicSphere: {
@@ -25672,8 +25696,9 @@ var presets_default = {
         softening: 50,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 5e5
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 5e5,
+        creationMode: false
       }
     },
     ProtoSolarSystem: {
@@ -25704,8 +25729,9 @@ var presets_default = {
         softening: 0,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 2e6
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 2e6,
+        creationMode: false
       }
     },
     CollidingGalaxies: {
@@ -25736,8 +25762,9 @@ var presets_default = {
         softening: 10,
         collisions: true,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 5e5
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 5e5,
+        creationMode: false
       }
     },
     Fountain: {
@@ -25768,8 +25795,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     EightCubes: {
@@ -25800,8 +25828,9 @@ var presets_default = {
         softening: 10,
         collisions: true,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 2500
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 2500,
+        creationMode: false
       }
     },
     Plane: {
@@ -25832,8 +25861,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 5e5
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 5e5,
+        creationMode: false
       }
     },
     Teapot: {
@@ -25864,8 +25894,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     TeapotWithBlackHole: {
@@ -25896,8 +25927,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     Ekusupuroshon: {
@@ -25928,8 +25960,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     Ekusupuroshon2: {
@@ -25960,8 +25993,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     LittleExpand: {
@@ -25992,8 +26026,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     BigSphere: {
@@ -26024,8 +26059,9 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
-        escapeDistance: 1e4,
-        blackHoleMassThreshold: 1e4
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     }
   },
@@ -26160,72 +26196,6 @@ function wasm_memory() {
   var ret = wasm.wasm_memory();
   return takeObject(ret);
 }
-var FMMRustGravity = class {
-  static __wrap(ptr) {
-    const obj = Object.create(FMMRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  free() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    wasm.__wbg_fmmrustgravity_free(ptr);
-  }
-  constructor(orbs, params2, alloc_len) {
-    try {
-      var ret = wasm.fmmrustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      return FMMRustGravity.__wrap(ret);
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
-  }
-  positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
-    return ret;
-  }
-  speeds_ptr() {
-    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
-    return ret;
-  }
-  masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
-    return ret;
-  }
-  temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
-    return ret;
-  }
-  frog_leap() {
-    wasm.fmmrustgravity_frog_leap(this.ptr);
-  }
-  simulate() {
-    var ret = wasm.fmmrustgravity_simulate(this.ptr);
-    return ret >>> 0;
-  }
-  frog_drop() {
-    wasm.fmmrustgravity_frog_drop(this.ptr);
-  }
-  grow(orbs) {
-    try {
-      wasm.fmmrustgravity_grow(this.ptr, addBorrowedObject(orbs));
-    } finally {
-      heap[stack_pointer++] = void 0;
-    }
-  }
-  shrink(n) {
-    wasm.fmmrustgravity_shrink(this.ptr, n);
-  }
-  params_change(params2, key, value) {
-    try {
-      wasm.fmmrustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
-  }
-};
 var P2PRustGravity = class {
   static __wrap(ptr) {
     const obj = Object.create(P2PRustGravity.prototype);
@@ -26247,30 +26217,30 @@ var P2PRustGravity = class {
     }
   }
   positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
-    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_speeds_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap() {
-    wasm.fmmrustgravity_frog_leap(this.ptr);
+    wasm.p2prustgravity_frog_leap(this.ptr);
   }
   simulate() {
     var ret = wasm.p2prustgravity_simulate(this.ptr);
     return ret >>> 0;
   }
   frog_drop() {
-    wasm.fmmrustgravity_frog_drop(this.ptr);
+    wasm.p2prustgravity_frog_drop(this.ptr);
   }
   grow(orbs) {
     try {
@@ -26280,16 +26250,10 @@ var P2PRustGravity = class {
     }
   }
   shrink(n) {
-    wasm.fmmrustgravity_shrink(this.ptr, n);
+    wasm.p2prustgravity_shrink(this.ptr, n);
   }
-  params_change(params2, key, value) {
-    try {
-      wasm.p2prustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
+  set_orb(i, orb) {
+    wasm.p2prustgravity_set_orb(this.ptr, i, addHeapObject(orb));
   }
 };
 var RustNoGravity = class {
@@ -26313,15 +26277,15 @@ var RustNoGravity = class {
     }
   }
   positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap() {
@@ -26342,82 +26306,10 @@ var RustNoGravity = class {
     }
   }
   shrink(n) {
-    wasm.fmmrustgravity_shrink(this.ptr, n);
+    wasm.p2prustgravity_shrink(this.ptr, n);
   }
-  params_change(params2, key, value) {
-    try {
-      wasm.rustnogravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
-  }
-};
-var TreeRustGravity = class {
-  static __wrap(ptr) {
-    const obj = Object.create(TreeRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  free() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    wasm.__wbg_treerustgravity_free(ptr);
-  }
-  constructor(orbs, params2, alloc_len) {
-    try {
-      var ret = wasm.treerustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      return TreeRustGravity.__wrap(ret);
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
-  }
-  positions_ptr() {
-    var ret = wasm.fmmrustgravity_positions_ptr(this.ptr);
-    return ret;
-  }
-  speeds_ptr() {
-    var ret = wasm.fmmrustgravity_speeds_ptr(this.ptr);
-    return ret;
-  }
-  masses_ptr() {
-    var ret = wasm.fmmrustgravity_masses_ptr(this.ptr);
-    return ret;
-  }
-  temperatures_ptr() {
-    var ret = wasm.fmmrustgravity_temperatures_ptr(this.ptr);
-    return ret;
-  }
-  frog_leap() {
-    wasm.fmmrustgravity_frog_leap(this.ptr);
-  }
-  simulate() {
-    var ret = wasm.treerustgravity_simulate(this.ptr);
-    return ret >>> 0;
-  }
-  frog_drop() {
-    wasm.fmmrustgravity_frog_drop(this.ptr);
-  }
-  grow(orbs) {
-    try {
-      wasm.fmmrustgravity_grow(this.ptr, addBorrowedObject(orbs));
-    } finally {
-      heap[stack_pointer++] = void 0;
-    }
-  }
-  shrink(n) {
-    wasm.fmmrustgravity_shrink(this.ptr, n);
-  }
-  params_change(params2, key, value) {
-    try {
-      wasm.fmmrustgravity_params_change(this.ptr, addBorrowedObject(params2), addBorrowedObject(key), addBorrowedObject(value));
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
+  set_orb(i, orb) {
+    wasm.rustnogravity_set_orb(this.ptr, i, addHeapObject(orb));
   }
 };
 async function load2(module, imports) {
@@ -26450,19 +26342,19 @@ async function init(input) {
   }
   const imports = {};
   imports.wbg = {};
+  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+    takeObject(arg0);
+  };
+  imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
+    var ret = getStringFromWasm0(arg0, arg1);
+    return addHeapObject(ret);
+  };
   imports.wbg.__wbg_length_4c7aec6f35774e3d = function(arg0) {
     var ret = getObject(arg0).length;
     return ret;
   };
   imports.wbg.__wbg_get_a8b9619536c590d4 = function(arg0, arg1) {
     var ret = getObject(arg0)[arg1 >>> 0];
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-    takeObject(arg0);
-  };
-  imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
-    var ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
   };
   imports.wbg.__wbg_new_59cb74e423758ede = function() {
@@ -26611,9 +26503,7 @@ var Gravity = class {
     this.accelerations = new Float32Array(3 * allocLen);
     this.masses = new Float32Array(allocLen);
     this.temperatures = new Float32Array(allocLen);
-    orbs.forEach((orb, i) => this.setOrb(i, orb));
-  }
-  params_change(obj, key, value) {
+    orbs.forEach((orb, i) => this.set_orb(i, orb));
   }
   getBounds() {
     const bounds = {
@@ -26779,7 +26669,7 @@ var Gravity = class {
       this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
     }
   }
-  setOrb(i, {position, mass, speed, temperature}) {
+  set_orb(i, {position, mass, speed, temperature}) {
     this.positions[i * 3] = position.x;
     this.positions[i * 3 + 1] = position.y;
     this.positions[i * 3 + 2] = position.z;
@@ -26794,7 +26684,7 @@ var Gravity = class {
       console.warn("Can't grow");
       return;
     }
-    orbs.forEach((orb, i) => this.setOrb(this.len + i, orb));
+    orbs.forEach((orb, i) => this.set_orb(this.len + i, orb));
     this.len += orbs.length;
   }
   shrink(n) {
@@ -26971,20 +26861,46 @@ var NoGravity = class extends gravity_default {
 };
 var none_default = NoGravity;
 
-// dist/gravity/p2p-threaded.js
-import.meta.env = env_exports;
+// dist/utils.js
+var mix = (baseClass, ...mixins) => {
+  class base extends baseClass {
+    constructor(...args) {
+      super(...args);
+      mixins.forEach((mixin) => {
+        copyProps(this, new mixin(...args));
+      });
+    }
+  }
+  let copyProps = (target, source) => {
+    Object.getOwnPropertyNames(source).concat(Object.getOwnPropertySymbols(source)).forEach((prop) => {
+      if (!prop.match(/^(?:constructor|prototype|arguments|caller|name|bind|call|apply|toString|length)$/))
+        Object.defineProperty(target, prop, Object.getOwnPropertyDescriptor(source, prop));
+    });
+  };
+  mixins.forEach((mixin) => {
+    copyProps(base.prototype, mixin.prototype);
+    copyProps(base, mixin);
+  });
+  return base;
+};
 var workerPromise = (worker, ...args) => {
   return new Promise((resolve) => {
     worker.postMessage(...args);
     worker.onmessage = (e) => resolve(e.data);
   });
 };
+
+// dist/gravity/p2p-threaded.js
+import.meta.env = env_exports;
 var P2PThreadedGravity = class extends gravity_default {
-  constructor(orbs, params2, allocLen) {
+  constructor(orbs, params2, allocLen, workerName = "p2p-thread") {
     super(orbs, params2, allocLen);
-    this.pool = new Array(~~params2.threads).fill().map(() => {
+    this.initThreadPool(workerName);
+  }
+  initThreadPool(workerName) {
+    this.pool = new Array(~~this.params.threads).fill().map(() => {
       const url = import.meta.url;
-      return new Worker(url.includes("gravity") ? new URL("../../worker/p2p-thread.js", import.meta.url) : new URL("./gravity/worker/p2p-thread.js", import.meta.url));
+      return new Worker(url.includes("gravity") ? new URL(`../../worker/${workerName}.js`, import.meta.url) : new URL(`./gravity/worker/${workerName}.js`, import.meta.url));
     });
   }
   async simulate() {
@@ -27033,10 +26949,9 @@ var P2PThreadedGravity = class extends gravity_default {
 var p2p_threaded_default = P2PThreadedGravity;
 
 // dist/gravity/p2p-threaded-sab.js
-import.meta.env = env_exports;
-var P2PThreadedSABGravity = class extends gravity_default {
-  constructor(orbs, params2, allocLen) {
-    super(orbs, params2, allocLen);
+var P2PThreadedSABGravity = class extends p2p_threaded_default {
+  constructor(orbs, params2, allocLen, workerName = "p2p-thread-sab") {
+    super(orbs, params2, allocLen, workerName);
     this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
     this.positions = new Float32Array(this.positionsBuffer);
     this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
@@ -27045,10 +26960,6 @@ var P2PThreadedSABGravity = class extends gravity_default {
     this.accelerations = new Float32Array(this.accelerationsBuffer);
     this.massesBuffer = new SharedArrayBuffer(allocLen * 4);
     this.masses = new Float32Array(this.massesBuffer);
-    this.pool = new Array(~~params2.threads).fill().map(() => {
-      const url = import.meta.url;
-      return new Worker(url.includes("gravity") ? new URL("../../worker/p2p-thread-sab.js", import.meta.url) : new URL("./gravity/worker/p2p-thread-sab.js", import.meta.url));
-    });
     this.pool.forEach((worker) => {
       worker.postMessage([
         this.accelerationsBuffer,
@@ -27094,10 +27005,6 @@ var P2PThreadedSABGravity = class extends gravity_default {
       collided.push(...collidedPart);
     });
     return this.solve(collided);
-  }
-  free() {
-    super.free();
-    this.pool.forEach((worker) => worker.terminate());
   }
 };
 var p2p_threaded_sab_default = P2PThreadedSABGravity;
@@ -27148,7 +27055,11 @@ var BarnesHutGravity = class extends gravity_default {
     existingSubCell.index = cell.index;
     const newSubCell = this.getSubCell(cell, index);
     if (existingSubCell === newSubCell) {
-      this.addParticle(existingSubCell, index);
+      let i3 = index * 3;
+      let ci3 = cell.index * 3;
+      if (this.positions[ci3] !== this.positions[i3] && this.positions[ci3 + 1] !== this.positions[i3 + 1] && this.positions[ci3 + 2] !== this.positions[i3 + 2]) {
+        this.addParticle(existingSubCell, index);
+      }
     }
     newSubCell.index = index;
   }
@@ -27225,7 +27136,7 @@ var BarnesHutGravity = class extends gravity_default {
       const z = cell.cz - this.positions[i3 + 2];
       const r = Math.sqrt(x * x + y * y + z * z);
       const d = cell.size;
-      if (d / r < theta) {
+      if (d < theta * r) {
         const fact = cell.mass / (r * r * r);
         this.accelerations[i3] += fact * x;
         this.accelerations[i3 + 1] += fact * y;
@@ -27268,98 +27179,9 @@ var BarnesHutGravity = class extends gravity_default {
 var bh_default = BarnesHutGravity;
 
 // dist/gravity/bh-threaded.js
-import.meta.env = env_exports;
-var BarnesHutThreadedGravity = class extends gravity_default {
-  constructor(orbs, params2, allocLen) {
-    super(orbs, params2, allocLen);
-    this.pool = new Array(~~params2.threads).fill().map(() => {
-      const url = import.meta.url;
-      return new Worker(url.includes("gravity") ? new URL("../../worker/bh-thread.js", import.meta.url) : new URL("./gravity/worker/bh-thread.js", import.meta.url));
-    });
-  }
-  subdivide(cell) {
-    const size = cell.size / 2;
-    cell.leaf = false;
-    cell.octants = OCTANTS.map(([x, y, z]) => ({
-      x: cell.x + x * size,
-      y: cell.y + y * size,
-      z: cell.z + z * size,
-      size,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true
-    }));
-  }
-  getSubCell(cell, index) {
-    let i3 = index * 3;
-    const x = this.positions[i3] > cell.octants[6].x;
-    const y = this.positions[i3 + 1] > cell.octants[6].y;
-    const z = this.positions[i3 + 2] > cell.octants[6].z;
-    return cell.octants[OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)];
-  }
-  addParticle(cell, index) {
-    if (cell.index === null) {
-      cell.index = index;
-      return;
-    }
-    this.subdivide(cell);
-    const existingSubCell = this.getSubCell(cell, cell.index);
-    existingSubCell.index = cell.index;
-    const newSubCell = this.getSubCell(cell, index);
-    if (existingSubCell === newSubCell) {
-      this.addParticle(existingSubCell, index);
-    }
-    newSubCell.index = index;
-  }
-  makeOctree(origin, range) {
-    const rootCell = {
-      x: origin,
-      y: origin,
-      z: origin,
-      size: range,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true
-    };
-    for (let i = 0; i < this.len; i++) {
-      let cell = rootCell;
-      while (!cell.leaf) {
-        cell = this.getSubCell(cell, i);
-      }
-      this.addParticle(cell, i);
-    }
-    return rootCell;
-  }
-  massDistribution(cell) {
-    if (cell.leaf) {
-      let i3 = cell.index * 3;
-      cell.cx = this.positions[i3];
-      cell.cy = this.positions[i3 + 1];
-      cell.cz = this.positions[i3 + 2];
-      cell.mass = this.masses[cell.index];
-    } else {
-      for (let i = 0, n = cell.octants.length; i < n; i++) {
-        const subCell = cell.octants[i];
-        if (subCell.index !== null) {
-          this.massDistribution(subCell);
-          cell.mass += subCell.mass;
-          cell.cx += subCell.cx * subCell.mass;
-          cell.cy += subCell.cy * subCell.mass;
-          cell.cz += subCell.cz * subCell.mass;
-        }
-      }
-      cell.cx /= cell.mass;
-      cell.cy /= cell.mass;
-      cell.cz /= cell.mass;
-    }
+var BarnesHutThreadedGravity = class extends mix(p2p_threaded_default, bh_default) {
+  constructor(orbs, params2, allocLen, workerName = "bh-thread") {
+    super(orbs, params2, allocLen, workerName);
   }
   fill(cell, cells, flag) {
     const s = flag.shift;
@@ -27430,131 +27252,13 @@ var BarnesHutThreadedGravity = class extends gravity_default {
     });
     return this.solve(collided);
   }
-  free() {
-    super.free();
-    this.pool.forEach((worker) => worker.terminate());
-  }
 };
 var bh_threaded_default = BarnesHutThreadedGravity;
 
 // dist/gravity/bh-threaded-sab.js
-import.meta.env = env_exports;
-var BarnesHutThreadedSABGravity = class extends gravity_default {
-  constructor(orbs, params2, allocLen) {
-    super(orbs, params2, allocLen);
-    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
-    this.positions = new Float32Array(this.positionsBuffer);
-    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
-    this.speeds = new Float32Array(this.speedsBuffer);
-    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4);
-    this.accelerations = new Float32Array(this.accelerationsBuffer);
-    this.massesBuffer = new SharedArrayBuffer(allocLen * 4);
-    this.masses = new Float32Array(this.massesBuffer);
-    this.pool = new Array(~~params2.threads).fill().map(() => {
-      const url = import.meta.url;
-      return new Worker(url.includes("gravity") ? new URL("../../worker/bh-thread-sab.js", import.meta.url) : new URL("./gravity/worker/bh-thread-sab.js", import.meta.url));
-    });
-    this.pool.forEach((worker) => {
-      worker.postMessage([
-        this.accelerationsBuffer,
-        this.positionsBuffer,
-        this.massesBuffer
-      ]);
-    });
-    orbs.forEach(({position, mass, speed, temperature}, i) => {
-      this.positions[i * 3] = position.x;
-      this.positions[i * 3 + 1] = position.y;
-      this.positions[i * 3 + 2] = position.z;
-      this.speeds[i * 3] = speed.x;
-      this.speeds[i * 3 + 1] = speed.y;
-      this.speeds[i * 3 + 2] = speed.z;
-      this.masses[i] = mass;
-      this.temperatures[i] = temperature;
-    });
-  }
-  subdivide(cell) {
-    const size = cell.size / 2;
-    cell.leaf = false;
-    cell.octants = OCTANTS.map(([x, y, z]) => ({
-      x: cell.x + x * size,
-      y: cell.y + y * size,
-      z: cell.z + z * size,
-      size,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true
-    }));
-  }
-  getSubCell(cell, index) {
-    let i3 = index * 3;
-    const x = this.positions[i3] > cell.octants[6].x;
-    const y = this.positions[i3 + 1] > cell.octants[6].y;
-    const z = this.positions[i3 + 2] > cell.octants[6].z;
-    return cell.octants[OCTANTS.findIndex(([xc, yc, zc]) => !!xc == x && !!yc == y && !!zc == z)];
-  }
-  addParticle(cell, index) {
-    if (cell.index === null) {
-      cell.index = index;
-      return;
-    }
-    this.subdivide(cell);
-    const existingSubCell = this.getSubCell(cell, cell.index);
-    existingSubCell.index = cell.index;
-    const newSubCell = this.getSubCell(cell, index);
-    if (existingSubCell === newSubCell) {
-      this.addParticle(existingSubCell, index);
-    }
-    newSubCell.index = index;
-  }
-  makeOctree(origin, range) {
-    const rootCell = {
-      x: origin,
-      y: origin,
-      z: origin,
-      size: range,
-      index: null,
-      mass: 0,
-      cx: 0,
-      cy: 0,
-      cz: 0,
-      octants: null,
-      leaf: true
-    };
-    for (let i = 0; i < this.len; i++) {
-      let cell = rootCell;
-      while (!cell.leaf) {
-        cell = this.getSubCell(cell, i);
-      }
-      this.addParticle(cell, i);
-    }
-    return rootCell;
-  }
-  massDistribution(cell) {
-    if (cell.leaf) {
-      let i3 = cell.index * 3;
-      cell.cx = this.positions[i3];
-      cell.cy = this.positions[i3 + 1];
-      cell.cz = this.positions[i3 + 2];
-      cell.mass = this.masses[cell.index];
-    } else {
-      for (let i = 0, n = cell.octants.length; i < n; i++) {
-        const subCell = cell.octants[i];
-        if (subCell.index !== null) {
-          this.massDistribution(subCell);
-          cell.mass += subCell.mass;
-          cell.cx += subCell.cx * subCell.mass;
-          cell.cy += subCell.cy * subCell.mass;
-          cell.cz += subCell.cz * subCell.mass;
-        }
-      }
-      cell.cx /= cell.mass;
-      cell.cy /= cell.mass;
-      cell.cz /= cell.mass;
-    }
+var BarnesHutThreadedSABGravity = class extends mix(bh_default, p2p_threaded_sab_default) {
+  constructor(orbs, params2, allocLen, workerName = "bh-thread-sab") {
+    super(orbs, params2, allocLen, workerName);
   }
   fill(cell, cells, flag) {
     const s = flag.shift;
@@ -27635,6 +27339,7 @@ var colorModes = {
 };
 var particles;
 var gravity;
+var gui;
 var backends = {
   js_p2p: p2p_default,
   rust_p2p: P2PRustGravity,
@@ -27644,8 +27349,6 @@ var backends = {
   js_bh_threaded: bh_threaded_default,
   js_bh_sab: bh_threaded_sab_default,
   js_fmm: fmm_default,
-  rust_fmm: FMMRustGravity,
-  rust_tree: TreeRustGravity,
   js_none: none_default,
   rust_none: RustNoGravity
 };
@@ -27660,13 +27363,7 @@ if (typeof SharedArrayBuffer === "undefined") {
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
-var params = new Proxy({...presets_default.remembered[preset][0]}, {
-  set(target, key, value) {
-    target[key] = value;
-    gravity?.params_change(target, key, value);
-    return true;
-  }
-});
+var params = {...presets_default.remembered[preset][0]};
 var renderer = new WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -27715,6 +27412,39 @@ async function animate() {
   raf = requestAnimationFrame(animate);
 }
 async function render() {
+  if (newOrb !== null) {
+    raycaster.setFromCamera(mouse, camera);
+    if (newOrb.iter === 0) {
+      const {escapeDistance} = params;
+      const position = new Vector3();
+      position.copy(raycaster.ray.origin);
+      position.addScaledVector(raycaster.ray.direction, 2e3);
+      if (position.length() > escapeDistance) {
+        position.normalize().multiplyScalar(escapeDistance * 0.9);
+      }
+      newOrb.iter++;
+      const speed = new Vector3();
+      speed.copy(raycaster.ray.direction);
+      speed.multiplyScalar(newOrb.speed);
+      const mass = Math.pow(newOrb.iter / 50, 4) * params.mass;
+      newOrb.orb = {
+        position,
+        speed,
+        mass,
+        temperature: massToTemperature(mass)
+      };
+      gravity.grow([newOrb.orb]);
+    } else {
+      newOrb.iter++;
+      newOrb.orb.speed.copy(raycaster.ray.direction);
+      newOrb.orb.speed.multiplyScalar(newOrb.speed);
+      newOrb.orb.mass = Math.pow(newOrb.iter / 50, 4) * params.mass;
+      newOrb.orb.temperature = massToTemperature(newOrb.orb.mass);
+      gravity.set_orb(gravity.len - 1, newOrb.orb);
+    }
+    particles.geometry.attributes.temperature.needsUpdate = true;
+    particles.geometry.attributes.mass.needsUpdate = true;
+  }
   gravity.frog_leap();
   const newLen = await gravity.simulate();
   gravity.frog_drop();
@@ -27725,28 +27455,6 @@ async function render() {
   }
   particles.geometry.attributes.position.needsUpdate = true;
   controls.update();
-  if (newOrb !== null) {
-    newOrb.iter !== 0 && gravity.shrink(1);
-    newOrb.iter++;
-    raycaster.setFromCamera(mouse, camera);
-    const position = new Vector3();
-    position.copy(raycaster.ray.origin);
-    position.addScaledVector(raycaster.ray.direction, 1e3);
-    const speed = new Vector3();
-    speed.copy(raycaster.ray.direction);
-    speed.multiplyScalar(newOrb.speed);
-    const mass = Math.pow(newOrb.iter / 50, 4) * params.mass;
-    gravity.grow([
-      {
-        position,
-        speed,
-        mass,
-        temperature: massToTemperature(mass)
-      }
-    ]);
-    particles.geometry.attributes.temperature.needsUpdate = true;
-    particles.geometry.attributes.mass.needsUpdate = true;
-  }
   composer.render();
 }
 function init2() {
@@ -27797,7 +27505,7 @@ function restart() {
   raf = requestAnimationFrame(animate);
 }
 function initGUI() {
-  const gui = new GUI$1({
+  gui = new GUI$1({
     load: presets_default,
     preset
   });
@@ -27840,6 +27548,7 @@ function initGUI() {
   simulation.add(params, "escapeDistance", 0, 1e5, 1);
   simulation.add(params, "blackHoleMassThreshold", 0, 2e6, 1).onChange((v) => particles.material.uniforms.blackHoleMassThreshold.value = v);
   simulation.open();
+  gui.add(params, "creationMode");
   gui.add({
     "Go 4d": () => {
       window.open("https://paradoxxxzero.github.io/katannealation");
@@ -27857,37 +27566,26 @@ function initGUI() {
 }
 var raycaster = new Raycaster();
 var mouse = new Vector2();
-var delay = null;
 window.addEventListener("pointerdown", function(event) {
+  if (gui.domElement.contains(event.target) || stats.dom.contains(event.target)) {
+    return;
+  }
   mouse.set(event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
-  const activateNewOrb = () => {
+  if (params.creationMode) {
     params.autoRotate = false;
     controls.autoRotate = false;
-    delay = null;
     newOrb = {
       iter: 0,
       speed: 20 * (1 + event.button)
     };
-  };
-  if (event.shiftKey) {
-    activateNewOrb();
-  } else {
-    delay = setTimeout(activateNewOrb, 125);
   }
 });
 window.addEventListener("pointermove", function(event) {
-  if (delay) {
-    clearTimeout(delay);
-    delay = null;
-  } else if (newOrb !== null) {
+  if (newOrb !== null) {
     mouse.set(event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
   }
 });
 window.addEventListener("pointerup", function() {
-  if (delay) {
-    clearTimeout(delay);
-    delay = null;
-  }
   newOrb = null;
 });
 var wasmPromise = wasm_default("./dist/wasm/index_bg.wasm");
