@@ -25472,7 +25472,7 @@ var presets_default = {
   remembered: {
     Cube: {
       0: {
-        backend: "rust_p2p",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25486,12 +25486,12 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "cube",
-        number: 1250,
+        number: 3e3,
         range: 1e3,
         speed: 5,
         mass: 10,
         blackHoleMass: 0,
-        scale: 50,
+        scale: 35,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
@@ -25538,7 +25538,7 @@ var presets_default = {
     },
     Galaxy: {
       0: {
-        backend: "js_bh",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25571,7 +25571,7 @@ var presets_default = {
     },
     BulbGalaxy: {
       0: {
-        backend: "js_bh",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25604,7 +25604,7 @@ var presets_default = {
     },
     SlowGalaxy: {
       0: {
-        backend: "js_bh",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25637,7 +25637,7 @@ var presets_default = {
     },
     Sphere: {
       0: {
-        backend: "rust_p2p",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25651,7 +25651,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "sphere",
-        number: 1e3,
+        number: 4e3,
         range: 1500,
         speed: 1,
         mass: 10,
@@ -25670,7 +25670,7 @@ var presets_default = {
     },
     HarmonicSphere: {
       0: {
-        backend: "js_p2p_threaded",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25684,7 +25684,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "harmonicSphere",
-        number: 4e3,
+        number: 5e3,
         range: 1500,
         speed: 15,
         mass: 10,
@@ -25736,7 +25736,7 @@ var presets_default = {
     },
     CollidingGalaxies: {
       0: {
-        backend: "js_bh",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,
@@ -25826,7 +25826,7 @@ var presets_default = {
         gravitationalConstant: 6.67,
         simulationSpeed: 0.5,
         softening: 10,
-        collisions: true,
+        collisions: false,
         collisionThreshold: 10,
         escapeDistance: 2e3,
         blackHoleMassThreshold: 2500,
@@ -26000,7 +26000,7 @@ var presets_default = {
     },
     LittleExpand: {
       0: {
-        backend: "js_p2p_sab",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
         theta: 1,
@@ -26033,10 +26033,10 @@ var presets_default = {
     },
     BigSphere: {
       0: {
-        backend: "js_fmm",
+        backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
-        theta: 1,
+        theta: 2,
         autoRotate: false,
         fxaa: true,
         bloom: true,
@@ -26047,7 +26047,7 @@ var presets_default = {
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "sphere",
-        number: 15e3,
+        number: 2e4,
         range: 2e3,
         speed: 0,
         mass: 10,
@@ -26055,7 +26055,7 @@ var presets_default = {
         scale: 30,
         colorMode: "Temperature",
         gravitationalConstant: 6.67,
-        simulationSpeed: 2,
+        simulationSpeed: 1,
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
@@ -26196,6 +26196,66 @@ function wasm_memory() {
   var ret = wasm.wasm_memory();
   return takeObject(ret);
 }
+var BarnesHutRustGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(BarnesHutRustGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_barneshutrustgravity_free(ptr);
+  }
+  constructor(orbs, params2, alloc_len) {
+    try {
+      var ret = wasm.barneshutrustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
+      return BarnesHutRustGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  positions_ptr() {
+    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
+    return ret;
+  }
+  speeds_ptr() {
+    var ret = wasm.barneshutrustgravity_speeds_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap() {
+    wasm.barneshutrustgravity_frog_leap(this.ptr);
+  }
+  simulate() {
+    var ret = wasm.barneshutrustgravity_simulate(this.ptr);
+    return ret >>> 0;
+  }
+  frog_drop() {
+    wasm.barneshutrustgravity_frog_drop(this.ptr);
+  }
+  grow(orbs) {
+    try {
+      wasm.barneshutrustgravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.barneshutrustgravity_shrink(this.ptr, n);
+  }
+  set_orb(i, orb) {
+    wasm.barneshutrustgravity_set_orb(this.ptr, i, addHeapObject(orb));
+  }
+};
 var P2PRustGravity = class {
   static __wrap(ptr) {
     const obj = Object.create(P2PRustGravity.prototype);
@@ -26217,30 +26277,30 @@ var P2PRustGravity = class {
     }
   }
   positions_ptr() {
-    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
-    var ret = wasm.p2prustgravity_speeds_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_speeds_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap() {
-    wasm.p2prustgravity_frog_leap(this.ptr);
+    wasm.barneshutrustgravity_frog_leap(this.ptr);
   }
   simulate() {
     var ret = wasm.p2prustgravity_simulate(this.ptr);
     return ret >>> 0;
   }
   frog_drop() {
-    wasm.p2prustgravity_frog_drop(this.ptr);
+    wasm.barneshutrustgravity_frog_drop(this.ptr);
   }
   grow(orbs) {
     try {
@@ -26250,7 +26310,7 @@ var P2PRustGravity = class {
     }
   }
   shrink(n) {
-    wasm.p2prustgravity_shrink(this.ptr, n);
+    wasm.barneshutrustgravity_shrink(this.ptr, n);
   }
   set_orb(i, orb) {
     wasm.p2prustgravity_set_orb(this.ptr, i, addHeapObject(orb));
@@ -26277,15 +26337,15 @@ var RustNoGravity = class {
     }
   }
   positions_ptr() {
-    var ret = wasm.p2prustgravity_positions_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
     return ret;
   }
   masses_ptr() {
-    var ret = wasm.p2prustgravity_masses_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
     return ret;
   }
   temperatures_ptr() {
-    var ret = wasm.p2prustgravity_temperatures_ptr(this.ptr);
+    var ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
     return ret;
   }
   frog_leap() {
@@ -26306,7 +26366,7 @@ var RustNoGravity = class {
     }
   }
   shrink(n) {
-    wasm.p2prustgravity_shrink(this.ptr, n);
+    wasm.barneshutrustgravity_shrink(this.ptr, n);
   }
   set_orb(i, orb) {
     wasm.rustnogravity_set_orb(this.ptr, i, addHeapObject(orb));
@@ -26375,6 +26435,10 @@ async function init(input) {
       wasm.__wbindgen_free(arg0, arg1);
     }
   };
+  imports.wbg.__wbindgen_memory = function() {
+    var ret = wasm.memory;
+    return addHeapObject(ret);
+  };
   imports.wbg.__wbindgen_json_serialize = function(arg0, arg1) {
     const obj = getObject(arg1);
     var ret = JSON.stringify(obj === void 0 ? null : obj);
@@ -26382,10 +26446,6 @@ async function init(input) {
     var len0 = WASM_VECTOR_LEN;
     getInt32Memory0()[arg0 / 4 + 1] = len0;
     getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-  imports.wbg.__wbindgen_memory = function() {
-    var ret = wasm.memory;
-    return addHeapObject(ret);
   };
   imports.wbg.__wbindgen_throw = function(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
@@ -27340,6 +27400,7 @@ var colorModes = {
 var particles;
 var gravity;
 var gui;
+var started = false;
 var backends = {
   js_p2p: p2p_default,
   rust_p2p: P2PRustGravity,
@@ -27348,6 +27409,7 @@ var backends = {
   js_bh: bh_default,
   js_bh_threaded: bh_threaded_default,
   js_bh_sab: bh_threaded_sab_default,
+  rust_bh: BarnesHutRustGravity,
   js_fmm: fmm_default,
   js_none: none_default,
   rust_none: RustNoGravity
@@ -27448,6 +27510,10 @@ async function render() {
   gravity.frog_leap();
   const newLen = await gravity.simulate();
   gravity.frog_drop();
+  if (params.backend.startsWith("rust") && !particles.geometry.attributes.temperature.array.buffer.byteLength) {
+    console.warn("Bad rust memory");
+    setRustMemory(particles.geometry, particles.geometry.attributes.temperature.count);
+  }
   if (newLen !== particles.geometry.drawRange.count) {
     particles.geometry.setDrawRange(0, newLen);
     particles.geometry.attributes.temperature.needsUpdate = true;
@@ -27456,6 +27522,15 @@ async function render() {
   particles.geometry.attributes.position.needsUpdate = true;
   controls.update();
   composer.render();
+}
+function setRustMemory(geometry, allocLength) {
+  const {buffer} = wasm_memory();
+  const positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * allocLength);
+  const masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength);
+  const temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), allocLength);
+  geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("mass", new BufferAttribute(masses, 1).setUsage(DynamicDrawUsage));
+  geometry.setAttribute("temperature", new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage));
 }
 function init2() {
   const {
@@ -27466,24 +27541,18 @@ function init2() {
     colorMode
   } = params;
   const orbs = configurations_exports[configuration](params);
-  let positions, masses, temperatures;
   const Backend = backends[backend] || backends[fallbacks[backend]];
   const allocLength = orbs.length + 1e3;
   gravity = new Backend(orbs, params, allocLength);
-  if (backend.startsWith("rust")) {
-    const {buffer} = wasm_memory();
-    positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * allocLength);
-    masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength);
-    temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), allocLength);
-  } else {
-    ;
-    ({positions, masses, temperatures} = gravity);
-  }
   const geometry = new BufferGeometry();
   geometry.setDrawRange(0, orbs.length);
-  geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
-  geometry.setAttribute("mass", new BufferAttribute(masses, 1).setUsage(DynamicDrawUsage));
-  geometry.setAttribute("temperature", new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage));
+  if (backend.startsWith("rust")) {
+    setRustMemory(geometry, allocLength);
+  } else {
+    geometry.setAttribute("position", new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage));
+    geometry.setAttribute("mass", new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage));
+    geometry.setAttribute("temperature", new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage));
+  }
   geometry.setDrawRange(0, orbs.length);
   const material = new ShaderMaterial({
     vertexShader: vertexShader_default,
@@ -27498,6 +27567,9 @@ function init2() {
   scene.add(particles);
 }
 function restart() {
+  if (!started) {
+    return;
+  }
   cancelAnimationFrame(raf);
   scene.clear();
   gravity.free();
@@ -27592,5 +27664,6 @@ var wasmPromise = wasm_default("./dist/wasm/index_bg.wasm");
 wasmPromise.then(() => {
   init2();
   initGUI();
+  started = true;
   raf = requestAnimationFrame(animate);
 });
