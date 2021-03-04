@@ -375,6 +375,50 @@ export const collidingDisc = ({
 
   return [...firstDisc, ...secondDisc]
 }
+export const collidingBulb = ({
+  number,
+  range,
+  mass,
+  speed,
+  blackHoleMass,
+  gravitationalConstant,
+}) => {
+  const halfNumber = ~~(number / 2)
+
+  const firstShift = new Vector3(range * 0.15, range * 0.15, -range * 0.25)
+  const firstEuler = new Euler(Math.PI / 4, 0, 0)
+  const firstSpeed = new Vector3(-speed, -speed, 0)
+  const firstDisc = bulb({
+    number: halfNumber,
+    range: range / 3,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant,
+  })
+  firstDisc.forEach(({ position, speed }) => {
+    position.applyEuler(firstEuler).add(firstShift)
+    speed.applyEuler(firstEuler).add(firstSpeed)
+  })
+
+  const secondShift = new Vector3(-range * 0.15, -range * 0.15, range * 0.25)
+  const secondEuler = new Euler(-Math.PI / 8, 0, 0)
+  const secondSpeed = new Vector3(speed, 0, 0)
+  const secondDisc = bulb({
+    number: halfNumber,
+    range: range / 2,
+    mass,
+    speed: 1,
+    blackHoleMass,
+    gravitationalConstant,
+  })
+  secondDisc.forEach(({ position, speed }) => {
+    position.applyEuler(secondEuler).add(secondShift)
+    speed.applyEuler(secondEuler).add(secondSpeed)
+  })
+
+  return [...firstDisc, ...secondDisc]
+}
 
 export const fountain = ({ number, range, mass, speed, blackHoleMass }) => {
   const spherical = new Spherical()
