@@ -25781,6 +25781,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -25823,6 +25824,7 @@ var presets_default = {
         dimensions: 4,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 1,
         xz: 1,
         xw: 1,
@@ -25865,6 +25867,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -25907,6 +25910,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -25949,6 +25953,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -25991,6 +25996,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26033,6 +26039,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26075,6 +26082,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26117,6 +26125,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26159,6 +26168,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26201,6 +26211,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26243,6 +26254,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26285,6 +26297,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26327,6 +26340,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26369,6 +26383,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26411,6 +26426,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26453,6 +26469,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26495,6 +26512,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26537,6 +26555,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26579,6 +26598,7 @@ var presets_default = {
         dimensions: 3,
         zFov: 45,
         wFov: 45,
+        w: 1500,
         xy: 0,
         xz: 0,
         xw: 5,
@@ -26611,6 +26631,49 @@ var presets_default = {
         softening: 10,
         collisions: false,
         collisionThreshold: 10,
+        escapeDistance: 2e3,
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
+      }
+    },
+    Bench: {
+      0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        w: 1500,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
+        backend: "rust_p2p",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 7,
+        theta: 1,
+        autoRotate: true,
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "cube",
+        number: 1e3,
+        range: 1e3,
+        speed: 5,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 35,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 0.5,
+        softening: 10,
+        collisions: false,
+        collisionThreshold: 25,
         escapeDistance: 2e3,
         blackHoleMassThreshold: 1e4,
         creationMode: false
@@ -26768,8 +26831,8 @@ var BarnesHutRustGravity = class {
       heap[stack_pointer++] = void 0;
     }
   }
-  positions_ptr() {
-    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
+  xyz_ptr() {
+    var ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
@@ -26807,6 +26870,82 @@ var BarnesHutRustGravity = class {
   set_orb(i, orb) {
     wasm.barneshutrustgravity_set_orb(this.ptr, i, addHeapObject(orb));
   }
+  project() {
+    wasm.barneshutrustgravity_project(this.ptr);
+  }
+  params_change(params2) {
+    try {
+      wasm.barneshutrustgravity_params_change(this.ptr, addBorrowedObject(params2));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+};
+var NoRustGravity = class {
+  static __wrap(ptr) {
+    const obj = Object.create(NoRustGravity.prototype);
+    obj.ptr = ptr;
+    return obj;
+  }
+  free() {
+    const ptr = this.ptr;
+    this.ptr = 0;
+    wasm.__wbg_norustgravity_free(ptr);
+  }
+  constructor(orbs, params2, alloc_len) {
+    try {
+      var ret = wasm.norustgravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
+      return NoRustGravity.__wrap(ret);
+    } finally {
+      heap[stack_pointer++] = void 0;
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  xyz_ptr() {
+    var ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
+    return ret;
+  }
+  masses_ptr() {
+    var ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
+    return ret;
+  }
+  temperatures_ptr() {
+    var ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
+    return ret;
+  }
+  frog_leap() {
+    wasm.norustgravity_frog_leap(this.ptr);
+  }
+  simulate() {
+    var ret = wasm.norustgravity_simulate(this.ptr);
+    return ret >>> 0;
+  }
+  frog_drop() {
+    wasm.norustgravity_frog_drop(this.ptr);
+  }
+  grow(orbs) {
+    try {
+      wasm.norustgravity_grow(this.ptr, addBorrowedObject(orbs));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
+  shrink(n) {
+    wasm.barneshutrustgravity_shrink(this.ptr, n);
+  }
+  set_orb(i, orb) {
+    wasm.norustgravity_set_orb(this.ptr, i, addHeapObject(orb));
+  }
+  project() {
+    wasm.barneshutrustgravity_project(this.ptr);
+  }
+  params_change(params2) {
+    try {
+      wasm.norustgravity_params_change(this.ptr, addBorrowedObject(params2));
+    } finally {
+      heap[stack_pointer++] = void 0;
+    }
+  }
 };
 var P2PRustGravity = class {
   static __wrap(ptr) {
@@ -26828,8 +26967,8 @@ var P2PRustGravity = class {
       heap[stack_pointer++] = void 0;
     }
   }
-  positions_ptr() {
-    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
+  xyz_ptr() {
+    var ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
     return ret;
   }
   speeds_ptr() {
@@ -26867,61 +27006,15 @@ var P2PRustGravity = class {
   set_orb(i, orb) {
     wasm.p2prustgravity_set_orb(this.ptr, i, addHeapObject(orb));
   }
-};
-var RustNoGravity = class {
-  static __wrap(ptr) {
-    const obj = Object.create(RustNoGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
+  project() {
+    wasm.barneshutrustgravity_project(this.ptr);
   }
-  free() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    wasm.__wbg_rustnogravity_free(ptr);
-  }
-  constructor(orbs, params2, alloc_len) {
+  params_change(params2) {
     try {
-      var ret = wasm.rustnogravity_new(addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      return RustNoGravity.__wrap(ret);
-    } finally {
-      heap[stack_pointer++] = void 0;
-      heap[stack_pointer++] = void 0;
-    }
-  }
-  positions_ptr() {
-    var ret = wasm.barneshutrustgravity_positions_ptr(this.ptr);
-    return ret;
-  }
-  masses_ptr() {
-    var ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
-    return ret;
-  }
-  temperatures_ptr() {
-    var ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
-    return ret;
-  }
-  frog_leap() {
-    wasm.rustnogravity_frog_leap(this.ptr);
-  }
-  simulate() {
-    var ret = wasm.rustnogravity_simulate(this.ptr);
-    return ret >>> 0;
-  }
-  frog_drop() {
-    wasm.rustnogravity_frog_drop(this.ptr);
-  }
-  grow(orbs) {
-    try {
-      wasm.rustnogravity_grow(this.ptr, addBorrowedObject(orbs));
+      wasm.p2prustgravity_params_change(this.ptr, addBorrowedObject(params2));
     } finally {
       heap[stack_pointer++] = void 0;
     }
-  }
-  shrink(n) {
-    wasm.barneshutrustgravity_shrink(this.ptr, n);
-  }
-  set_orb(i, orb) {
-    wasm.rustnogravity_set_orb(this.ptr, i, addHeapObject(orb));
   }
 };
 async function load2(module, imports) {
@@ -26987,10 +27080,6 @@ async function init(input) {
       wasm.__wbindgen_free(arg0, arg1);
     }
   };
-  imports.wbg.__wbindgen_memory = function() {
-    var ret = wasm.memory;
-    return addHeapObject(ret);
-  };
   imports.wbg.__wbindgen_json_serialize = function(arg0, arg1) {
     const obj = getObject(arg1);
     var ret = JSON.stringify(obj === void 0 ? null : obj);
@@ -26998,6 +27087,10 @@ async function init(input) {
     var len0 = WASM_VECTOR_LEN;
     getInt32Memory0()[arg0 / 4 + 1] = len0;
     getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+  };
+  imports.wbg.__wbindgen_memory = function() {
+    var ret = wasm.memory;
+    return addHeapObject(ret);
   };
   imports.wbg.__wbindgen_throw = function(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
@@ -27112,6 +27205,9 @@ var Gravity = class {
     this.N = params2.dimensions;
     this.vectorSuffix = "xyzw";
     this.len = orbs.length;
+    if (this.N > 3) {
+      this.projector = new HyperRenderer(params2.wFov * Math.PI / 180, params2.w);
+    }
     this.xyz = new Float32Array(allocLen * 3);
     this.positions = this.N === 3 ? this.xyz : new Float32Array(allocLen * this.N);
     this.speeds = new Float32Array(this.N * allocLen);
@@ -27119,6 +27215,12 @@ var Gravity = class {
     this.masses = new Float32Array(allocLen);
     this.temperatures = new Float32Array(allocLen);
     orbs.forEach((orb, i) => this.set_orb(i, orb));
+  }
+  params_change(params2) {
+    if (this.projector) {
+      this.projector.fov = params2.wFov * Math.PI / 180;
+      this.projector.w = params2.w;
+    }
   }
   frog_leap() {
     const dt = this.params.simulationSpeed;
@@ -27247,6 +27349,9 @@ var Gravity = class {
         this.speeds[I + s] += this.accelerations[I + s] * half_dt;
       }
     }
+    if (this.projector) {
+      this.projector.rotate(this.params);
+    }
   }
   set_orb(i, {position, mass, speed, temperature}) {
     let I = i * this.N;
@@ -27273,7 +27378,7 @@ var Gravity = class {
     }
     this.len -= n;
   }
-  project(projector) {
+  project() {
     if (this.N === 3) {
       return;
     } else if (this.N === 2) {
@@ -27288,7 +27393,7 @@ var Gravity = class {
       for (let i = 0, n = this.len; i < n; i++) {
         let i3 = i * 3;
         let i4 = i3 + i;
-        let p = projector.project([
+        let p = this.projector.project([
           this.positions[i4],
           this.positions[i4 + 1],
           this.positions[i4 + 2],
@@ -27314,7 +27419,7 @@ var gravity_default = Gravity;
 
 // dist/gravity/p2p.js
 var P2PGravity = class extends gravity_default {
-  computeForce2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  simulate2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I];
     u[1] = this.positions[J + 1] - this.positions[I + 1];
     let distance2 = u[0] * u[0] + u[1] * u[1];
@@ -27327,7 +27432,7 @@ var P2PGravity = class extends gravity_default {
     a[0] += u[0] * fact;
     a[1] += u[1] * fact;
   }
-  computeForce3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  simulate3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I];
     u[1] = this.positions[J + 1] - this.positions[I + 1];
     u[2] = this.positions[J + 2] - this.positions[I + 2];
@@ -27343,7 +27448,7 @@ var P2PGravity = class extends gravity_default {
     a[1] += u[1] * fact;
     a[2] += u[2] * fact;
   }
-  computeForce4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  simulate4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I];
     u[1] = this.positions[J + 1] - this.positions[I + 1];
     u[2] = this.positions[J + 2] - this.positions[I + 2];
@@ -27369,7 +27474,7 @@ var P2PGravity = class extends gravity_default {
     } = this.params;
     const softening2 = softening * softening;
     const threshold2 = collisionThreshold * collisionThreshold;
-    const computeForce = this[`computeForce${this.N}`].bind(this);
+    const simulate = this[`simulate${this.N}`].bind(this);
     const collided = [];
     const u = new Array(this.N).fill(0);
     const a = new Array(this.N).fill(0);
@@ -27381,7 +27486,7 @@ var P2PGravity = class extends gravity_default {
           continue;
         }
         let J = j * this.N;
-        computeForce(a, u, i, I, j, J, softening2, collisions, threshold2, collided);
+        simulate(a, u, i, I, j, J, softening2, collisions, threshold2, collided);
       }
       for (let s = 0; s < this.N; s++) {
         this.accelerations[I + s] = a[s] * gravitationalConstant;
@@ -27488,10 +27593,10 @@ var NoGravity = class extends gravity_default {
   frog_leap() {
     const dt = this.params.simulationSpeed;
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i * 3;
-      this.positions[i3] += this.speeds[i3] * dt;
-      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt;
-      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt;
+      let I = i * this.N;
+      for (let s = 0; s < this.N; s++) {
+        this.positions[I + s] += this.speeds[I + s] * dt;
+      }
     }
   }
   simulate() {
@@ -27993,7 +28098,7 @@ var backends = {
   rust_bh: BarnesHutRustGravity,
   js_fmm: fmm_default,
   js_none: none_default,
-  rust_none: RustNoGravity
+  rust_none: NoRustGravity
 };
 var fallbacks = {
   js_p2p_sab: "js_p2p_threaded",
@@ -28006,7 +28111,13 @@ if (typeof SharedArrayBuffer === "undefined") {
 var stats = new statsjs_default();
 var getPreset = () => decodeURIComponent(location.hash.replace(/^#/, "")) || presets_default.preset;
 var preset = getPreset();
-var params = {...presets_default.remembered[preset][0]};
+var params = new Proxy({...presets_default.remembered[preset][0]}, {
+  set(target, key, value) {
+    target[key] = value;
+    gravity?.params_change(target, key, value);
+    return true;
+  }
+});
 var renderer = new WebGLRenderer();
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -28017,7 +28128,6 @@ var scene = new Scene();
 var camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2e4);
 camera.position.set(1500, 1500, 1500);
 camera.lookAt(0, 0, 0);
-var hyperRenderer = new HyperRenderer(Math.PI / 2, 1500);
 var controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 1;
 controls.maxDistance = 2e4;
@@ -28056,9 +28166,6 @@ async function animate() {
   raf = requestAnimationFrame(animate);
 }
 async function render() {
-  if (params.dimensions > 3) {
-    hyperRenderer.rotate(params);
-  }
   if (newOrb !== null) {
     raycaster.setFromCamera(mouse, camera);
     if (newOrb.iter === 0) {
@@ -28095,7 +28202,7 @@ async function render() {
   gravity.frog_leap();
   const newLen = await gravity.simulate();
   gravity.frog_drop();
-  gravity.project?.(hyperRenderer);
+  gravity.project();
   if (params.backend.startsWith("rust") && !particles.geometry.attributes.temperature.array.buffer.byteLength) {
     console.warn("Bad rust memory");
     setRustMemory(particles.geometry, particles.geometry.attributes.temperature.count);
@@ -28111,7 +28218,7 @@ async function render() {
 }
 function setRustMemory(geometry, allocLength) {
   const {buffer} = wasm_memory();
-  const positions = new Float32Array(buffer, gravity.positions_ptr(), 3 * allocLength);
+  const positions = new Float32Array(buffer, gravity.xyz_ptr(), 3 * allocLength);
   const masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength);
   const temperatures = new Float32Array(buffer, gravity.temperatures_ptr(), allocLength);
   geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
@@ -28157,14 +28264,6 @@ function restart() {
     return;
   }
   cancelAnimationFrame(raf);
-  hyperRenderer.rotation = {
-    xy: 0,
-    xz: 0,
-    xw: 0,
-    yz: 0,
-    yw: 0,
-    zw: 0
-  };
   scene.clear();
   gravity.free();
   init2();
@@ -28180,7 +28279,8 @@ function initGUI() {
     camera.fov = v;
     camera.updateProjectionMatrix();
   });
-  gui.add(params, "wFov", 0, 180).onChange((v) => hyperRenderer.fov = v * Math.PI / 180);
+  gui.add(params, "wFov", 0, 180);
+  gui.add(params, "w", 0).name("Camera ana");
   const rotSpeed = gui.addFolder("4d rotation speed");
   rotSpeed.add(params, "xy", 0, 50);
   rotSpeed.add(params, "xz", 0, 50);
@@ -28207,7 +28307,7 @@ function initGUI() {
   fx.add(params, "afterImageDamp", 0, 1).onChange((v) => afterImagePass.uniforms.damp.value = v);
   const config = gui.addFolder("Configuration");
   config.add(params, "configuration", Object.keys(configurations_exports));
-  config.add(params, "number");
+  config.add(params, "number", 0);
   config.add(params, "range", 0, 5e3, 1).name("range (1e15m)");
   config.add(params, "speed", 0, 1e3).name("speed (1e2m.s)");
   config.add(params, "mass", 0, 1e3).name("mass (1e30kg)");

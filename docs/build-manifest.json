@@ -172,7 +172,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 20276,
+      "bytes": 21615,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -197,7 +197,7 @@
       "imports": []
     },
     "dist/wasm/index.js": {
-      "bytes": 13198,
+      "bytes": 14187,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -210,11 +210,16 @@
       "imports": []
     },
     "dist/gravity/gravity.js": {
-      "bytes": 6055,
-      "imports": []
+      "bytes": 6477,
+      "imports": [
+        {
+          "path": "_snowpack/pkg/four-js.js",
+          "kind": "import-statement"
+        }
+      ]
     },
     "dist/gravity/p2p.js": {
-      "bytes": 2903,
+      "bytes": 2664,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -232,7 +237,7 @@
       ]
     },
     "dist/gravity/none.js": {
-      "bytes": 447,
+      "bytes": 394,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -322,7 +327,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 14058,
+      "bytes": 13983,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -498,7 +503,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 20108
+          "bytesInOutput": 21440
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -507,22 +512,22 @@
           "bytesInOutput": 186
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 10570
+          "bytesInOutput": 11280
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 3401
         },
         "dist/gravity/gravity.js": {
-          "bytesInOutput": 6053
+          "bytesInOutput": 6390
         },
         "dist/gravity/p2p.js": {
-          "bytesInOutput": 2684
+          "bytesInOutput": 2660
         },
         "dist/gravity/fmm.js": {
           "bytesInOutput": 3670
         },
         "dist/gravity/none.js": {
-          "bytesInOutput": 447
+          "bytesInOutput": 392
         },
         "dist/utils.js": {
           "bytesInOutput": 874
@@ -543,10 +548,10 @@
           "bytesInOutput": 2211
         },
         "dist/index.js": {
-          "bytesInOutput": 11644
+          "bytesInOutput": 11529
         }
       },
-      "bytes": 1048117
+      "bytes": 1050302
     }
   }
 }
