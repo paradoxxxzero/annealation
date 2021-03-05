@@ -11,13 +11,9 @@ export default class P2PThreadedGravity extends Gravity {
   initThreadPool(workerName) {
     this.pool = new Array(~~this.params.threads).fill().map(() => {
       const url = import.meta.url
-      return new Worker(
-        // Handle bundling
-        url.includes('gravity')
-          ? new URL(`../../worker/${workerName}.js`, import.meta.url)
-          : new URL(`./gravity/worker/${workerName}.js`, import.meta.url),
-        { type: 'module' }
-      )
+      return new Worker(new URL(`./worker/${workerName}.js`, url), {
+        type: 'module',
+      })
     })
   }
 

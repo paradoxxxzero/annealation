@@ -219,7 +219,7 @@
       ]
     },
     "dist/gravity/p2p.js": {
-      "bytes": 2664,
+      "bytes": 3001,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -250,7 +250,7 @@
       "imports": []
     },
     "dist/gravity/p2p-threaded.js": {
-      "bytes": 2125,
+      "bytes": 2009,
       "imports": [
         {
           "path": "_snowpack/env.js",
@@ -267,7 +267,7 @@
       ]
     },
     "dist/gravity/p2p-threaded-sab.js": {
-      "bytes": 2257,
+      "bytes": 2108,
       "imports": [
         {
           "path": "dist/gravity/p2p-threaded.js",
@@ -438,10 +438,10 @@
       "entryPoint": "index.css",
       "inputs": {
         "index.css": {
-          "bytesInOutput": 42
+          "bytesInOutput": 30
         }
       },
-      "bytes": 58
+      "bytes": 31
     },
     "../~~bundle~~/dist/index.js": {
       "imports": [],
@@ -449,109 +449,109 @@
       "entryPoint": "dist/index.js",
       "inputs": {
         "_snowpack/pkg/dat.gui.js": {
-          "bytesInOutput": 86078
+          "bytesInOutput": 49822
         },
         "_snowpack/pkg/four-js.js": {
-          "bytesInOutput": 9635
+          "bytesInOutput": 3462
         },
         "_snowpack/pkg/common/three.module-d1385b42.js": {
-          "bytesInOutput": 738985
+          "bytesInOutput": 442592
         },
         "_snowpack/pkg/three.js": {
           "bytesInOutput": 0
         },
         "_snowpack/pkg/common/Pass-5767c87c.js": {
-          "bytesInOutput": 963
+          "bytesInOutput": 604
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/AfterimagePass.js": {
-          "bytesInOutput": 2706
+          "bytesInOutput": 1874
         },
         "_snowpack/pkg/three/examples/jsm/controls/OrbitControls.js": {
-          "bytesInOutput": 21710
+          "bytesInOutput": 11130
         },
         "_snowpack/pkg/common/CopyShader-c0a4c94f.js": {
-          "bytesInOutput": 525
+          "bytesInOutput": 416
         },
         "_snowpack/pkg/common/ShaderPass-da94d569.js": {
-          "bytesInOutput": 1249
+          "bytesInOutput": 764
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/EffectComposer.js": {
-          "bytesInOutput": 7425
+          "bytesInOutput": 4529
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/RenderPass.js": {
-          "bytesInOutput": 1605
+          "bytesInOutput": 916
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/UnrealBloomPass.js": {
-          "bytesInOutput": 12365
+          "bytesInOutput": 9199
         },
         "_snowpack/pkg/three/examples/jsm/shaders/FXAAShader.js": {
-          "bytesInOutput": 54260
+          "bytesInOutput": 48781
         },
         "dist/configurations.js": {
-          "bytesInOutput": 13327
+          "bytesInOutput": 7108
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
-          "bytesInOutput": 19135
+          "bytesInOutput": 8089
         },
         "dist/helpers.js": {
-          "bytesInOutput": 593
+          "bytesInOutput": 281
         },
         "dist/fragmentShader.js": {
-          "bytesInOutput": 669
+          "bytesInOutput": 622
         },
         "dist/vertexShader.js": {
-          "bytesInOutput": 1939
+          "bytesInOutput": 1861
         },
         "dist/presets.js": {
-          "bytesInOutput": 21440
+          "bytesInOutput": 12101
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
         },
         "_snowpack/env.js": {
-          "bytesInOutput": 186
+          "bytesInOutput": 100
         },
         "dist/wasm/index.js": {
-          "bytesInOutput": 11280
+          "bytesInOutput": 6484
         },
         "_snowpack/pkg/statsjs.js": {
-          "bytesInOutput": 3401
+          "bytesInOutput": 2198
         },
         "dist/gravity/gravity.js": {
-          "bytesInOutput": 6390
+          "bytesInOutput": 3588
         },
         "dist/gravity/p2p.js": {
-          "bytesInOutput": 2660
+          "bytesInOutput": 1384
         },
         "dist/gravity/fmm.js": {
-          "bytesInOutput": 3670
+          "bytesInOutput": 1651
         },
         "dist/gravity/none.js": {
-          "bytesInOutput": 392
+          "bytesInOutput": 231
         },
         "dist/utils.js": {
-          "bytesInOutput": 874
+          "bytesInOutput": 496
         },
         "dist/gravity/p2p-threaded.js": {
-          "bytesInOutput": 1908
+          "bytesInOutput": 903
         },
         "dist/gravity/p2p-threaded-sab.js": {
-          "bytesInOutput": 2101
+          "bytesInOutput": 1102
         },
         "dist/gravity/bh.js": {
-          "bytesInOutput": 5224
+          "bytesInOutput": 2603
         },
         "dist/gravity/bh-threaded.js": {
-          "bytesInOutput": 2474
+          "bytesInOutput": 1154
         },
         "dist/gravity/bh-threaded-sab.js": {
-          "bytesInOutput": 2211
+          "bytesInOutput": 1017
         },
         "dist/index.js": {
-          "bytesInOutput": 11529
+          "bytesInOutput": 7030
         }
       },
-      "bytes": 1050302
+      "bytes": 634186
     }
   }
 }

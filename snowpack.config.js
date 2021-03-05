@@ -1,7 +1,6 @@
 module.exports = {
   mount: {
     public: { url: '/', static: true },
-    'src/gravity/worker': { url: '/worker' },
     src: { url: '/dist' },
   },
   plugins: [
@@ -20,7 +19,7 @@ module.exports = {
     ],
   ],
   routes: [],
-  optimize: { bundle: true },
+  optimize: { bundle: true, treeshake: true, minify: true },
   packageOptions: {},
   devOptions: {
     port: 9009,

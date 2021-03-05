@@ -1,4 +1,5 @@
 import { getAccelerations } from './bh-cell'
+
 onmessage = function (e) {
   const [
     start,
