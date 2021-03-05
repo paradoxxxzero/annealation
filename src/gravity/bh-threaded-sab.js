@@ -11,7 +11,28 @@ export default class BarnesHutThreadedSABGravity extends mix(
     super(orbs, params, allocLen, workerName)
   }
 
-  fill(cell, cells, flag) {
+  fill2(cell, cells, flag) {
+    const s = flag.shift
+    cells[0 + s] = cell.size
+    cells[1 + s] = cell.index
+    cells[2 + s] = cell.mass
+    cells[3 + s] = cell.cx
+    cells[4 + s] = cell.cy
+    if (cell.leaf) {
+      for (let i = 0; i < 4; i++) {
+        cells[5 + i + s] = NaN
+      }
+    } else {
+      for (let i = 0; i < 4; i++) {
+        flag.shift += 9
+        cells[5 + i + s] = flag.shift
+        this.fill2(cell.quadrants[i], cells, flag)
+      }
+    }
+
+    return s
+  }
+  fill3(cell, cells, flag) {
     const s = flag.shift
     cells[0 + s] = cell.size
     cells[1 + s] = cell.index
@@ -27,7 +48,30 @@ export default class BarnesHutThreadedSABGravity extends mix(
       for (let i = 0; i < 8; i++) {
         flag.shift += 14
         cells[6 + i + s] = flag.shift
-        this.fill(cell.octants[i], cells, flag)
+        this.fill3(cell.octants[i], cells, flag)
+      }
+    }
+
+    return s
+  }
+  fill4(cell, cells, flag) {
+    const s = flag.shift
+    cells[0 + s] = cell.size
+    cells[1 + s] = cell.index
+    cells[2 + s] = cell.mass
+    cells[3 + s] = cell.cx
+    cells[4 + s] = cell.cy
+    cells[5 + s] = cell.cz
+    cells[6 + s] = cell.cw
+    if (cell.leaf) {
+      for (let i = 0; i < 16; i++) {
+        cells[7 + i + s] = NaN
+      }
+    } else {
+      for (let i = 0; i < 16; i++) {
+        flag.shift += 23
+        cells[7 + i + s] = flag.shift
+        this.fill4(cell.hexadecants[i], cells, flag)
       }
     }
 
@@ -48,16 +92,22 @@ export default class BarnesHutThreadedSABGravity extends mix(
     const threshold2 = collisionThreshold * collisionThreshold
     const min = Math.min.apply(null, this.positions)
     const max = Math.max.apply(null, this.positions)
-    const rootCell = this.makeOctree(min, max - min)
-    this.massDistribution(rootCell)
+    const rootCell = this[`makeOctree${this.N}`](min, max - min)
+    this[`massDistribution${this.N}`](rootCell)
+    const orthants = { 2: 'quadrants', 3: 'octants', 4: 'hexadecants' }[this.N]
     const count = c =>
-      c.octants
-        ? c.octants.length + c.octants.map(count).reduce((a, b) => a + b, 0)
+      c[orthants]
+        ? c[orthants].length + c[orthants].map(count).reduce((a, b) => a + b, 0)
         : 0
     const cellCount = count(rootCell) + 1
-    const cellsBuffer = new SharedArrayBuffer(cellCount * 14 * 4)
+    const cellSize = {
+      2: 9,
+      3: 14,
+      4: 23,
+    }[this.N]
+    const cellsBuffer = new SharedArrayBuffer(cellCount * cellSize * 4)
     const cells = new Float32Array(cellsBuffer)
-    this.fill(rootCell, cells, { shift: 0 })
+    this[`fill${this.N}`](rootCell, cells, { shift: 0 })
     let parts = ~~(this.len / this.pool.length)
 
     const workersResults = await Promise.all(
@@ -65,6 +115,7 @@ export default class BarnesHutThreadedSABGravity extends mix(
         workerPromise(worker, [
           i * parts,
           i == this.pool.length - 1 ? this.len : (i + 1) * parts,
+          this.N,
           theta,
           gravitationalConstant,
           softening2,

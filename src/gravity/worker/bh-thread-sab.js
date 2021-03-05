@@ -1,10 +1,12 @@
-import { getAccelerations } from './bh-cell'
+import { compute2, compute3, compute4 } from './bh-cell'
+
 let accelerations, positions, masses
 
 onmessage = function (e) {
   const [
     start,
     end,
+    N,
     theta,
     gravitationalConstant,
     softening2,
@@ -21,13 +23,15 @@ onmessage = function (e) {
   }
   const cells = new Float32Array(cellsBuffer)
   const collided = []
-  for (let i = start; i < end; i++) {
-    let i3 = i * 3
-    accelerations[i3] = 0
-    accelerations[i3 + 1] = 0
-    accelerations[i3 + 2] = 0
+  const computeN = { 2: compute2, 3: compute3, 4: compute4 }[N]
 
-    getAccelerations(
+  for (let i = start; i < end; i++) {
+    let I = i * N
+    for (let s = 0; s < N; s++) {
+      accelerations[I + s] = 0
+    }
+
+    computeN(
       cells,
       0,
       i,
@@ -40,9 +44,10 @@ onmessage = function (e) {
       accelerations,
       masses
     )
-    accelerations[i3] *= gravitationalConstant
-    accelerations[i3 + 1] *= gravitationalConstant
-    accelerations[i3 + 2] *= gravitationalConstant
+
+    for (let s = 0; s < N; s++) {
+      accelerations[I + s] *= gravitationalConstant
+    }
   }
   postMessage([collided])
 }
