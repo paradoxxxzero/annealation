@@ -916,7 +916,7 @@ export default {
         yz: 0,
         yw: 5,
         zw: 5,
-        backend: 'js_bh',
+        backend: 'rust_bh',
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
         theta: 1,

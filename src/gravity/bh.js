@@ -86,7 +86,7 @@ export default class BarnesHutGravity extends Gravity {
     existingSubCell.index = cell.index
 
     const newSubCell = this.getSubCell2(cell, index)
-    // If both cells end up in same octant, subdivide again
+    // If both cells end up in same quadrant, subdivide again
     if (existingSubCell === newSubCell) {
       // Prevent same position infinite loop
       let i2 = index * 2
@@ -138,7 +138,7 @@ export default class BarnesHutGravity extends Gravity {
       cell.cy = this.positions[i2 + 1]
       cell.mass = this.masses[cell.index]
     } else {
-      // For each octant
+      // For each quadrant
       for (let i = 0, n = cell.quadrants.length; i < n; i++) {
         const subCell = cell.quadrants[i]
         // If it has particles
@@ -194,7 +194,7 @@ export default class BarnesHutGravity extends Gravity {
         this.accelerations[i2] += fact * x
         this.accelerations[i2 + 1] += fact * y
       } else {
-        // Otherwise compute accelerations for each octant
+        // Otherwise compute accelerations for each quadrant
         for (let i = 0, n = cell.quadrants.length; i < n; i++) {
           this.compute2(
             cell.quadrants[i],
@@ -454,7 +454,7 @@ export default class BarnesHutGravity extends Gravity {
     existingSubCell.index = cell.index
 
     const newSubCell = this.getSubCell4(cell, index)
-    // If both cells end up in same octant, subdivide again
+    // If both cells end up in same hexadecant, subdivide again
     if (existingSubCell === newSubCell) {
       // Prevent same position infinite loop
       let i4 = index * 4
@@ -514,7 +514,7 @@ export default class BarnesHutGravity extends Gravity {
       cell.cw = this.positions[i4 + 3]
       cell.mass = this.masses[cell.index]
     } else {
-      // For each octant
+      // For each hexadecant
       for (let i = 0, n = cell.hexadecants.length; i < n; i++) {
         const subCell = cell.hexadecants[i]
         // If it has particles
@@ -583,7 +583,7 @@ export default class BarnesHutGravity extends Gravity {
         this.accelerations[i4 + 2] += fact * z
         this.accelerations[i4 + 3] += fact * w
       } else {
-        // Otherwise compute accelerations for each octant
+        // Otherwise compute accelerations for each hexadecant
         for (let i = 0, n = cell.hexadecants.length; i < n; i++) {
           this.compute4(
             cell.hexadecants[i],
