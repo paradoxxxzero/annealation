@@ -224,13 +224,13 @@ impl P2PRustGravity {
                     self.positions[j4 + 3] - self.positions[i4 + 3],
                 ];
                 let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2] + u[3] * u[3];
-                let distance = (distance2 + softening2).sqrt();
                 if collisions {
                     if distance2 < threshold2 {
                         collided.push((i, j));
                     }
                 }
-                let fact = self.masses[j] / (distance * distance * distance);
+                let distance2_soft = distance2 + softening2;
+                let fact = self.masses[j] / (distance2_soft * distance2_soft);
                 a[0] += u[0] * fact;
                 a[1] += u[1] * fact;
                 a[2] += u[2] * fact;

@@ -15,7 +15,8 @@ export default class P2PThreadedGravity extends Gravity {
         // Handle bundling
         url.includes('gravity')
           ? new URL(`../../worker/${workerName}.js`, import.meta.url)
-          : new URL(`./gravity/worker/${workerName}.js`, import.meta.url)
+          : new URL(`./gravity/worker/${workerName}.js`, import.meta.url),
+        { type: 'module' }
       )
     })
   }
@@ -40,6 +41,7 @@ export default class P2PThreadedGravity extends Gravity {
           i * parts,
           i == this.pool.length - 1 ? this.len : (i + 1) * parts,
           this.len,
+          this.N,
           gravitationalConstant,
           softening2,
           collisions,

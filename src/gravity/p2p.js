@@ -1,7 +1,7 @@
 import Gravity from './gravity'
 
 export default class P2PGravity extends Gravity {
-  simulate2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  compute2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     let distance2 = u[0] * u[0] + u[1] * u[1]
@@ -17,7 +17,7 @@ export default class P2PGravity extends Gravity {
     a[1] += u[1] * fact
   }
 
-  simulate3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  compute3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     u[2] = this.positions[J + 2] - this.positions[I + 2]
@@ -36,7 +36,7 @@ export default class P2PGravity extends Gravity {
     a[2] += u[2] * fact
   }
 
-  simulate4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+  compute4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     u[2] = this.positions[J + 2] - this.positions[I + 2]
@@ -47,13 +47,45 @@ export default class P2PGravity extends Gravity {
         collided.push([i, j])
       }
     }
-
-    let fact = this.masses[j] / (distance2 * distance2)
+    let distance2Soft = distance2 + softening2
+    let fact = this.masses[j] / (distance2Soft * distance2Soft)
 
     a[0] += u[0] * fact
     a[1] += u[1] * fact
     a[2] += u[2] * fact
     a[3] += u[3] * fact
+  }
+
+  compute(
+    start,
+    end,
+    N,
+    len,
+    gravitationalConstant,
+    softening2,
+    collisions,
+    threshold2,
+    collided
+  ) {
+    // Unfactored for perf
+    const computeN = this[`compute${N}`].bind(this)
+
+    const u = new Array(N).fill(0)
+    const a = new Array(N).fill(0)
+    for (let i = start, n = end; i < n; i++) {
+      let I = i * N
+      a.fill(0)
+      for (let j = 0; j < len; j++) {
+        if (i === j) {
+          continue
+        }
+        let J = j * N
+        computeN(a, u, i, I, j, J, softening2, collisions, threshold2, collided)
+      }
+      for (let s = 0; s < N; s++) {
+        this.accelerations[I + s] = a[s] * gravitationalConstant
+      }
+    }
   }
 
   async simulate() {
@@ -65,27 +97,19 @@ export default class P2PGravity extends Gravity {
     } = this.params
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
-
-    // Unfactored for perf
-    const simulate = this[`simulate${this.N}`].bind(this)
-
     const collided = []
-    const u = new Array(this.N).fill(0)
-    const a = new Array(this.N).fill(0)
-    for (let i = 0, n = this.len; i < n; i++) {
-      let I = i * this.N
-      a.fill(0)
-      for (let j = 0; j < this.len; j++) {
-        if (i === j) {
-          continue
-        }
-        let J = j * this.N
-        simulate(a, u, i, I, j, J, softening2, collisions, threshold2, collided)
-      }
-      for (let s = 0; s < this.N; s++) {
-        this.accelerations[I + s] = a[s] * gravitationalConstant
-      }
-    }
+
+    this.compute(
+      0,
+      this.len,
+      this.N,
+      this.len,
+      gravitationalConstant,
+      softening2,
+      collisions,
+      threshold2,
+      collided
+    )
 
     return this.solve(collided)
   }

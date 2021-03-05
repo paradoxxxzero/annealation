@@ -5,11 +5,16 @@ import { workerPromise } from '../utils'
 export default class P2PThreadedSABGravity extends P2PThreadedGravity {
   constructor(orbs, params, allocLen, workerName = 'p2p-thread-sab') {
     super(orbs, params, allocLen, workerName)
-    this.positionsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.xyzBuffer = new SharedArrayBuffer(3 * allocLen * 4)
+    this.positionsBuffer =
+      this.N === 3
+        ? this.xyzBuffer
+        : new SharedArrayBuffer(this.N * allocLen * 4)
+    this.xyz = new Float32Array(this.xyzBuffer)
     this.positions = new Float32Array(this.positionsBuffer)
-    this.speedsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.speedsBuffer = new SharedArrayBuffer(this.N * allocLen * 4) // 32 / 8
     this.speeds = new Float32Array(this.speedsBuffer)
-    this.accelerationsBuffer = new SharedArrayBuffer(3 * allocLen * 4) // 32 / 8
+    this.accelerationsBuffer = new SharedArrayBuffer(this.N * allocLen * 4) // 32 / 8
     this.accelerations = new Float32Array(this.accelerationsBuffer)
     this.massesBuffer = new SharedArrayBuffer(allocLen * 4) // 32 / 8
     this.masses = new Float32Array(this.massesBuffer)
@@ -22,16 +27,7 @@ export default class P2PThreadedSABGravity extends P2PThreadedGravity {
       ])
     })
 
-    orbs.forEach(({ position, mass, speed, temperature }, i) => {
-      this.positions[i * 3] = position.x
-      this.positions[i * 3 + 1] = position.y
-      this.positions[i * 3 + 2] = position.z
-      this.speeds[i * 3] = speed.x
-      this.speeds[i * 3 + 1] = speed.y
-      this.speeds[i * 3 + 2] = speed.z
-      this.masses[i] = mass
-      this.temperatures[i] = temperature
-    })
+    orbs.forEach((orb, i) => this.set_orb(i, orb))
   }
 
   async simulate() {
@@ -54,6 +50,7 @@ export default class P2PThreadedSABGravity extends P2PThreadedGravity {
           i * parts,
           i == this.pool.length - 1 ? this.len : (i + 1) * parts,
           this.len,
+          this.N,
           gravitationalConstant,
           softening2,
           collisions,
