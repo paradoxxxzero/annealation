@@ -235,11 +235,10 @@ impl BarnesHutRustGravity {
             // If both cells end up in same quadrant, subdivide again
             if existing_quadrant_index == new_quadrant_index {
                 // Prevent same position infinite loop
-                let i3 = index * 3;
-                let ci3 = cell_index * 3;
-                if !(self.positions[ci3] == self.positions[i3]
-                    && self.positions[ci3 + 1] == self.positions[i3 + 1]
-                    && self.positions[ci3 + 2] == self.positions[i3 + 2])
+                let i2 = index * 2;
+                let ci2 = cell_index * 2;
+                if !(self.positions[ci2] == self.positions[i2]
+                    && self.positions[ci2 + 1] == self.positions[i2 + 1])
                 {
                     self.add_particle2(&mut cell.quadrants[existing_quadrant_index], index);
                 }

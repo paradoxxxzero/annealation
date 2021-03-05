@@ -404,7 +404,7 @@ function initGUI() {
 
   config.open()
   const simulation = gui.addFolder('Simulation')
-  simulation.add(params, 'gravitationalConstant', 0.0, 25.0, 0.01)
+  simulation.add(params, 'gravitationalConstant', 0.0, 100.0, 0.01)
   // // (a = 1e-11 * 1e30 / 1e(15 * 2) = 1e-11 m.s-2)
   // // dp = a * dt² -> dt = sqrt(dp / a) = sqrt(1e15 / 1e-11) = 1e13s
   simulation

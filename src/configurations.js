@@ -1,4 +1,4 @@
-import { Spherical, Vector3, Vector4, Euler } from 'three'
+import { Spherical, Vector3, Vector4, Euler, Vector2 } from 'three'
 import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
 import { colorEncode, rngTemperatureMass } from './helpers'
 
@@ -504,6 +504,18 @@ export const plane = ({ number, range, mass, blackHoleMass }) => {
       }
     })
     .concat(blackHole(blackHoleMass))
+}
+export const plane2 = ({ number, range, mass }) => {
+  return new Array(number).fill().map(() => {
+    return {
+      ...rngTemperatureMass(mass),
+      position: new Vector2(
+        range / 2 - Math.random() * range,
+        range / 2 - Math.random() * range
+      ),
+      speed: new Vector3(),
+    }
+  })
 }
 
 export const teapot = ({ number, range, mass, blackHoleMass }) => {
