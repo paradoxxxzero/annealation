@@ -108,9 +108,6 @@ impl P2PRustGravity {
     pub fn xyz_ptr(&self) -> *const f32 {
         self.xyz.as_ptr()
     }
-    pub fn speeds_ptr(&self) -> *const f32 {
-        self.speeds.as_ptr()
-    }
     pub fn masses_ptr(&self) -> *const f32 {
         self.masses.as_ptr()
     }

@@ -121,6 +121,15 @@ impl NoRustGravity {
         if self.dimensions == 3 {
             std::mem::swap(&mut self.xyz, &mut self.positions)
         }
+        let xy = self._params().xy;
+        let xz = self._params().xz;
+        let xw = self._params().xw;
+        let yz = self._params().yz;
+        let yw = self._params().yw;
+        let zw = self._params().zw;
+        if let Some(projector) = self._projector() {
+            projector.rotate(xy, xz, xw, yz, yw, zw);
+        }
     }
 
     pub fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {

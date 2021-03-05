@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "snowpack dev",
-    "build": "snowpack build && esbuild --bundle --minify src/gravity/worker/*-thread*.js --outdir=docs/dist/worker/ && rm docs/dist/wasm/.gitignore && touch docs/.nojekyll",
+    "build": "snowpack build && esbuild --bundle --minify src/gravity/worker/*-thread*.js --outdir=docs/dist/worker/ && rm docs/dist/wasm/.gitignore && rm -r docs/dist/gravity && touch docs/.nojekyll",
     "test": "echo \"This template does not include a test runner by default.\" && exit 1"
   },
   "devDependencies": {
