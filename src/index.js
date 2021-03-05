@@ -1,4 +1,5 @@
 import { GUI } from 'dat.gui'
+import { HyperRenderer } from 'four-js'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -110,6 +111,8 @@ const camera = new PerspectiveCamera(
 camera.position.set(1500, 1500, 1500)
 camera.lookAt(0, 0, 0)
 
+const hyperRenderer = new HyperRenderer(Math.PI / 2, 1500)
+
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.minDistance = 1
 controls.maxDistance = 20000
@@ -172,6 +175,10 @@ async function animate() {
 }
 
 async function render() {
+  if (params.dimensions > 3) {
+    hyperRenderer.rotate(params)
+  }
+
   if (newOrb !== null) {
     raycaster.setFromCamera(mouse, camera)
     if (newOrb.iter === 0) {
@@ -210,6 +217,7 @@ async function render() {
   gravity.frog_leap()
   const newLen = await gravity.simulate()
   gravity.frog_drop()
+  gravity.project?.(hyperRenderer)
 
   if (
     params.backend.startsWith('rust') &&
@@ -281,7 +289,7 @@ function init() {
   } else {
     geometry.setAttribute(
       'position',
-      new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage)
+      new BufferAttribute(gravity.xyz, 3).setUsage(DynamicDrawUsage)
     )
     geometry.setAttribute(
       'mass',
@@ -314,6 +322,14 @@ function restart() {
     return
   }
   cancelAnimationFrame(raf)
+  hyperRenderer.rotation = {
+    xy: 0,
+    xz: 0,
+    xw: 0,
+    yz: 0,
+    yw: 0,
+    zw: 0,
+  }
   scene.clear()
   gravity.free()
   init()
@@ -325,6 +341,23 @@ function initGUI() {
     load: presets,
     preset,
   })
+  gui.add(params, 'dimensions', 2, 4, 1).onChange(restart)
+  gui.add(params, 'zFov', 0, 180).onChange(v => {
+    camera.fov = v
+    camera.updateProjectionMatrix()
+  })
+  gui
+    .add(params, 'wFov', 0, 180)
+    .onChange(v => (hyperRenderer.fov = (v * Math.PI) / 180))
+
+  const rotSpeed = gui.addFolder('4d rotation speed')
+  rotSpeed.add(params, 'xy', 0, 50)
+  rotSpeed.add(params, 'xz', 0, 50)
+  rotSpeed.add(params, 'xw', 0, 50)
+  rotSpeed.add(params, 'yz', 0, 50)
+  rotSpeed.add(params, 'yw', 0, 50)
+  rotSpeed.add(params, 'zw', 0, 50)
+
   gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
   gui
     .add(params, 'resolution', 1, 9, 1)
@@ -397,14 +430,6 @@ function initGUI() {
     )
   simulation.open()
   gui.add(params, 'creationMode')
-  gui.add(
-    {
-      'Go 4d': () => {
-        window.open('https://paradoxxxzero.github.io/katannealation')
-      },
-    },
-    'Go 4d'
-  )
   gui.remember(params)
   gui.revert()
   gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
@@ -420,8 +445,8 @@ const raycaster = new Raycaster()
 const mouse = new Vector2()
 window.addEventListener('pointerdown', function (event) {
   if (
-    gui.domElement.contains(event.target) ||
-    stats.dom.contains(event.target)
+    (gui && gui.domElement.contains(event.target)) ||
+    (stats && stats.dom.contains(event.target))
   ) {
     return
   }

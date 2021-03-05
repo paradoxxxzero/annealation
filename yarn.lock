@@ -561,6 +561,11 @@ flatted@^3.1.0:
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.1.1.tgz#c4b489e80096d9df1dfc97c79871aea7c617c469"
   integrity sha512-zAoAQiudy+r5SvnSw3KJy5os/oRJYHzrzja/tBDqrZtNhUw8bt6y8OBzMWcjWr+8liV8Eb6yOhw8WZ7VFZ5ZzA==
 
+four-js@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/four-js/-/four-js-0.1.2.tgz#e3823b93fe86f2104ba282e042da925a601eb138"
+  integrity sha512-8UqFXTo8mKskhEHqI2i8+fQO9s8rZh+3h2CAPuf7IkV7Nupf1c/HVDLSP/OKfGaHBxa51aVmcpAU/HYqvQoGng==
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"

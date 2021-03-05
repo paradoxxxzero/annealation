@@ -1,4 +1,4 @@
-import { Spherical, Vector3, Euler } from 'three'
+import { Spherical, Vector3, Vector4, Euler } from 'three'
 import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
 import { colorEncode, rngTemperatureMass } from './helpers'
 
@@ -14,8 +14,8 @@ const blackHole = blackHoleMass =>
       ]
     : []
 
-export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
-  return new Array(number)
+export const cube = ({ number, range, speed, mass, blackHoleMass }) =>
+  new Array(number)
     .fill()
     .map(() => ({
       // mass 10^30 kg
@@ -33,7 +33,6 @@ export const cube = ({ number, range, speed, mass, blackHoleMass }) => {
       ),
     }))
     .concat(blackHole(blackHoleMass))
-}
 
 export const regularCube = ({ number, range, speed, mass, blackHoleMass }) => {
   const n = ~~Math.cbrt(number)
@@ -527,20 +526,24 @@ export const teapot = ({ number, range, mass, blackHoleMass }) => {
     .concat(blackHole(blackHoleMass))
 }
 
-export const test = ({ mass }) => [
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1, 2, 3),
-    speed: new Vector3(),
-  },
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1000, 1000, -500),
-    speed: new Vector3(),
-  },
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1000, 1000, -500),
-    speed: new Vector3(),
-  },
-]
+export const tesseract = ({ number, range, speed, mass, blackHoleMass }) =>
+  new Array(number)
+    .fill()
+    .map(() => ({
+      // mass 10^30 kg
+      ...rngTemperatureMass(mass),
+      // distance 10^16 m
+      position: new Vector4(
+        range / 2 - Math.random() * range,
+        range / 2 - Math.random() * range,
+        range / 2 - Math.random() * range,
+        range / 2 - Math.random() * range
+      ),
+      speed: new Vector4(
+        speed / 2 - Math.random() * speed,
+        speed / 2 - Math.random() * speed,
+        speed / 2 - Math.random() * speed,
+        speed / 2 - Math.random() * speed
+      ),
+    }))
+    .concat(blackHole(blackHoleMass))

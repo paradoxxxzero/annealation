@@ -180,57 +180,57 @@ var INTERPRETATIONS = [
     conversions: {
       THREE_CHAR_HEX: {
         read: function read(original) {
-          var test2 = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
-          if (test2 === null) {
+          var test = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
+          if (test === null) {
             return false;
           }
           return {
             space: "HEX",
-            hex: parseInt("0x" + test2[1].toString() + test2[1].toString() + test2[2].toString() + test2[2].toString() + test2[3].toString() + test2[3].toString(), 0)
+            hex: parseInt("0x" + test[1].toString() + test[1].toString() + test[2].toString() + test[2].toString() + test[3].toString() + test[3].toString(), 0)
           };
         },
         write: colorToString
       },
       SIX_CHAR_HEX: {
         read: function read2(original) {
-          var test2 = original.match(/^#([A-F0-9]{6})$/i);
-          if (test2 === null) {
+          var test = original.match(/^#([A-F0-9]{6})$/i);
+          if (test === null) {
             return false;
           }
           return {
             space: "HEX",
-            hex: parseInt("0x" + test2[1].toString(), 0)
+            hex: parseInt("0x" + test[1].toString(), 0)
           };
         },
         write: colorToString
       },
       CSS_RGB: {
         read: function read3(original) {
-          var test2 = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
-          if (test2 === null) {
+          var test = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+          if (test === null) {
             return false;
           }
           return {
             space: "RGB",
-            r: parseFloat(test2[1]),
-            g: parseFloat(test2[2]),
-            b: parseFloat(test2[3])
+            r: parseFloat(test[1]),
+            g: parseFloat(test[2]),
+            b: parseFloat(test[3])
           };
         },
         write: colorToString
       },
       CSS_RGBA: {
         read: function read4(original) {
-          var test2 = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
-          if (test2 === null) {
+          var test = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+          if (test === null) {
             return false;
           }
           return {
             space: "RGB",
-            r: parseFloat(test2[1]),
-            g: parseFloat(test2[2]),
-            b: parseFloat(test2[3]),
-            a: parseFloat(test2[4])
+            r: parseFloat(test[1]),
+            g: parseFloat(test[2]),
+            b: parseFloat(test[3]),
+            a: parseFloat(test[4])
           };
         },
         write: colorToString
@@ -2440,7 +2440,285 @@ function updateDisplays(controllerArray) {
 }
 var GUI$1 = GUI;
 
-// _snowpack/pkg/common/three.module-295f7415.js
+// _snowpack/pkg/four-js.js
+var HyperRenderer = class {
+  constructor(fov2, w, initialRotation) {
+    this.fov = fov2 || Math.PI / 2;
+    this.w = w || 10;
+    this.rotation = initialRotation || {
+      xy: 0,
+      xz: 0,
+      xw: 0,
+      yz: 0,
+      yw: 0,
+      zw: 0
+    };
+  }
+  project([xo, yo, zo, wo]) {
+    const [x, y, z, w] = this.rotatePoint([xo, yo, zo, wo]);
+    const zoom = 1 + w * this.fov / this.w;
+    return [x / zoom, y / zoom, z / zoom];
+  }
+  rotate(delta) {
+    Object.keys(this.rotation).forEach((k) => {
+      this.rotation[k] = (this.rotation[k] + (delta[k] || 0) / 1e3) % (2 * Math.PI);
+    });
+  }
+  rotatePoint([x, y, z, w]) {
+    const {xy, xz, xw, yz, yw, zw} = this.rotation;
+    const cxy = Math.cos(xy);
+    const sxy = Math.sin(xy);
+    const cxz = Math.cos(xz);
+    const sxz = Math.sin(xz);
+    const cxw = Math.cos(xw);
+    const sxw = Math.sin(xw);
+    const cyz = Math.cos(yz);
+    const syz = Math.sin(yz);
+    const cyw = Math.cos(yw);
+    const syw = Math.sin(yw);
+    const czw = Math.cos(zw);
+    const szw = Math.sin(zw);
+    let t = x;
+    x = x * cxy + y * sxy;
+    y = y * cxy - t * sxy;
+    t = x;
+    x = x * cxz + z * sxz;
+    z = z * cxz - t * sxz;
+    t = x;
+    x = x * cxw + w * sxw;
+    w = w * cxw - t * sxw;
+    t = y;
+    y = y * cyz + z * syz;
+    z = z * cyz - t * syz;
+    t = y;
+    y = y * cyw + w * syw;
+    w = w * cyw - t * syw;
+    t = z;
+    z = z * czw + w * szw;
+    w = w * czw - t * szw;
+    return [x, y, z, w];
+  }
+};
+function createSphere(radius, piResolution = 8) {
+  const vertices = [];
+  const faces = [];
+  const cells = [];
+  let facesIndex = 0;
+  const classOfVertex = {
+    theta: {},
+    phi: {},
+    gamma: {}
+  };
+  for (let theta = 0; theta <= piResolution; theta++) {
+    for (let phi = 0; phi <= piResolution; phi++) {
+      for (let gamma = 0; gamma < 2 * piResolution; gamma++) {
+        if (!classOfVertex.theta[theta]) {
+          classOfVertex.theta[theta] = [];
+        }
+        if (!classOfVertex.phi[phi]) {
+          classOfVertex.phi[phi] = [];
+        }
+        if (!classOfVertex.gamma[gamma]) {
+          classOfVertex.gamma[gamma] = [];
+        }
+        classOfVertex.theta[theta].push(vertices.length);
+        classOfVertex.phi[phi].push(vertices.length);
+        classOfVertex.gamma[gamma].push(vertices.length);
+        const thetaInPi = theta * Math.PI / piResolution;
+        const phiInPi = phi * Math.PI / piResolution;
+        const gammaInPi = gamma * Math.PI / piResolution;
+        vertices.push([
+          radius * Math.cos(thetaInPi),
+          radius * Math.sin(thetaInPi) * Math.cos(phiInPi),
+          radius * Math.sin(thetaInPi) * Math.sin(phiInPi) * Math.cos(gammaInPi),
+          radius * Math.sin(thetaInPi) * Math.sin(phiInPi) * Math.sin(gammaInPi)
+        ]);
+      }
+    }
+  }
+  for (let key in classOfVertex.theta) {
+    const vertexClass = classOfVertex.theta[key];
+    const cell = [];
+    for (let rounds = 0; rounds < vertexClass.length / (piResolution * 2) - 1; rounds++) {
+      for (let i = 0; i < piResolution * 2; i++) {
+        let iBase = rounds * piResolution * 2;
+        let iBaseNext = (rounds + 1) * piResolution * 2;
+        faces.push([
+          vertexClass[iBase + i],
+          vertexClass[iBase + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + i % (piResolution * 2)]
+        ]);
+        cell.push(facesIndex);
+        facesIndex++;
+      }
+    }
+    cells.push(cell);
+  }
+  for (let key in classOfVertex.phi) {
+    const vertexClass = classOfVertex.phi[key];
+    const cell = [];
+    for (let rounds = 0; rounds < vertexClass.length / (piResolution * 2) - 1; rounds++) {
+      for (let i = 0; i < piResolution * 2; i++) {
+        let iBase = rounds * piResolution * 2;
+        let iBaseNext = (rounds + 1) * piResolution * 2;
+        faces.push([
+          vertexClass[iBase + i],
+          vertexClass[iBase + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + i % (piResolution * 2)]
+        ]);
+        cell.push(facesIndex);
+        facesIndex++;
+      }
+    }
+    cells.push(cell);
+  }
+  for (let key in classOfVertex.gamma) {
+    if (parseInt(key) < piResolution) {
+      const vertexClassOne = classOfVertex.gamma[key];
+      const vertexClassTwo = classOfVertex.gamma[parseInt(key) + piResolution];
+      const vertexClass = [];
+      for (let rounds = 0; rounds < vertexClassOne.length / (piResolution + 1); rounds++) {
+        vertexClass.push(...vertexClassOne.slice(rounds * (piResolution + 1), (rounds + 1) * (piResolution + 1)));
+        vertexClass.push(...vertexClassTwo.slice(rounds * (piResolution + 1), (rounds + 1) * (piResolution + 1)).reverse());
+      }
+      const cell = [];
+      for (let rounds = 0; rounds < vertexClass.length / (2 * (piResolution + 1)) - 1; rounds++) {
+        for (let i = 0; i < 2 * (piResolution + 1); i++) {
+          let iBase = rounds * (2 * (piResolution + 1));
+          let iBaseNext = (rounds + 1) * (2 * (piResolution + 1));
+          faces.push([
+            vertexClass[iBase + i],
+            vertexClass[iBase + (i + 1) % (2 * (piResolution + 1))],
+            vertexClass[iBaseNext + (i + 1) % (2 * (piResolution + 1))],
+            vertexClass[iBaseNext + i % (2 * (piResolution + 1))]
+          ]);
+          cell.push(facesIndex);
+          facesIndex++;
+        }
+      }
+      cells.push(cell);
+    }
+  }
+  return {
+    vertices,
+    faces,
+    cells
+  };
+}
+createSphere(1);
+function createTorus(r1, r2, r3, piResolution = 8) {
+  const vertices = [];
+  const faces = [];
+  const cells = [];
+  let facesIndex = 0;
+  const classOfVertex = {
+    theta: {},
+    phi: {},
+    gamma: {}
+  };
+  for (let theta = 0; theta <= piResolution; theta++) {
+    for (let phi = 0; phi <= piResolution; phi++) {
+      for (let gamma = 0; gamma < 2 * piResolution; gamma++) {
+        if (!classOfVertex.theta[theta]) {
+          classOfVertex.theta[theta] = [];
+        }
+        if (!classOfVertex.phi[phi]) {
+          classOfVertex.phi[phi] = [];
+        }
+        if (!classOfVertex.gamma[gamma]) {
+          classOfVertex.gamma[gamma] = [];
+        }
+        classOfVertex.theta[theta].push(vertices.length);
+        classOfVertex.phi[phi].push(vertices.length);
+        classOfVertex.gamma[gamma].push(vertices.length);
+        const thetaInPi = theta * Math.PI / piResolution;
+        const phiInPi = phi * Math.PI / piResolution;
+        const gammaInPi = gamma * Math.PI / piResolution;
+        vertices.push([
+          r1 * Math.cos(thetaInPi),
+          (r2 + r1 * Math.sin(thetaInPi)) * Math.cos(phiInPi),
+          (r3 + (r2 + r1 * Math.sin(thetaInPi)) * Math.sin(phiInPi)) * Math.cos(gammaInPi),
+          (r3 + (r2 + r1 * Math.sin(thetaInPi)) * Math.sin(phiInPi)) * Math.sin(gammaInPi)
+        ]);
+      }
+    }
+  }
+  for (let key in classOfVertex.theta) {
+    const vertexClass = classOfVertex.theta[key];
+    const cell = [];
+    for (let rounds = 0; rounds < vertexClass.length / (piResolution * 2) - 1; rounds++) {
+      for (let i = 0; i < piResolution * 2; i++) {
+        let iBase = rounds * piResolution * 2;
+        let iBaseNext = (rounds + 1) * piResolution * 2;
+        faces.push([
+          vertexClass[iBase + i],
+          vertexClass[iBase + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + i % (piResolution * 2)]
+        ]);
+        cell.push(facesIndex);
+        facesIndex++;
+      }
+    }
+    cells.push(cell);
+  }
+  for (let key in classOfVertex.phi) {
+    const vertexClass = classOfVertex.phi[key];
+    const cell = [];
+    for (let rounds = 0; rounds < vertexClass.length / (piResolution * 2) - 1; rounds++) {
+      for (let i = 0; i < piResolution * 2; i++) {
+        let iBase = rounds * piResolution * 2;
+        let iBaseNext = (rounds + 1) * piResolution * 2;
+        faces.push([
+          vertexClass[iBase + i],
+          vertexClass[iBase + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + (i + 1) % (piResolution * 2)],
+          vertexClass[iBaseNext + i % (piResolution * 2)]
+        ]);
+        cell.push(facesIndex);
+        facesIndex++;
+      }
+    }
+    cells.push(cell);
+  }
+  for (let key in classOfVertex.gamma) {
+    if (parseInt(key) < piResolution) {
+      const vertexClassOne = classOfVertex.gamma[key];
+      const vertexClassTwo = classOfVertex.gamma[parseInt(key) + piResolution];
+      const vertexClass = [];
+      for (let rounds = 0; rounds < vertexClassOne.length / (piResolution + 1); rounds++) {
+        vertexClass.push(...vertexClassOne.slice(rounds * (piResolution + 1), (rounds + 1) * (piResolution + 1)));
+        vertexClass.push(...vertexClassTwo.slice(rounds * (piResolution + 1), (rounds + 1) * (piResolution + 1)).reverse());
+      }
+      const cell = [];
+      for (let rounds = 0; rounds < vertexClass.length / (2 * (piResolution + 1)) - 1; rounds++) {
+        for (let i = 0; i < 2 * (piResolution + 1); i++) {
+          let iBase = rounds * (2 * (piResolution + 1));
+          let iBaseNext = (rounds + 1) * (2 * (piResolution + 1));
+          faces.push([
+            vertexClass[iBase + i],
+            vertexClass[iBase + (i + 1) % (2 * (piResolution + 1))],
+            vertexClass[iBaseNext + (i + 1) % (2 * (piResolution + 1))],
+            vertexClass[iBaseNext + i % (2 * (piResolution + 1))]
+          ]);
+          cell.push(facesIndex);
+          facesIndex++;
+        }
+      }
+      cells.push(cell);
+    }
+  }
+  return {
+    vertices,
+    faces,
+    cells
+  };
+}
+createTorus(0.1, 0.5, 1);
+
+// _snowpack/pkg/common/three.module-d1385b42.js
 var REVISION = "126";
 var MOUSE = {LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2};
 var TOUCH = {ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3};
@@ -8423,8 +8701,8 @@ BufferGeometry.prototype = Object.assign(Object.create(EventDispatcher.prototype
       tmp.copy(t);
       tmp.sub(n.multiplyScalar(n.dot(t))).normalize();
       tmp2.crossVectors(n2, t);
-      const test2 = tmp2.dot(tan2[v]);
-      const w = test2 < 0 ? -1 : 1;
+      const test = tmp2.dot(tan2[v]);
+      const w = test < 0 ? -1 : 1;
       tangents[v * 4] = tmp.x;
       tangents[v * 4 + 1] = tmp.y;
       tangents[v * 4 + 2] = tmp.z;
@@ -21093,7 +21371,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-// _snowpack/pkg/common/Pass-38ef430e.js
+// _snowpack/pkg/common/Pass-5767c87c.js
 function Pass() {
   this.enabled = true;
   this.needsSwap = true;
@@ -21888,7 +22166,7 @@ var CopyShader = {
   ].join("\n")
 };
 
-// _snowpack/pkg/common/ShaderPass-23d3234c.js
+// _snowpack/pkg/common/ShaderPass-da94d569.js
 var ShaderPass = function(shader, textureID) {
   Pass.call(this);
   this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
@@ -23552,7 +23830,7 @@ __export(configurations_exports, {
   solarSystem: () => solarSystem,
   sphere: () => sphere,
   teapot: () => teapot,
-  test: () => test
+  tesseract: () => tesseract
 });
 
 // _snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js
@@ -25137,13 +25415,11 @@ var blackHole = (blackHoleMass) => blackHoleMass ? [
     speed: new Vector3()
   }
 ] : [];
-var cube = ({number, range, speed, mass, blackHoleMass}) => {
-  return new Array(number).fill().map(() => ({
-    ...rngTemperatureMass(mass),
-    position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
-    speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
-  })).concat(blackHole(blackHoleMass));
-};
+var cube = ({number, range, speed, mass, blackHoleMass}) => new Array(number).fill().map(() => ({
+  ...rngTemperatureMass(mass),
+  position: new Vector3(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
+  speed: new Vector3(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
+})).concat(blackHole(blackHoleMass));
 var regularCube = ({number, range, speed, mass, blackHoleMass}) => {
   const n = ~~Math.cbrt(number);
   return new Array(n).fill().map((_, i) => new Array(n).fill().map((_2, j) => new Array(n).fill().map((_3, k) => {
@@ -25484,23 +25760,11 @@ var teapot = ({number, range, mass, blackHoleMass}) => {
     };
   }).concat(blackHole(blackHoleMass));
 };
-var test = ({mass}) => [
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1, 2, 3),
-    speed: new Vector3()
-  },
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1e3, 1e3, -500),
-    speed: new Vector3()
-  },
-  {
-    ...rngTemperatureMass(mass),
-    position: new Vector3(1e3, 1e3, -500),
-    speed: new Vector3()
-  }
-];
+var tesseract = ({number, range, speed, mass, blackHoleMass}) => new Array(number).fill().map(() => ({
+  ...rngTemperatureMass(mass),
+  position: new Vector4(range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range, range / 2 - Math.random() * range),
+  speed: new Vector4(speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed, speed / 2 - Math.random() * speed)
+})).concat(blackHole(blackHoleMass));
 
 // dist/fragmentShader.js
 var fragmentShader_default = "varying float blackHole;\nvarying vec3 tColor;\n\nconst float maxR = 0.5;\nconst float eventHorizon = 0.666;\n// const float horizonFade = 0.8;\n\nvoid main() {\n  float r = length(gl_PointCoord - vec2(0.5, 0.5));\n  if (r > maxR) discard;\n\n  if (length(tColor) == 0.0) {\n    float p = r / maxR;\n    float luminance = 0.;\n    if(p > eventHorizon) {\n      luminance = 1.0;\n      // if(p > horizonFade) {\n      //   luminance = (p - 1.) - .7 * (p - horizonFade) / (1. -horizonFade - 1.);\n      // }\n    }\n    gl_FragColor = vec4(luminance, luminance, luminance, 0.1);\n  } else {\n    gl_FragColor = vec4(tColor, 1.0 );\n  }\n}";
@@ -25514,6 +25778,15 @@ var presets_default = {
   remembered: {
     Cube: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25545,8 +25818,54 @@ var presets_default = {
         creationMode: false
       }
     },
+    Tesseract: {
+      0: {
+        dimensions: 2,
+        zFov: 45,
+        wFov: 45,
+        xy: 1,
+        xz: 1,
+        xw: 1,
+        yz: 1,
+        yw: 1,
+        zw: 1,
+        backend: "js_p2p",
+        fxaa: true,
+        bloom: true,
+        bloomStrength: 1.5,
+        bloomRadius: 0.75,
+        bloomThreshold: 0,
+        bloomExposure: 0.75,
+        afterImage: false,
+        afterImageDamp: 0.75,
+        configuration: "tesseract",
+        number: 1e3,
+        range: 2e3,
+        speed: 0,
+        mass: 10,
+        blackHoleMass: 0,
+        scale: 40,
+        colorMode: "Temperature",
+        gravitationalConstant: 6.67,
+        simulationSpeed: 25,
+        softening: 10,
+        collisions: true,
+        collisionThreshold: 25,
+        escapeDistance: 1e5,
+        blackHoleMassThreshold: 1e4
+      }
+    },
     RegularCube: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25580,6 +25899,15 @@ var presets_default = {
     },
     Galaxy: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25613,6 +25941,15 @@ var presets_default = {
     },
     BulbGalaxy: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25646,6 +25983,15 @@ var presets_default = {
     },
     SlowGalaxy: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25679,6 +26025,15 @@ var presets_default = {
     },
     Sphere: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25712,6 +26067,15 @@ var presets_default = {
     },
     HarmonicSphere: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25745,6 +26109,15 @@ var presets_default = {
     },
     ProtoSolarSystem: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25778,6 +26151,15 @@ var presets_default = {
     },
     CollidingGalaxies: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25811,6 +26193,15 @@ var presets_default = {
     },
     CollidingGalaxiesBulb: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25844,6 +26235,15 @@ var presets_default = {
     },
     Fountain: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25877,6 +26277,15 @@ var presets_default = {
     },
     EightCubes: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25910,6 +26319,15 @@ var presets_default = {
     },
     Plane: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25943,6 +26361,15 @@ var presets_default = {
     },
     Teapot: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -25976,6 +26403,15 @@ var presets_default = {
     },
     TeapotWithBlackHole: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_p2p",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -26009,6 +26445,15 @@ var presets_default = {
     },
     Ekusupuroshon: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "js_none",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
@@ -26042,6 +26487,15 @@ var presets_default = {
     },
     Ekusupuroshon2: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "js_none",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
@@ -26075,6 +26529,15 @@ var presets_default = {
     },
     LittleExpand: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 3,
@@ -26108,6 +26571,15 @@ var presets_default = {
     },
     BigSphere: {
       0: {
+        dimensions: 3,
+        zFov: 45,
+        wFov: 45,
+        xy: 0,
+        xz: 0,
+        xw: 5,
+        yz: 0,
+        yw: 5,
+        zw: 5,
         backend: "rust_bh",
         threads: navigator.hardwareConcurrency - 1,
         resolution: 7,
@@ -26632,57 +27104,26 @@ var Gravity = class {
   constructor(orbs, params2, allocLen) {
     this.alive = true;
     this.params = params2;
+    this.N = params2.dimensions;
+    this.vectorSuffix = "xyzw";
     this.len = orbs.length;
-    this.positions = new Float32Array(3 * allocLen);
-    this.speeds = new Float32Array(3 * allocLen);
-    this.accelerations = new Float32Array(3 * allocLen);
+    this.xyz = new Float32Array(allocLen * 3);
+    this.positions = this.N === 3 ? this.xyz : new Float32Array(allocLen * this.N);
+    this.speeds = new Float32Array(this.N * allocLen);
+    this.accelerations = new Float32Array(this.N * allocLen);
     this.masses = new Float32Array(allocLen);
     this.temperatures = new Float32Array(allocLen);
     orbs.forEach((orb, i) => this.set_orb(i, orb));
-  }
-  getBounds() {
-    const bounds = {
-      xmin: Infinity,
-      xmax: -Infinity,
-      ymin: Infinity,
-      ymax: -Infinity,
-      zmin: Infinity,
-      zmax: -Infinity
-    };
-    for (let i = 0; i < this.len; i++) {
-      let i3 = i * 3;
-      if (this.positions[i3] < bounds.xmin) {
-        bounds.xmin = this.positions[i3];
-      }
-      if (this.positions[i3] > bounds.xmax) {
-        bounds.xmax = this.positions[i3];
-      }
-      if (this.positions[i3 + 1] < bounds.ymin) {
-        bounds.ymin = this.positions[i3 + 1];
-      }
-      if (this.positions[i3 + 1] > bounds.ymax) {
-        bounds.ymax = this.positions[i3 + 1];
-      }
-      if (this.positions[i3 + 2] < bounds.zmin) {
-        bounds.zmin = this.positions[i3 + 2];
-      }
-      if (this.positions[i3 + 2] > bounds.zmax) {
-        bounds.zmax = this.positions[i3 + 2];
-      }
-    }
-    return bounds;
   }
   frog_leap() {
     const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i * 3;
-      this.speeds[i3] += this.accelerations[i3] * half_dt;
-      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt;
-      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
-      this.positions[i3] += this.speeds[i3] * dt;
-      this.positions[i3 + 1] += this.speeds[i3 + 1] * dt;
-      this.positions[i3 + 2] += this.speeds[i3 + 2] * dt;
+      let I = i * this.N;
+      for (let s = 0; s < this.N; s++) {
+        this.speeds[I + s] += this.accelerations[I + s] * half_dt;
+        this.positions[I + s] += this.speeds[I + s] * dt;
+      }
     }
   }
   aggregateCollisions(collided) {
@@ -26717,17 +27158,15 @@ var Gravity = class {
     for (let l = 0, n = collided.length; l < n; l++) {
       const cell = collided[l];
       let i = cell[0];
-      let i3 = i * 3;
+      let I = i * this.N;
       for (let m = 1, o = cell.length; m < o; m++) {
         let j = cell[m];
-        let j3 = j * 3;
+        let J = j * this.N;
         let mass_ratio = 1 / (this.masses[i] + this.masses[j]);
-        this.positions[i3] = mass_ratio * (this.positions[i3] * this.masses[i] + this.positions[j3] * this.masses[j]);
-        this.positions[i3 + 1] = mass_ratio * (this.positions[i3 + 1] * this.masses[i] + this.positions[j3 + 1] * this.masses[j]);
-        this.positions[i3 + 2] = mass_ratio * (this.positions[i3 + 2] * this.masses[i] + this.positions[j3 + 2] * this.masses[j]);
-        this.speeds[i3] = mass_ratio * (this.speeds[i3] * this.masses[i] + this.speeds[j3] * this.masses[j]);
-        this.speeds[i3 + 1] = mass_ratio * (this.speeds[i3 + 1] * this.masses[i] + this.speeds[j3 + 1] * this.masses[j]);
-        this.speeds[i3 + 2] = mass_ratio * (this.speeds[i3 + 2] * this.masses[i] + this.speeds[j3 + 2] * this.masses[j]);
+        for (let s = 0; s < this.N; s++) {
+          this.positions[I + s] = mass_ratio * (this.positions[I + s] * this.masses[i] + this.positions[J + s] * this.masses[j]);
+          this.speeds[I + s] = mass_ratio * (this.speeds[I + s] * this.masses[i] + this.speeds[J + s] * this.masses[j]);
+        }
         this.temperatures[i] = mass_ratio * (this.temperatures[i] * this.masses[i] + this.temperatures[j] * this.masses[j]);
         this.masses[i] += this.masses[j];
       }
@@ -26741,8 +27180,12 @@ var Gravity = class {
     }
     const escapeDistance2 = escapeDistance * escapeDistance;
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i * 3;
-      if (this.positions[i3] * this.positions[i3] + this.positions[i3 + 1] * this.positions[i3 + 1] + this.positions[i3 + 2] * this.positions[i3 + 2] > escapeDistance2) {
+      let I = i * this.N;
+      let d = 0;
+      for (let s = 0; s < this.N; s++) {
+        d += this.positions[I + s] * this.positions[I + s];
+      }
+      if (d > escapeDistance2) {
         skip.push(i);
       }
     }
@@ -26760,17 +27203,13 @@ var Gravity = class {
         i += 1;
         continue;
       }
-      let i3 = i * 3;
-      let is3 = (i + shift) * 3;
-      this.positions[i3] = this.positions[is3];
-      this.positions[i3 + 1] = this.positions[is3 + 1];
-      this.positions[i3 + 2] = this.positions[is3 + 2];
-      this.speeds[i3] = this.speeds[is3];
-      this.speeds[i3 + 1] = this.speeds[is3 + 1];
-      this.speeds[i3 + 2] = this.speeds[is3 + 2];
-      this.accelerations[i3] = this.accelerations[is3];
-      this.accelerations[i3 + 1] = this.accelerations[is3 + 1];
-      this.accelerations[i3 + 2] = this.accelerations[is3 + 2];
+      let I = i * this.N;
+      let Is = (i + shift) * this.N;
+      for (let s = 0; s < this.N; s++) {
+        this.positions[I + s] = this.positions[Is + s];
+        this.speeds[I + s] = this.speeds[Is + s];
+        this.accelerations[I + s] = this.accelerations[Is + s];
+      }
       this.temperatures[i] = this.temperatures[i + shift];
       this.masses[i] = this.masses[i + shift];
       i += 1;
@@ -26798,19 +27237,19 @@ var Gravity = class {
     const dt = this.params.simulationSpeed;
     const half_dt = dt * 0.5;
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i * 3;
-      this.speeds[i3] += this.accelerations[i3] * half_dt;
-      this.speeds[i3 + 1] += this.accelerations[i3 + 1] * half_dt;
-      this.speeds[i3 + 2] += this.accelerations[i3 + 2] * half_dt;
+      let I = i * this.N;
+      for (let s = 0; s < this.N; s++) {
+        this.speeds[I + s] += this.accelerations[I + s] * half_dt;
+      }
     }
   }
   set_orb(i, {position, mass, speed, temperature}) {
-    this.positions[i * 3] = position.x;
-    this.positions[i * 3 + 1] = position.y;
-    this.positions[i * 3 + 2] = position.z;
-    this.speeds[i * 3] = speed.x;
-    this.speeds[i * 3 + 1] = speed.y;
-    this.speeds[i * 3 + 2] = speed.z;
+    let I = i * this.N;
+    for (let s = 0; s < this.N; s++) {
+      let suffix = this.vectorSuffix[s];
+      this.positions[I + s] = position[suffix] || 0;
+      this.speeds[I + s] = speed[suffix] || 0;
+    }
     this.masses[i] = mass;
     this.temperatures[i] = temperature;
   }
@@ -26829,6 +27268,33 @@ var Gravity = class {
     }
     this.len -= n;
   }
+  project(projector) {
+    if (this.N === 3) {
+      return;
+    } else if (this.N === 2) {
+      for (let i = 0, n = this.len; i < n; i++) {
+        let i2 = i * 2;
+        let i3 = i2 + i;
+        this.xyz[i3] = this.positions[i2];
+        this.xyz[i3 + 1] = this.positions[i2 + 1];
+        this.xyz[i3 + 2] = 0;
+      }
+    } else if (this.N === 4) {
+      for (let i = 0, n = this.len; i < n; i++) {
+        let i3 = i * 3;
+        let i4 = i3 + i;
+        let p = projector.project([
+          this.positions[i4],
+          this.positions[i4 + 1],
+          this.positions[i4 + 2],
+          this.positions[i4 + 3]
+        ]);
+        this.xyz[i3] = p[0];
+        this.xyz[i3 + 1] = p[1];
+        this.xyz[i3 + 2] = p[2];
+      }
+    }
+  }
   free() {
     this.alive = false;
     delete this.temperatures;
@@ -26836,12 +27302,59 @@ var Gravity = class {
     delete this.accelerations;
     delete this.speeds;
     delete this.positions;
+    delete this.xyz;
   }
 };
 var gravity_default = Gravity;
 
 // dist/gravity/p2p.js
 var P2PGravity = class extends gravity_default {
+  computeForce2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+    u[0] = this.positions[J] - this.positions[I];
+    u[1] = this.positions[J + 1] - this.positions[I + 1];
+    let distance2 = u[0] * u[0] + u[1] * u[1];
+    if (collisions) {
+      if (distance2 < threshold2) {
+        collided.push([i, j]);
+      }
+    }
+    let fact = this.masses[j] / (distance2 + softening2);
+    a[0] += u[0] * fact;
+    a[1] += u[1] * fact;
+  }
+  computeForce3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+    u[0] = this.positions[J] - this.positions[I];
+    u[1] = this.positions[J + 1] - this.positions[I + 1];
+    u[2] = this.positions[J + 2] - this.positions[I + 2];
+    let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
+    let distance = Math.sqrt(distance2 + softening2);
+    if (collisions) {
+      if (distance2 < threshold2) {
+        collided.push([i, j]);
+      }
+    }
+    let fact = this.masses[j] / (distance * distance * distance);
+    a[0] += u[0] * fact;
+    a[1] += u[1] * fact;
+    a[2] += u[2] * fact;
+  }
+  computeForce4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
+    u[0] = this.positions[J] - this.positions[I];
+    u[1] = this.positions[J + 1] - this.positions[I + 1];
+    u[2] = this.positions[J + 2] - this.positions[I + 2];
+    u[3] = this.positions[J + 3] - this.positions[I + 3];
+    let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2] + u[3] * u[3];
+    if (collisions) {
+      if (distance2 < threshold2) {
+        collided.push([i, j]);
+      }
+    }
+    let fact = this.masses[j] / (distance2 * distance2);
+    a[0] += u[0] * fact;
+    a[1] += u[1] * fact;
+    a[2] += u[2] * fact;
+    a[3] += u[3] * fact;
+  }
   async simulate() {
     const {
       gravitationalConstant,
@@ -26851,35 +27364,23 @@ var P2PGravity = class extends gravity_default {
     } = this.params;
     const softening2 = softening * softening;
     const threshold2 = collisionThreshold * collisionThreshold;
+    const computeForce = this[`computeForce${this.N}`].bind(this);
     const collided = [];
-    const u = [0, 0, 0];
-    const a = [0, 0, 0];
+    const u = new Array(this.N).fill(0);
+    const a = new Array(this.N).fill(0);
     for (let i = 0, n = this.len; i < n; i++) {
-      let i3 = i * 3;
+      let I = i * this.N;
       a.fill(0);
       for (let j = 0; j < this.len; j++) {
         if (i === j) {
           continue;
         }
-        let j3 = j * 3;
-        u[0] = this.positions[j3] - this.positions[i3];
-        u[1] = this.positions[j3 + 1] - this.positions[i3 + 1];
-        u[2] = this.positions[j3 + 2] - this.positions[i3 + 2];
-        let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
-        let distance = Math.sqrt(distance2 + softening2);
-        if (collisions) {
-          if (distance2 < threshold2) {
-            collided.push([i, j]);
-          }
-        }
-        let fact = this.masses[j] / (distance * distance * distance);
-        a[0] += u[0] * fact;
-        a[1] += u[1] * fact;
-        a[2] += u[2] * fact;
+        let J = j * this.N;
+        computeForce(a, u, i, I, j, J, softening2, collisions, threshold2, collided);
       }
-      this.accelerations[i3] = a[0] * gravitationalConstant;
-      this.accelerations[i3 + 1] = a[1] * gravitationalConstant;
-      this.accelerations[i3 + 2] = a[2] * gravitationalConstant;
+      for (let s = 0; s < this.N; s++) {
+        this.accelerations[I + s] = a[s] * gravitationalConstant;
+      }
     }
     return this.solve(collided);
   }
@@ -27511,6 +28012,7 @@ var scene = new Scene();
 var camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2e4);
 camera.position.set(1500, 1500, 1500);
 camera.lookAt(0, 0, 0);
+var hyperRenderer = new HyperRenderer(Math.PI / 2, 1500);
 var controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 1;
 controls.maxDistance = 2e4;
@@ -27549,6 +28051,9 @@ async function animate() {
   raf = requestAnimationFrame(animate);
 }
 async function render() {
+  if (params.dimensions > 3) {
+    hyperRenderer.rotate(params);
+  }
   if (newOrb !== null) {
     raycaster.setFromCamera(mouse, camera);
     if (newOrb.iter === 0) {
@@ -27585,6 +28090,7 @@ async function render() {
   gravity.frog_leap();
   const newLen = await gravity.simulate();
   gravity.frog_drop();
+  gravity.project?.(hyperRenderer);
   if (params.backend.startsWith("rust") && !particles.geometry.attributes.temperature.array.buffer.byteLength) {
     console.warn("Bad rust memory");
     setRustMemory(particles.geometry, particles.geometry.attributes.temperature.count);
@@ -27624,7 +28130,7 @@ function init2() {
   if (backend.startsWith("rust")) {
     setRustMemory(geometry, allocLength);
   } else {
-    geometry.setAttribute("position", new BufferAttribute(gravity.positions, 3).setUsage(DynamicDrawUsage));
+    geometry.setAttribute("position", new BufferAttribute(gravity.xyz, 3).setUsage(DynamicDrawUsage));
     geometry.setAttribute("mass", new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage));
     geometry.setAttribute("temperature", new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage));
   }
@@ -27646,6 +28152,14 @@ function restart() {
     return;
   }
   cancelAnimationFrame(raf);
+  hyperRenderer.rotation = {
+    xy: 0,
+    xz: 0,
+    xw: 0,
+    yz: 0,
+    yw: 0,
+    zw: 0
+  };
   scene.clear();
   gravity.free();
   init2();
@@ -27656,6 +28170,19 @@ function initGUI() {
     load: presets_default,
     preset
   });
+  gui.add(params, "dimensions", 2, 4, 1).onChange(restart);
+  gui.add(params, "zFov", 0, 180).onChange((v) => {
+    camera.fov = v;
+    camera.updateProjectionMatrix();
+  });
+  gui.add(params, "wFov", 0, 180).onChange((v) => hyperRenderer.fov = v * Math.PI / 180);
+  const rotSpeed = gui.addFolder("4d rotation speed");
+  rotSpeed.add(params, "xy", 0, 50);
+  rotSpeed.add(params, "xz", 0, 50);
+  rotSpeed.add(params, "xw", 0, 50);
+  rotSpeed.add(params, "yz", 0, 50);
+  rotSpeed.add(params, "yw", 0, 50);
+  rotSpeed.add(params, "zw", 0, 50);
   gui.add(params, "backend", Object.keys(backends)).onChange(restart);
   gui.add(params, "resolution", 1, 9, 1).name("fmm resolution").onChange(restart);
   gui.add(params, "theta", 0, 4, 0.01).name("bh theta").onChange(restart);
@@ -27696,11 +28223,6 @@ function initGUI() {
   simulation.add(params, "blackHoleMassThreshold", 0, 2e6, 1).onChange((v) => particles.material.uniforms.blackHoleMassThreshold.value = v);
   simulation.open();
   gui.add(params, "creationMode");
-  gui.add({
-    "Go 4d": () => {
-      window.open("https://paradoxxxzero.github.io/katannealation");
-    }
-  }, "Go 4d");
   gui.remember(params);
   gui.revert();
   gui.__preset_select.addEventListener("change", ({target: {value}}) => {
@@ -27714,7 +28236,7 @@ function initGUI() {
 var raycaster = new Raycaster();
 var mouse = new Vector2();
 window.addEventListener("pointerdown", function(event) {
-  if (gui.domElement.contains(event.target) || stats.dom.contains(event.target)) {
+  if (gui && gui.domElement.contains(event.target) || stats && stats.dom.contains(event.target)) {
     return;
   }
   mouse.set(event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
