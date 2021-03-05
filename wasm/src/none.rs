@@ -1,21 +1,27 @@
 use crate::gravity::Gravity;
-use crate::{Orb, Params};
+use crate::projector::Projector;
+use crate::Params;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct RustNoGravity {
+pub struct NoRustGravity {
     params: Params,
+    xyz: Vec<f32>,
     positions: Vec<f32>,
     speeds: Vec<f32>,
     accelerations: Vec<f32>,
     masses: Vec<f32>,
     temperatures: Vec<f32>,
     len: usize,
-    alloc_len: usize,
+    dimensions: usize,
+    projector: Option<Projector>,
 }
 
-impl Gravity for RustNoGravity {
+impl Gravity for NoRustGravity {
+    fn _dimensions(&self) -> usize {
+        self.dimensions
+    }
     fn _len(&self) -> usize {
         self.len
     }
@@ -37,55 +43,53 @@ impl Gravity for RustNoGravity {
     fn _positions(&mut self) -> &mut Vec<f32> {
         &mut self.positions
     }
+    fn _xyz(&mut self) -> &mut Vec<f32> {
+        &mut self.xyz
+    }
     fn _masses(&mut self) -> &mut Vec<f32> {
         &mut self.masses
     }
     fn _temperatures(&mut self) -> &mut Vec<f32> {
         &mut self.temperatures
     }
+    fn _projector(&mut self) -> &mut Option<Projector> {
+        &mut self.projector
+    }
 }
 
 #[wasm_bindgen]
-impl RustNoGravity {
+impl NoRustGravity {
     #[wasm_bindgen(constructor)]
-    pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<RustNoGravity, JsValue> {
-        console_error_panic_hook::set_once();
-        let params = params
-            .into_serde()
-            .map_err(|e| JsValue::from(e.to_string()))?;
-        let len = orbs.length() as usize;
-        let mut positions = vec![0f32; 3 * alloc_len];
-        let mut speeds = vec![0f32; 3 * alloc_len];
-        let accelerations = vec![0f32; 3 * alloc_len];
-        let mut masses = vec![0f32; alloc_len];
-        let mut temperatures = vec![0f32; alloc_len];
-
-        for (i, orb) in orbs.iter().enumerate() {
-            let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-            positions[i * 3] = orb.position.x;
-            positions[i * 3 + 1] = orb.position.y;
-            positions[i * 3 + 2] = orb.position.z;
-            speeds[i * 3] = orb.speed.x;
-            speeds[i * 3 + 1] = orb.speed.y;
-            speeds[i * 3 + 2] = orb.speed.z;
-            masses[i] = orb.mass;
-            temperatures[i] = orb.temperature;
-        }
-
-        Ok(RustNoGravity {
+    pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<NoRustGravity, JsValue> {
+        let (
             params,
+            xyz,
             positions,
             speeds,
             accelerations,
             masses,
             temperatures,
             len,
-            alloc_len,
+            dimensions,
+            projector,
+        ) = NoRustGravity::init(orbs, params, alloc_len)?;
+
+        Ok(NoRustGravity {
+            params,
+            xyz,
+            positions,
+            speeds,
+            accelerations,
+            masses,
+            temperatures,
+            len,
+            dimensions,
+            projector,
         })
     }
 
-    pub fn positions_ptr(&self) -> *const f32 {
-        self.positions.as_ptr()
+    pub fn xyz_ptr(&self) -> *const f32 {
+        self.xyz.as_ptr()
     }
     pub fn masses_ptr(&self) -> *const f32 {
         self.masses.as_ptr()
@@ -95,13 +99,16 @@ impl RustNoGravity {
     }
 
     pub fn frog_leap(&mut self) {
+        if self.dimensions == 3 {
+            std::mem::swap(&mut self.positions, &mut self.xyz)
+        }
         let dt = self._params().simulationSpeed;
         for i in 0..self._len() {
-            for k in 0..3 {
-                self._positions()[i * 3 + k] += self._speeds()[i * 3 + k] * dt;
+            let ii = i * self.dimensions;
+            for s in 0..self.dimensions {
+                self._positions()[ii + s] += self._speeds()[ii + s] * dt;
             }
         }
-        self.leap();
     }
 
     pub fn simulate(&mut self) -> usize {
@@ -110,7 +117,11 @@ impl RustNoGravity {
         self.solve(collided)
     }
 
-    pub fn frog_drop(&mut self) {}
+    pub fn frog_drop(&mut self) {
+        if self.dimensions == 3 {
+            std::mem::swap(&mut self.xyz, &mut self.positions)
+        }
+    }
 
     pub fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {
         Gravity::grow(self, orbs)
@@ -120,5 +131,11 @@ impl RustNoGravity {
     }
     pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
         Gravity::set_orb(self, i, orb)
+    }
+    pub fn project(&mut self) {
+        Gravity::project(self)
+    }
+    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+        Gravity::params_change(self, params)
     }
 }

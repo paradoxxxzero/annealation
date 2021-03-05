@@ -31,7 +31,7 @@ import wasmInit, {
   BarnesHutRustGravity,
   // FMMRustGravity,
   // TreeRustGravity,
-  RustNoGravity,
+  NoRustGravity,
   wasm_memory,
 } from 'wasm'
 import Stats from 'stats.js'
@@ -71,7 +71,7 @@ const backends = {
   // rust_fmm: FMMRustGravity,
   // rust_tree: TreeRustGravity,
   js_none: NoGravity,
-  rust_none: RustNoGravity,
+  rust_none: NoRustGravity,
 }
 
 const fallbacks = {
@@ -90,7 +90,17 @@ const getPreset = () =>
   decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
 const preset = getPreset()
 
-const params = { ...presets.remembered[preset][0] }
+// const params = { ...presets.remembered[preset][0] }
+const params = new Proxy(
+  { ...presets.remembered[preset][0] },
+  {
+    set(target, key, value) {
+      target[key] = value
+      gravity?.params_change(target, key, value)
+      return true
+    },
+  }
+)
 
 const renderer = new WebGLRenderer()
 renderer.setPixelRatio(window.devicePixelRatio)
@@ -110,8 +120,6 @@ const camera = new PerspectiveCamera(
 )
 camera.position.set(1500, 1500, 1500)
 camera.lookAt(0, 0, 0)
-
-const hyperRenderer = new HyperRenderer(Math.PI / 2, 1500)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.minDistance = 1
@@ -175,10 +183,6 @@ async function animate() {
 }
 
 async function render() {
-  if (params.dimensions > 3) {
-    hyperRenderer.rotate(params)
-  }
-
   if (newOrb !== null) {
     raycaster.setFromCamera(mouse, camera)
     if (newOrb.iter === 0) {
@@ -217,7 +221,7 @@ async function render() {
   gravity.frog_leap()
   const newLen = await gravity.simulate()
   gravity.frog_drop()
-  gravity.project?.(hyperRenderer)
+  gravity.project()
 
   if (
     params.backend.startsWith('rust') &&
@@ -242,11 +246,7 @@ async function render() {
 
 function setRustMemory(geometry, allocLength) {
   const { buffer } = wasm_memory()
-  const positions = new Float32Array(
-    buffer,
-    gravity.positions_ptr(),
-    3 * allocLength
-  )
+  const positions = new Float32Array(buffer, gravity.xyz_ptr(), 3 * allocLength)
   const masses = new Float32Array(buffer, gravity.masses_ptr(), allocLength)
   const temperatures = new Float32Array(
     buffer,
@@ -322,14 +322,6 @@ function restart() {
     return
   }
   cancelAnimationFrame(raf)
-  hyperRenderer.rotation = {
-    xy: 0,
-    xz: 0,
-    xw: 0,
-    yz: 0,
-    yw: 0,
-    zw: 0,
-  }
   scene.clear()
   gravity.free()
   init()
@@ -346,9 +338,8 @@ function initGUI() {
     camera.fov = v
     camera.updateProjectionMatrix()
   })
-  gui
-    .add(params, 'wFov', 0, 180)
-    .onChange(v => (hyperRenderer.fov = (v * Math.PI) / 180))
+  gui.add(params, 'wFov', 0, 180)
+  gui.add(params, 'w', 0).name('Camera ana')
 
   const rotSpeed = gui.addFolder('4d rotation speed')
   rotSpeed.add(params, 'xy', 0, 50)
@@ -393,7 +384,7 @@ function initGUI() {
 
   const config = gui.addFolder('Configuration')
   config.add(params, 'configuration', Object.keys(configurations))
-  config.add(params, 'number')
+  config.add(params, 'number', 0)
   config.add(params, 'range', 0, 5000, 1).name('range (1e15m)')
   config.add(params, 'speed', 0, 1000).name('speed (1e2m.s)')
   config.add(params, 'mass', 0, 1000).name('mass (1e30kg)')

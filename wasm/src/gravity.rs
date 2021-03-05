@@ -1,8 +1,81 @@
+use crate::projector::Projector;
 use crate::{Orb, Params};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 pub trait Gravity {
+  fn init(
+    orbs: &Array,
+    params: &JsValue,
+    alloc_len: usize,
+  ) -> Result<
+    (
+      Params,
+      Vec<f32>,
+      Vec<f32>,
+      Vec<f32>,
+      Vec<f32>,
+      Vec<f32>,
+      Vec<f32>,
+      usize,
+      usize,
+      Option<Projector>,
+    ),
+    JsValue,
+  > {
+    console_error_panic_hook::set_once();
+    let params: Params = params
+      .into_serde()
+      .map_err(|e| JsValue::from(e.to_string()))?;
+    let len = orbs.length() as usize;
+    let dimensions = params.dimensions;
+    let mut xyz = vec![0f32; 3 * alloc_len];
+    let mut positions = if dimensions == 3 {
+      Vec::new()
+    } else {
+      vec![0f32; dimensions * alloc_len]
+    };
+    let mut speeds = vec![0f32; dimensions * alloc_len];
+    let accelerations = vec![0f32; dimensions * alloc_len];
+    let mut masses = vec![0f32; alloc_len];
+    let mut temperatures = vec![0f32; alloc_len];
+
+    if dimensions == 3 {
+      std::mem::swap(&mut positions, &mut xyz)
+    }
+    for (i, orb) in orbs.iter().enumerate() {
+      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+      let ii = i * dimensions;
+      for s in 0..dimensions {
+        positions[ii + s] = orb.position.get(s);
+        speeds[ii + s] = orb.speed.get(s);
+      }
+      masses[i] = orb.mass;
+      temperatures[i] = orb.temperature;
+    }
+    if dimensions == 3 {
+      std::mem::swap(&mut xyz, &mut positions)
+    }
+
+    let projector = match dimensions {
+      4 => Some(Projector::new(params.wFov, params.w)),
+      _ => None,
+    };
+
+    Ok((
+      params,
+      xyz,
+      positions,
+      speeds,
+      accelerations,
+      masses,
+      temperatures,
+      len,
+      dimensions,
+      projector,
+    ))
+  }
+  fn _dimensions(&self) -> usize;
   fn _len(&self) -> usize;
   fn _len_set(&mut self, len: usize);
   fn _params(&self) -> &Params;
@@ -10,17 +83,19 @@ pub trait Gravity {
   fn _accelerations(&mut self) -> &mut Vec<f32>;
   fn _speeds(&mut self) -> &mut Vec<f32>;
   fn _positions(&mut self) -> &mut Vec<f32>;
+  fn _xyz(&mut self) -> &mut Vec<f32>;
   fn _masses(&mut self) -> &mut Vec<f32>;
   fn _temperatures(&mut self) -> &mut Vec<f32>;
+  fn _projector(&mut self) -> &mut Option<Projector>;
 
   fn leap(&mut self) {
     let dt = self._params().simulationSpeed;
     let half_dt = dt * 0.5f32;
     for i in 0..self._len() {
-      let i3 = i * 3;
-      for k in 0..3 {
-        self._speeds()[i3 + k] += self._accelerations()[i3 + k] * half_dt;
-        self._positions()[i3 + k] += self._speeds()[i3 + k] * dt;
+      let ii = i * self._dimensions();
+      for s in 0..self._dimensions() {
+        self._speeds()[ii + s] += self._accelerations()[ii + s] * half_dt;
+        self._positions()[ii + s] += self._speeds()[ii + s] * dt;
       }
     }
   }
@@ -29,10 +104,28 @@ pub trait Gravity {
     let dt = self._params().simulationSpeed;
     let half_dt = dt * 0.5f32;
     for i in 0..self._len() {
-      let i3 = i * 3;
-      for k in 0..3 {
-        self._speeds()[i3 + k] += self._accelerations()[i3 + k] * half_dt;
+      let ii = i * self._dimensions();
+      for s in 0..self._dimensions() {
+        self._speeds()[ii + s] += self._accelerations()[ii + s] * half_dt;
       }
+    }
+    // let Params {
+    //   xy,
+    //   xz,
+    //   xw,
+    //   yz,
+    //   yw,
+    //   zw,
+    //   ..
+    // } = self._params();
+    let xy = self._params().xy;
+    let xz = self._params().xz;
+    let xw = self._params().xw;
+    let yz = self._params().yz;
+    let yw = self._params().yw;
+    let zw = self._params().zw;
+    if let Some(projector) = self._projector() {
+      projector.rotate(xy, xz, xw, yz, yw, zw);
     }
   }
 
@@ -66,21 +159,23 @@ pub trait Gravity {
   fn solve_collisions(&mut self, collided: Vec<Vec<usize>>) {
     for item in collided.iter() {
       let i = item[0];
-      let i3 = i * 3;
+      let ii = i * self._dimensions();
       for j in &item[1..] {
-        let j3 = j * 3;
+        let jj = *j * self._dimensions();
         let mass_ratio = 1. / (self._masses()[i] + self._masses()[*j]);
-        for k in 0..3 {
-          self._positions()[i3 + k] = mass_ratio
-            * (self._positions()[i3 + k] * self._masses()[i]
-              + self._positions()[j3 + k] * self._masses()[*j]);
-          self._speeds()[i3 + k] = mass_ratio
-            * (self._speeds()[i3 + k] * self._masses()[i]
-              + self._speeds()[j3 + k] * self._masses()[*j]);
+        for s in 0..self._dimensions() {
+          self._positions()[ii + s] = mass_ratio
+            * (self._positions()[ii + s] * self._masses()[i]
+              + self._positions()[jj + s] * self._masses()[*j]);
+
+          self._speeds()[ii + s] = mass_ratio
+            * (self._speeds()[ii + s] * self._masses()[i]
+              + self._speeds()[jj + s] * self._masses()[*j]);
         }
         self._temperatures()[i] = mass_ratio
           * (self._temperatures()[i] * self._masses()[i]
             + self._temperatures()[*j] * self._masses()[*j]);
+
         self._masses()[i] += self._masses()[*j];
       }
     }
@@ -94,12 +189,11 @@ pub trait Gravity {
     }
     let escape_distance2 = escape_distance * escape_distance;
     for i in 0..self._len() {
-      let i3 = i * 3;
-      if self._positions()[i3] * self._positions()[i3]
-        + self._positions()[i3 + 1] * self._positions()[i3 + 1]
-        + self._positions()[i3 + 2] * self._positions()[i3 + 2]
-        > escape_distance2
-      {
+      let ii = i * self._dimensions();
+      let distance = (0..self._dimensions()).fold(0f32, |acc, s| {
+        acc + self._positions()[ii + s] * self._positions()[ii + s]
+      });
+      if distance > escape_distance2 {
         skip.push(i);
       }
     }
@@ -119,12 +213,12 @@ pub trait Gravity {
         i += 1;
         continue;
       }
-      let i3 = i * 3;
-      let is3 = (i + shift) * 3;
-      for k in 0..3 {
-        self._positions()[i3 + k] = self._positions()[is3 + k];
-        self._speeds()[i3 + k] = self._speeds()[is3 + k];
-        self._accelerations()[i3 + k] = self._accelerations()[is3 + k];
+      let ii = i * self._dimensions();
+      let iis = (i + shift) * self._dimensions();
+      for s in 0..self._dimensions() {
+        self._positions()[ii + s] = self._positions()[iis + s];
+        self._speeds()[ii + s] = self._speeds()[iis + s];
+        self._accelerations()[ii + s] = self._accelerations()[iis + s];
       }
       self._temperatures()[i] = self._temperatures()[i + shift];
       self._masses()[i] = self._masses()[i + shift];
@@ -153,12 +247,11 @@ pub trait Gravity {
 
   fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
     let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-    self._positions()[i * 3] = orb.position.x;
-    self._positions()[i * 3 + 1] = orb.position.y;
-    self._positions()[i * 3 + 2] = orb.position.z;
-    self._speeds()[i * 3] = orb.speed.x;
-    self._speeds()[i * 3 + 1] = orb.speed.y;
-    self._speeds()[i * 3 + 2] = orb.speed.z;
+    let ii = i * self._dimensions();
+    for s in 0..self._dimensions() {
+      self._positions()[ii + s] = orb.position.get(s);
+      self._speeds()[ii + s] = orb.speed.get(s);
+    }
     self._masses()[i] = orb.mass;
     self._temperatures()[i] = orb.temperature;
     Ok(())
@@ -182,6 +275,49 @@ pub trait Gravity {
     }
 
     self._len_set(self._len() - n);
+    Ok(())
+  }
+
+  fn project(&mut self) {
+    if self._dimensions() == 3 {
+      return;
+    } else if self._dimensions() == 2 {
+      for i in 0..self._len() {
+        let i2 = i * 2;
+        let i3 = i2 + i;
+        self._xyz()[i3] = self._positions()[i2];
+        self._xyz()[i3 + 1] = self._positions()[i2 + 1];
+        self._xyz()[i3 + 2] = 0f32;
+      }
+    } else if self._dimensions() == 4 {
+      for i in 0..self._len() {
+        let i3 = i * 3;
+        let i4 = i3 + i;
+        let x = self._positions()[i4];
+        let y = self._positions()[i4 + 1];
+        let z = self._positions()[i4 + 2];
+        let w = self._positions()[i4 + 3];
+        if let Some(projector) = self._projector() {
+          let (x, y, z) = projector.project(x, y, z, w);
+          self._xyz()[i3] = x;
+          self._xyz()[i3 + 1] = y;
+          self._xyz()[i3 + 2] = z;
+        }
+      }
+    }
+  }
+  fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+    self._params_set(
+      params
+        .into_serde()
+        .map_err(|e| JsValue::from(e.to_string()))?,
+    );
+    let w_fov = self._params().wFov;
+    let w = self._params().w;
+    if let Some(projector) = self._projector() {
+      projector.set_fov(w_fov);
+      projector.set_w(w);
+    }
     Ok(())
   }
 }

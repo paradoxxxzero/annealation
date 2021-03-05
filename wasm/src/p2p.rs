@@ -1,21 +1,40 @@
 use crate::gravity::Gravity;
-use crate::{Orb, Params};
+use crate::projector::Projector;
+use crate::Params;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+#[allow(unused_macros)]
+macro_rules! console_log {
+  // Note that this is using the `log` function imported above during
+  // `bare_bones`
+  ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
+
+#[wasm_bindgen]
 pub struct P2PRustGravity {
     params: Params,
+    xyz: Vec<f32>,
     positions: Vec<f32>,
     speeds: Vec<f32>,
     accelerations: Vec<f32>,
     masses: Vec<f32>,
     temperatures: Vec<f32>,
     len: usize,
-    alloc_len: usize,
+    dimensions: usize,
+    projector: Option<Projector>,
 }
 
 impl Gravity for P2PRustGravity {
+    fn _dimensions(&self) -> usize {
+        self.dimensions
+    }
     fn _len(&self) -> usize {
         self.len
     }
@@ -37,11 +56,17 @@ impl Gravity for P2PRustGravity {
     fn _positions(&mut self) -> &mut Vec<f32> {
         &mut self.positions
     }
+    fn _xyz(&mut self) -> &mut Vec<f32> {
+        &mut self.xyz
+    }
     fn _masses(&mut self) -> &mut Vec<f32> {
         &mut self.masses
     }
     fn _temperatures(&mut self) -> &mut Vec<f32> {
         &mut self.temperatures
+    }
+    fn _projector(&mut self) -> &mut Option<Projector> {
+        &mut self.projector
     }
 }
 
@@ -53,43 +78,35 @@ impl P2PRustGravity {
         params: &JsValue,
         alloc_len: usize,
     ) -> Result<P2PRustGravity, JsValue> {
-        console_error_panic_hook::set_once();
-        let params = params
-            .into_serde()
-            .map_err(|e| JsValue::from(e.to_string()))?;
-        let len = orbs.length() as usize;
-        let mut positions = vec![0f32; 3 * alloc_len];
-        let mut speeds = vec![0f32; 3 * alloc_len];
-        let accelerations = vec![0f32; 3 * alloc_len];
-        let mut masses = vec![0f32; alloc_len];
-        let mut temperatures = vec![0f32; alloc_len];
-
-        for (i, orb) in orbs.iter().enumerate() {
-            let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-            positions[i * 3] = orb.position.x;
-            positions[i * 3 + 1] = orb.position.y;
-            positions[i * 3 + 2] = orb.position.z;
-            speeds[i * 3] = orb.speed.x;
-            speeds[i * 3 + 1] = orb.speed.y;
-            speeds[i * 3 + 2] = orb.speed.z;
-            masses[i] = orb.mass;
-            temperatures[i] = orb.temperature;
-        }
-
-        Ok(P2PRustGravity {
+        let (
             params,
+            xyz,
             positions,
             speeds,
             accelerations,
             masses,
             temperatures,
             len,
-            alloc_len,
+            dimensions,
+            projector,
+        ) = P2PRustGravity::init(orbs, params, alloc_len)?;
+
+        Ok(P2PRustGravity {
+            params,
+            xyz,
+            positions,
+            speeds,
+            accelerations,
+            masses,
+            temperatures,
+            len,
+            dimensions,
+            projector,
         })
     }
 
-    pub fn positions_ptr(&self) -> *const f32 {
-        self.positions.as_ptr()
+    pub fn xyz_ptr(&self) -> *const f32 {
+        self.xyz.as_ptr()
     }
     pub fn speeds_ptr(&self) -> *const f32 {
         self.speeds.as_ptr()
@@ -101,19 +118,57 @@ impl P2PRustGravity {
         self.temperatures.as_ptr()
     }
     pub fn frog_leap(&mut self) {
+        if self._dimensions() == 3 {
+            std::mem::swap(&mut self.positions, &mut self.xyz)
+        }
         self.leap();
     }
-    pub fn simulate(&mut self) -> usize {
-        let gravitational_constant = self.params.gravitationalConstant;
-        let softening = self.params.softening;
-        let collisions = self.params.collisions;
-        let threshold = self.params.collisionThreshold;
 
-        let mut collided = Vec::new();
-        let softening2 = softening * softening;
-        let threshold2 = threshold * threshold;
+    fn simulate2(
+        &mut self,
+        softening2: f32,
+        collisions: bool,
+        threshold2: f32,
+        collided: &mut Vec<(usize, usize)>,
+        gravitational_constant: f32,
+    ) {
+        let mut a = [0f32, 0f32];
+        for i in 0..self.len {
+            let i2 = i * 2;
+            a.fill(0f32);
+            for j in 0..self.len {
+                if i == j {
+                    continue;
+                }
+                let j2 = j * 2;
+                let u = [
+                    self.positions[j2] - self.positions[i2],
+                    self.positions[j2 + 1] - self.positions[i2 + 1],
+                ];
+                let distance2 = u[0] * u[0] + u[1] * u[1];
+                if collisions {
+                    if distance2 < threshold2 {
+                        collided.push((i, j));
+                    }
+                }
+                let fact = self.masses[j] / (distance2 + softening2);
+                a[0] += u[0] * fact;
+                a[1] += u[1] * fact;
+            }
+            self.accelerations[i2] = a[0] * gravitational_constant;
+            self.accelerations[i2 + 1] = a[1] * gravitational_constant;
+        }
+    }
+
+    fn simulate3(
+        &mut self,
+        softening2: f32,
+        collisions: bool,
+        threshold2: f32,
+        collided: &mut Vec<(usize, usize)>,
+        gravitational_constant: f32,
+    ) {
         let mut a = [0f32, 0f32, 0f32];
-
         for i in 0..self.len {
             let i3 = i * 3;
             a.fill(0f32);
@@ -134,22 +189,104 @@ impl P2PRustGravity {
                         collided.push((i, j));
                     }
                 }
-
                 let fact = self.masses[j] / (distance * distance * distance);
-
                 a[0] += u[0] * fact;
                 a[1] += u[1] * fact;
                 a[2] += u[2] * fact;
             }
-            for k in 0..3 {
-                self.accelerations[i3 + k] = a[k] * gravitational_constant;
+            self.accelerations[i3] = a[0] * gravitational_constant;
+            self.accelerations[i3 + 1] = a[1] * gravitational_constant;
+            self.accelerations[i3 + 2] = a[2] * gravitational_constant;
+        }
+    }
+
+    fn simulate4(
+        &mut self,
+        softening2: f32,
+        collisions: bool,
+        threshold2: f32,
+        collided: &mut Vec<(usize, usize)>,
+        gravitational_constant: f32,
+    ) {
+        let mut a = [0f32, 0f32, 0f32, 0f32];
+        for i in 0..self.len {
+            let i4 = i * 4;
+            a.fill(0f32);
+            for j in 0..self.len {
+                if i == j {
+                    continue;
+                }
+                let j4 = j * 4;
+                let u = [
+                    self.positions[j4] - self.positions[i4],
+                    self.positions[j4 + 1] - self.positions[i4 + 1],
+                    self.positions[j4 + 2] - self.positions[i4 + 2],
+                    self.positions[j4 + 3] - self.positions[i4 + 3],
+                ];
+                let distance2 = u[0] * u[0] + u[1] * u[1] + u[2] * u[2] + u[3] * u[3];
+                let distance = (distance2 + softening2).sqrt();
+                if collisions {
+                    if distance2 < threshold2 {
+                        collided.push((i, j));
+                    }
+                }
+                let fact = self.masses[j] / (distance * distance * distance);
+                a[0] += u[0] * fact;
+                a[1] += u[1] * fact;
+                a[2] += u[2] * fact;
+                a[3] += u[3] * fact;
             }
+            self.accelerations[i4] = a[0] * gravitational_constant;
+            self.accelerations[i4 + 1] = a[1] * gravitational_constant;
+            self.accelerations[i4 + 2] = a[2] * gravitational_constant;
+            self.accelerations[i4 + 3] = a[3] * gravitational_constant;
+        }
+    }
+
+    pub fn simulate(&mut self) -> usize {
+        let gravitational_constant = self.params.gravitationalConstant;
+        let softening = self.params.softening;
+        let collisions = self.params.collisions;
+        let threshold = self.params.collisionThreshold;
+
+        let mut collided = Vec::new();
+        let softening2 = softening * softening;
+        let threshold2 = threshold * threshold;
+
+        // Unfactored for performance
+        if self.dimensions == 2 {
+            self.simulate2(
+                softening2,
+                collisions,
+                threshold2,
+                &mut collided,
+                gravitational_constant,
+            );
+        } else if self.dimensions == 3 {
+            self.simulate3(
+                softening2,
+                collisions,
+                threshold2,
+                &mut collided,
+                gravitational_constant,
+            );
+        } else if self.dimensions == 4 {
+            self.simulate4(
+                softening2,
+                collisions,
+                threshold2,
+                &mut collided,
+                gravitational_constant,
+            );
         }
 
         self.solve(collided)
     }
     pub fn frog_drop(&mut self) {
         self.drop();
+        if self._dimensions() == 3 {
+            std::mem::swap(&mut self.xyz, &mut self.positions)
+        }
     }
 
     pub fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {
@@ -160,5 +297,11 @@ impl P2PRustGravity {
     }
     pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
         Gravity::set_orb(self, i, orb)
+    }
+    pub fn project(&mut self) {
+        Gravity::project(self)
+    }
+    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+        Gravity::params_change(self, params)
     }
 }

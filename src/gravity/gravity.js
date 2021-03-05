@@ -1,3 +1,5 @@
+import { HyperRenderer } from 'four-js'
+
 export default class Gravity {
   constructor(orbs, params, allocLen) {
     this.alive = true
@@ -5,6 +7,12 @@ export default class Gravity {
     this.N = params.dimensions
     this.vectorSuffix = 'xyzw'
     this.len = orbs.length
+    if (this.N > 3) {
+      this.projector = new HyperRenderer(
+        (params.wFov * Math.PI) / 180,
+        params.w
+      )
+    }
 
     this.xyz = new Float32Array(allocLen * 3)
     this.positions =
@@ -15,6 +23,13 @@ export default class Gravity {
     this.temperatures = new Float32Array(allocLen)
 
     orbs.forEach((orb, i) => this.set_orb(i, orb))
+  }
+
+  params_change(params) {
+    if (this.projector) {
+      this.projector.fov = (params.wFov * Math.PI) / 180
+      this.projector.w = params.w
+    }
   }
 
   frog_leap() {
@@ -164,6 +179,10 @@ export default class Gravity {
         this.speeds[I + s] += this.accelerations[I + s] * half_dt
       }
     }
+
+    if (this.projector) {
+      this.projector.rotate(this.params)
+    }
   }
 
   set_orb(i, { position, mass, speed, temperature }) {
@@ -194,7 +213,7 @@ export default class Gravity {
     this.len -= n
   }
 
-  project(projector) {
+  project() {
     if (this.N === 3) {
       return
     } else if (this.N === 2) {
@@ -209,7 +228,7 @@ export default class Gravity {
       for (let i = 0, n = this.len; i < n; i++) {
         let i3 = i * 3
         let i4 = i3 + i
-        let p = projector.project([
+        let p = this.projector.project([
           this.positions[i4],
           this.positions[i4 + 1],
           this.positions[i4 + 2],

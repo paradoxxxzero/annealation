@@ -1,5 +1,6 @@
 use crate::gravity::Gravity;
-use crate::{Orb, Params};
+use crate::projector::Projector;
+use crate::Params;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
@@ -32,16 +33,21 @@ struct Cell {
 #[wasm_bindgen]
 pub struct BarnesHutRustGravity {
     params: Params,
+    xyz: Vec<f32>,
     positions: Vec<f32>,
     speeds: Vec<f32>,
     accelerations: Vec<f32>,
     masses: Vec<f32>,
     temperatures: Vec<f32>,
     len: usize,
-    alloc_len: usize,
+    dimensions: usize,
+    projector: Option<Projector>,
 }
 
 impl Gravity for BarnesHutRustGravity {
+    fn _dimensions(&self) -> usize {
+        self.dimensions
+    }
     fn _len(&self) -> usize {
         self.len
     }
@@ -63,11 +69,17 @@ impl Gravity for BarnesHutRustGravity {
     fn _positions(&mut self) -> &mut Vec<f32> {
         &mut self.positions
     }
+    fn _xyz(&mut self) -> &mut Vec<f32> {
+        &mut self.xyz
+    }
     fn _masses(&mut self) -> &mut Vec<f32> {
         &mut self.masses
     }
     fn _temperatures(&mut self) -> &mut Vec<f32> {
         &mut self.temperatures
+    }
+    fn _projector(&mut self) -> &mut Option<Projector> {
+        &mut self.projector
     }
 }
 
@@ -79,43 +91,35 @@ impl BarnesHutRustGravity {
         params: &JsValue,
         alloc_len: usize,
     ) -> Result<BarnesHutRustGravity, JsValue> {
-        console_error_panic_hook::set_once();
-        let params = params
-            .into_serde()
-            .map_err(|e| JsValue::from(e.to_string()))?;
-        let len = orbs.length() as usize;
-        let mut positions = vec![0f32; 3 * alloc_len];
-        let mut speeds = vec![0f32; 3 * alloc_len];
-        let accelerations = vec![0f32; 3 * alloc_len];
-        let mut masses = vec![0f32; alloc_len];
-        let mut temperatures = vec![0f32; alloc_len];
-
-        for (i, orb) in orbs.iter().enumerate() {
-            let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-            positions[i * 3] = orb.position.x;
-            positions[i * 3 + 1] = orb.position.y;
-            positions[i * 3 + 2] = orb.position.z;
-            speeds[i * 3] = orb.speed.x;
-            speeds[i * 3 + 1] = orb.speed.y;
-            speeds[i * 3 + 2] = orb.speed.z;
-            masses[i] = orb.mass;
-            temperatures[i] = orb.temperature;
-        }
-
-        Ok(BarnesHutRustGravity {
+        let (
             params,
+            xyz,
             positions,
             speeds,
             accelerations,
             masses,
             temperatures,
             len,
-            alloc_len,
+            dimensions,
+            projector,
+        ) = BarnesHutRustGravity::init(orbs, params, alloc_len)?;
+
+        Ok(BarnesHutRustGravity {
+            params,
+            xyz,
+            positions,
+            speeds,
+            accelerations,
+            masses,
+            temperatures,
+            len,
+            dimensions,
+            projector,
         })
     }
 
-    pub fn positions_ptr(&self) -> *const f32 {
-        self.positions.as_ptr()
+    pub fn xyz_ptr(&self) -> *const f32 {
+        self.xyz.as_ptr()
     }
     pub fn speeds_ptr(&self) -> *const f32 {
         self.speeds.as_ptr()
@@ -127,6 +131,9 @@ impl BarnesHutRustGravity {
         self.temperatures.as_ptr()
     }
     pub fn frog_leap(&mut self) {
+        if self._dimensions() == 3 {
+            std::mem::swap(&mut self.positions, &mut self.xyz)
+        }
         self.leap();
     }
 
@@ -339,6 +346,9 @@ impl BarnesHutRustGravity {
     }
     pub fn frog_drop(&mut self) {
         self.drop();
+        if self._dimensions() == 3 {
+            std::mem::swap(&mut self.xyz, &mut self.positions)
+        }
     }
 
     pub fn grow(&mut self, orbs: &Array) -> Result<(), JsValue> {
@@ -349,5 +359,11 @@ impl BarnesHutRustGravity {
     }
     pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
         Gravity::set_orb(self, i, orb)
+    }
+    pub fn project(&mut self) {
+        Gravity::project(self)
+    }
+    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+        Gravity::params_change(self, params)
     }
 }

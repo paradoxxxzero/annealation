@@ -1,18 +1,7 @@
 import Gravity from './gravity'
 
 export default class P2PGravity extends Gravity {
-  computeForce2(
-    a,
-    u,
-    i,
-    I,
-    j,
-    J,
-    softening2,
-    collisions,
-    threshold2,
-    collided
-  ) {
+  simulate2(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     let distance2 = u[0] * u[0] + u[1] * u[1]
@@ -28,18 +17,7 @@ export default class P2PGravity extends Gravity {
     a[1] += u[1] * fact
   }
 
-  computeForce3(
-    a,
-    u,
-    i,
-    I,
-    j,
-    J,
-    softening2,
-    collisions,
-    threshold2,
-    collided
-  ) {
+  simulate3(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     u[2] = this.positions[J + 2] - this.positions[I + 2]
@@ -58,18 +36,7 @@ export default class P2PGravity extends Gravity {
     a[2] += u[2] * fact
   }
 
-  computeForce4(
-    a,
-    u,
-    i,
-    I,
-    j,
-    J,
-    softening2,
-    collisions,
-    threshold2,
-    collided
-  ) {
+  simulate4(a, u, i, I, j, J, softening2, collisions, threshold2, collided) {
     u[0] = this.positions[J] - this.positions[I]
     u[1] = this.positions[J + 1] - this.positions[I + 1]
     u[2] = this.positions[J + 2] - this.positions[I + 2]
@@ -99,7 +66,8 @@ export default class P2PGravity extends Gravity {
     const softening2 = softening * softening
     const threshold2 = collisionThreshold * collisionThreshold
 
-    const computeForce = this[`computeForce${this.N}`].bind(this)
+    // Unfactored for perf
+    const simulate = this[`simulate${this.N}`].bind(this)
 
     const collided = []
     const u = new Array(this.N).fill(0)
@@ -112,18 +80,7 @@ export default class P2PGravity extends Gravity {
           continue
         }
         let J = j * this.N
-        computeForce(
-          a,
-          u,
-          i,
-          I,
-          j,
-          J,
-          softening2,
-          collisions,
-          threshold2,
-          collided
-        )
+        simulate(a, u, i, I, j, J, softening2, collisions, threshold2, collided)
       }
       for (let s = 0; s < this.N; s++) {
         this.accelerations[I + s] = a[s] * gravitationalConstant

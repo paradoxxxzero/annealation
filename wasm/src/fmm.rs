@@ -6,6 +6,7 @@
   Reference : GPU Gems Vol.4 "Treecode and fast multipole method for N-body simulation with CUDA"
 */
 use crate::gravity::Gravity;
+use crate::projector::Projector;
 use crate::{Orb, Params};
 use js_sys::Array;
 
@@ -1316,7 +1317,6 @@ pub trait FMM {
   }
 }
 
-
 #[derive(PartialEq, Copy, Clone)]
 pub struct Vec3<T> {
   pub x: T,
@@ -1338,6 +1338,9 @@ const numExpansion4: usize = numExpansion2 * numExpansion2;
 const numCoefficients: usize = numExpansions * (numExpansions + 1) / 2;
 
 impl Gravity for FMMRustGravity {
+  fn _dimensions(&self) -> usize {
+    self.dimensions
+  }
   fn _len(&self) -> usize {
     self.len
   }
@@ -1359,14 +1362,23 @@ impl Gravity for FMMRustGravity {
   fn _positions(&mut self) -> &mut Vec<f32> {
     &mut self.positions
   }
+  fn _xyz(&mut self) -> &mut Vec<f32> {
+    &mut self.xyz
+  }
   fn _masses(&mut self) -> &mut Vec<f32> {
     &mut self.masses
   }
   fn _temperatures(&mut self) -> &mut Vec<f32> {
     &mut self.temperatures
+  }
+  fn _projector(&mut self) -> &mut Option<Projector> {
+      &mut self.projector
   }
 }
 impl Gravity for TreeRustGravity {
+  fn _dimensions(&self) -> usize {
+    self.dimensions
+  }
   fn _len(&self) -> usize {
     self.len
   }
@@ -1388,11 +1400,17 @@ impl Gravity for TreeRustGravity {
   fn _positions(&mut self) -> &mut Vec<f32> {
     &mut self.positions
   }
+  fn _xyz(&mut self) -> &mut Vec<f32> {
+    &mut self.xyz
+  }
   fn _masses(&mut self) -> &mut Vec<f32> {
     &mut self.masses
   }
   fn _temperatures(&mut self) -> &mut Vec<f32> {
     &mut self.temperatures
+  }
+  fn _projector(&mut self) -> &mut Option<Projector> {
+      &mut self.projector
   }
 }
 
@@ -1507,13 +1525,15 @@ impl FMM for TreeRustGravity {
 #[wasm_bindgen]
 pub struct FMMRustGravity {
   params: Params,
+  xyz: Vec<f32>,
   positions: Vec<f32>,
   speeds: Vec<f32>,
   accelerations: Vec<f32>,
   masses: Vec<f32>,
   temperatures: Vec<f32>,
   len: usize,
-  alloc_len: usize,
+  dimensions: usize,
+  projector: Option<Projector>,
 
   mortonIndex: Vec<usize>,
   sortValue: Vec<usize>,
@@ -1534,28 +1554,18 @@ pub struct FMMRustGravity {
 impl FMMRustGravity {
   #[wasm_bindgen(constructor)]
   pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<FMMRustGravity, JsValue> {
-    console_error_panic_hook::set_once();
-    let params = params
-      .into_serde()
-      .map_err(|e| JsValue::from(e.to_string()))?;
-    let len = orbs.length() as usize;
-    let mut positions = vec![0f32; 3 * alloc_len];
-    let mut speeds = vec![0f32; 3 * alloc_len];
-    let accelerations = vec![0f32; 3 * alloc_len];
-    let mut masses = vec![0f32; alloc_len];
-    let mut temperatures = vec![0f32; alloc_len];
-
-    for (i, orb) in orbs.iter().enumerate() {
-      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-      positions[i * 3] = orb.position.x;
-      positions[i * 3 + 1] = orb.position.y;
-      positions[i * 3 + 2] = orb.position.z;
-      speeds[i * 3] = orb.speed.x;
-      speeds[i * 3 + 1] = orb.speed.y;
-      speeds[i * 3 + 2] = orb.speed.z;
-      masses[i] = orb.mass;
-      temperatures[i] = orb.temperature;
-    }
+    let (
+      params,
+      xyz,
+      positions,
+      speeds,
+      accelerations,
+      masses,
+      temperatures,
+      len,
+      dimensions,
+      projector,
+    ) = FMMRustGravity::init(orbs, params, alloc_len)?;
 
     let mortonIndex = vec![0; len];
     let sortValue = vec![0; len];
@@ -1578,13 +1588,15 @@ impl FMMRustGravity {
 
     Ok(FMMRustGravity {
       params,
+      xyz,
       positions,
       speeds,
       accelerations,
       masses,
       temperatures,
       len,
-      alloc_len,
+      dimensions,
+      projector,
 
       // Do something about that:
       mortonIndex,
@@ -1604,8 +1616,8 @@ impl FMMRustGravity {
     })
   }
 
-  pub fn positions_ptr(&self) -> *const f32 {
-    self.positions.as_ptr()
+  pub fn xyz_ptr(&self) -> *const f32 {
+    self.xyz.as_ptr()
   }
   pub fn speeds_ptr(&self) -> *const f32 {
     self.speeds.as_ptr()
@@ -1843,18 +1855,23 @@ impl FMMRustGravity {
   pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
     Gravity::set_orb(self, i, orb)
   }
+  pub fn project(&mut self) {
+    Gravity::project(self)
+  }
 }
 
 #[wasm_bindgen]
 pub struct TreeRustGravity {
   params: Params,
+  xyz: Vec<f32>,
   positions: Vec<f32>,
   speeds: Vec<f32>,
   accelerations: Vec<f32>,
   masses: Vec<f32>,
   temperatures: Vec<f32>,
   len: usize,
-  alloc_len: usize,
+  dimensions: usize,
+  projector: Option<Projector>,
 
   mortonIndex: Vec<usize>,
   sortValue: Vec<usize>,
@@ -1875,28 +1892,18 @@ pub struct TreeRustGravity {
 impl TreeRustGravity {
   #[wasm_bindgen(constructor)]
   pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<TreeRustGravity, JsValue> {
-    console_error_panic_hook::set_once();
-    let params = params
-      .into_serde()
-      .map_err(|e| JsValue::from(e.to_string()))?;
-    let len = orbs.length() as usize;
-    let mut positions = vec![0f32; 3 * alloc_len];
-    let mut speeds = vec![0f32; 3 * alloc_len];
-    let accelerations = vec![0f32; 3 * alloc_len];
-    let mut masses = vec![0f32; alloc_len];
-    let mut temperatures = vec![0f32; alloc_len];
-
-    for (i, orb) in orbs.iter().enumerate() {
-      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
-      positions[i * 3] = orb.position.x;
-      positions[i * 3 + 1] = orb.position.y;
-      positions[i * 3 + 2] = orb.position.z;
-      speeds[i * 3] = orb.speed.x;
-      speeds[i * 3 + 1] = orb.speed.y;
-      speeds[i * 3 + 2] = orb.speed.z;
-      masses[i] = orb.mass;
-      temperatures[i] = orb.temperature;
-    }
+    let (
+      params,
+      xyz,
+      positions,
+      speeds,
+      accelerations,
+      masses,
+      temperatures,
+      len,
+      dimensions,
+      projector,
+    ) = TreeRustGravity::init(orbs, params, alloc_len)?;
 
     let mortonIndex = vec![0; len];
     let sortValue = vec![0; len];
@@ -1919,13 +1926,15 @@ impl TreeRustGravity {
 
     Ok(TreeRustGravity {
       params,
+      xyz,
       positions,
       speeds,
       accelerations,
       masses,
       temperatures,
       len,
-      alloc_len,
+      dimensions,
+      projector,
 
       // Do something about that:
       mortonIndex,
@@ -1945,8 +1954,8 @@ impl TreeRustGravity {
     })
   }
 
-  pub fn positions_ptr(&self) -> *const f32 {
-    self.positions.as_ptr()
+  pub fn xyz_ptr(&self) -> *const f32 {
+    self.xyz.as_ptr()
   }
   pub fn speeds_ptr(&self) -> *const f32 {
     self.speeds.as_ptr()
@@ -2149,5 +2158,8 @@ impl TreeRustGravity {
   }
   pub fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
     Gravity::set_orb(self, i, orb)
+  }
+  pub fn project(&mut self) {
+    Gravity::project(self)
   }
 }
