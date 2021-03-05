@@ -172,7 +172,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 20128,
+      "bytes": 20276,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -498,7 +498,7 @@
           "bytesInOutput": 1939
         },
         "dist/presets.js": {
-          "bytesInOutput": 19960
+          "bytesInOutput": 20108
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -546,7 +546,7 @@
           "bytesInOutput": 11644
         }
       },
-      "bytes": 1047969
+      "bytes": 1048117
     }
   }
 }

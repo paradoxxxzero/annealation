@@ -25820,7 +25820,7 @@ var presets_default = {
     },
     Tesseract: {
       0: {
-        dimensions: 2,
+        dimensions: 4,
         zFov: 45,
         wFov: 45,
         xy: 1,
@@ -25830,6 +25830,10 @@ var presets_default = {
         yw: 1,
         zw: 1,
         backend: "js_p2p",
+        threads: navigator.hardwareConcurrency - 1,
+        resolution: 7,
+        theta: 1,
+        autoRotate: true,
         fxaa: true,
         bloom: true,
         bloomStrength: 1.5,
@@ -25840,7 +25844,7 @@ var presets_default = {
         afterImageDamp: 0.75,
         configuration: "tesseract",
         number: 1e3,
-        range: 2e3,
+        range: 1e3,
         speed: 0,
         mass: 10,
         blackHoleMass: 0,
@@ -25852,7 +25856,8 @@ var presets_default = {
         collisions: true,
         collisionThreshold: 25,
         escapeDistance: 1e5,
-        blackHoleMassThreshold: 1e4
+        blackHoleMassThreshold: 1e4,
+        creationMode: false
       }
     },
     RegularCube: {
