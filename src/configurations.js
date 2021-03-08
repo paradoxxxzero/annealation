@@ -185,19 +185,24 @@ export const disc = ({
     return new Array(number)
       .fill()
       .map(() => {
-        spherical.radius = minRange + (range - minRange) * Math.random()
-        spherical.theta = Math.random() * 2 * Math.PI
-        spherical.phi = Math.PI / 2
-        const position = new Vector3().setFromSpherical(spherical)
-        const speedVector = new Vector3(
-          Math.cos(spherical.theta),
-          0,
-          -Math.sin(spherical.theta)
+        const r = minRange + (range - minRange) * Math.random()
+        const theta = Math.random() * 2 * Math.PI
+        const phi = Math.random() * 2 * Math.PI
+        const position = new Vector4(
+          r * Math.cos(theta),
+          r * Math.sin(phi),
+          r * Math.cos(phi),
+          r * Math.sin(theta)
+        )
+        const speedVector = new Vector4(
+          Math.sin(theta),
+          -Math.cos(phi),
+          Math.sin(phi),
+          -Math.cos(theta)
         )
           .normalize()
           .multiplyScalar(
-            (speed * Math.sqrt(gravitationalConstant * blackHoleMass)) /
-              spherical.radius
+            (speed * Math.sqrt(gravitationalConstant * blackHoleMass)) / r
           )
         return {
           ...rngTemperatureMass(mass),

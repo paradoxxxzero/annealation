@@ -147,7 +147,7 @@
       "imports": []
     },
     "dist/configurations.js": {
-      "bytes": 16528,
+      "bytes": 16616,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -172,7 +172,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 23111,
+      "bytes": 23119,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -475,7 +475,7 @@
           "bytesInOutput": 48781
         },
         "dist/configurations.js": {
-          "bytesInOutput": 7868
+          "bytesInOutput": 7906
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 8089
@@ -490,7 +490,7 @@
           "bytesInOutput": 1861
         },
         "dist/presets.js": {
-          "bytesInOutput": 12931
+          "bytesInOutput": 12938
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -535,7 +535,7 @@
           "bytesInOutput": 7004
         }
       },
-      "bytes": 639391
+      "bytes": 639436
     }
   }
 }
