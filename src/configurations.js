@@ -176,36 +176,84 @@ export const disc = ({
   speed,
   blackHoleMass,
   gravitationalConstant,
+  dimensions,
 }) => {
   const spherical = new Spherical()
   range *= 0.5
   const minRange = range / 12
-  return new Array(number)
-    .fill()
-    .map(() => {
-      spherical.radius = minRange + (range - minRange) * Math.random()
-      spherical.theta = Math.random() * 2 * Math.PI
-      spherical.phi = Math.PI / 2
-      const position = new Vector3().setFromSpherical(spherical)
-      const speedVector = new Vector3(
-        Math.cos(spherical.theta),
-        0,
-        -Math.sin(spherical.theta)
-      )
-        .normalize()
-        .multiplyScalar(
-          speed *
-            Math.sqrt(
-              (gravitationalConstant * blackHoleMass) / spherical.radius
-            )
+  if (dimensions === 4) {
+    return new Array(number)
+      .fill()
+      .map(() => {
+        spherical.radius = minRange + (range - minRange) * Math.random()
+        spherical.theta = Math.random() * 2 * Math.PI
+        spherical.phi = Math.PI / 2
+        const position = new Vector3().setFromSpherical(spherical)
+        const speedVector = new Vector3(
+          Math.cos(spherical.theta),
+          0,
+          -Math.sin(spherical.theta)
         )
-      return {
-        ...rngTemperatureMass(mass),
-        position,
-        speed: speedVector,
-      }
-    })
-    .concat(blackHole(blackHoleMass))
+          .normalize()
+          .multiplyScalar(
+            (speed * Math.sqrt(gravitationalConstant * blackHoleMass)) /
+              spherical.radius
+          )
+        return {
+          ...rngTemperatureMass(mass),
+          position,
+          speed: speedVector,
+        }
+      })
+      .concat(blackHole(blackHoleMass))
+  }
+  if (dimensions === 3) {
+    return new Array(number)
+      .fill()
+      .map(() => {
+        spherical.radius = minRange + (range - minRange) * Math.random()
+        spherical.theta = Math.random() * 2 * Math.PI
+        spherical.phi = Math.PI / 2
+        const position = new Vector3().setFromSpherical(spherical)
+        const speedVector = new Vector3(
+          Math.cos(spherical.theta),
+          0,
+          -Math.sin(spherical.theta)
+        )
+          .normalize()
+          .multiplyScalar(
+            speed *
+              Math.sqrt(
+                (gravitationalConstant * blackHoleMass) / spherical.radius
+              )
+          )
+        return {
+          ...rngTemperatureMass(mass),
+          position,
+          speed: speedVector,
+        }
+      })
+      .concat(blackHole(blackHoleMass))
+  } else if (dimensions === 2) {
+    return new Array(number)
+      .fill()
+      .map(() => {
+        const r = minRange + (range - minRange) * Math.random()
+        const theta = Math.random() * 2 * Math.PI
+        const position = new Vector2(r * Math.cos(theta), r * Math.sin(theta))
+        const speedVector = new Vector2(Math.sin(theta), -Math.cos(theta))
+          .normalize()
+          .multiplyScalar(
+            speed * Math.sqrt(gravitationalConstant * blackHoleMass)
+          )
+        return {
+          ...rngTemperatureMass(mass),
+          position,
+          speed: speedVector,
+        }
+      })
+      .concat(blackHole(blackHoleMass))
+  }
 }
 
 export const bulb = ({

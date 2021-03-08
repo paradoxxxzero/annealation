@@ -147,7 +147,7 @@
       "imports": []
     },
     "dist/configurations.js": {
-      "bytes": 14982,
+      "bytes": 16528,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -172,7 +172,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 22632,
+      "bytes": 23111,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -220,15 +220,6 @@
     },
     "dist/gravity/p2p.js": {
       "bytes": 3001,
-      "imports": [
-        {
-          "path": "dist/gravity/gravity.js",
-          "kind": "import-statement"
-        }
-      ]
-    },
-    "dist/gravity/fmm.js": {
-      "bytes": 4198,
       "imports": [
         {
           "path": "dist/gravity/gravity.js",
@@ -327,7 +318,7 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 13984,
+      "bytes": 14016,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
@@ -395,10 +386,6 @@
         },
         {
           "path": "dist/gravity/p2p.js",
-          "kind": "import-statement"
-        },
-        {
-          "path": "dist/gravity/fmm.js",
           "kind": "import-statement"
         },
         {
@@ -488,7 +475,7 @@
           "bytesInOutput": 48781
         },
         "dist/configurations.js": {
-          "bytesInOutput": 7265
+          "bytesInOutput": 7868
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 8089
@@ -503,7 +490,7 @@
           "bytesInOutput": 1861
         },
         "dist/presets.js": {
-          "bytesInOutput": 12669
+          "bytesInOutput": 12931
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -522,9 +509,6 @@
         },
         "dist/gravity/p2p.js": {
           "bytesInOutput": 1384
-        },
-        "dist/gravity/fmm.js": {
-          "bytesInOutput": 1651
         },
         "dist/gravity/none.js": {
           "bytesInOutput": 231
@@ -548,10 +532,10 @@
           "bytesInOutput": 1615
         },
         "dist/index.js": {
-          "bytesInOutput": 7031
+          "bytesInOutput": 7004
         }
       },
-      "bytes": 640204
+      "bytes": 639391
     }
   }
 }

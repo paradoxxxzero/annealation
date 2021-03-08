@@ -36,7 +36,7 @@ import wasmInit, {
 } from 'wasm'
 import Stats from 'stats.js'
 import P2PGravity from './gravity/p2p'
-import FMMGravity from './gravity/fmm'
+// import FMMGravity from './gravity/fmm'
 import NoGravity from './gravity/none'
 import P2PThreadedGravity from './gravity/p2p-threaded'
 import P2PThreadedSABGravity from './gravity/p2p-threaded-sab'
@@ -66,8 +66,8 @@ const backends = {
   js_bh_threaded: BarnesHutThreadedGravity,
   js_bh_sab: BarnesHutThreadedSABGravity,
   rust_bh: BarnesHutRustGravity,
-  js_fmm: FMMGravity,
   // Disabled because of broken / ineficient
+  // js_fmm: FMMGravity,
   // rust_fmm: FMMRustGravity,
   // rust_tree: TreeRustGravity,
   js_none: NoGravity,
@@ -333,29 +333,32 @@ function initGUI() {
     load: presets,
     preset,
   })
+  gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
+
   gui.add(params, 'dimensions', 2, 4, 1).onChange(restart)
   gui.add(params, 'zFov', 0, 180).onChange(v => {
     camera.fov = v
     camera.updateProjectionMatrix()
   })
-  gui.add(params, 'wFov', 0, 180)
-  gui.add(params, 'w', 0).name('Camera ana')
 
-  const rotSpeed = gui.addFolder('4d rotation speed')
-  rotSpeed.add(params, 'xy', 0, 50)
-  rotSpeed.add(params, 'xz', 0, 50)
-  rotSpeed.add(params, 'xw', 0, 50)
-  rotSpeed.add(params, 'yz', 0, 50)
-  rotSpeed.add(params, 'yw', 0, 50)
-  rotSpeed.add(params, 'zw', 0, 50)
+  const d4 = gui.addFolder('4d params and rotation speeds')
+  d4.add(params, 'wFov', 0, 180)
+  d4.add(params, 'w', 0).name('Camera ana')
+  d4.add(params, 'xy', 0, 50)
+  d4.add(params, 'xz', 0, 50)
+  d4.add(params, 'xw', 0, 50)
+  d4.add(params, 'yz', 0, 50)
+  d4.add(params, 'yw', 0, 50)
+  d4.add(params, 'zw', 0, 50)
 
-  gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
-  gui
-    .add(params, 'resolution', 1, 9, 1)
-    .name('fmm resolution')
-    .onChange(restart)
-  gui.add(params, 'theta', 0, 4, 0.01).name('bh theta').onChange(restart)
-  gui.add(params, 'threads', 1, 128, 1).onChange(restart)
+  const bp = gui.addFolder('Backend parameters')
+  bp.add(params, 'theta', 0, 4, 0.01).name('bh theta').onChange(restart)
+  bp.add(params, 'threads', 1, 128, 1).onChange(restart)
+
+  // gui
+  //   .add(params, 'resolution', 1, 9, 1)
+  //   .name('fmm resolution')
+  //   .onChange(restart)
   const fx = gui.addFolder('Render fx')
   fx.add(params, 'autoRotate')
     .onChange(on => (controls.autoRotate = on))
