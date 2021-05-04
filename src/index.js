@@ -423,7 +423,7 @@ function initGUI() {
       v => (particles.material.uniforms.blackHoleMassThreshold.value = v)
     )
   simulation.open()
-  gui.add(params, 'creationMode')
+  // gui.add(params, 'creationMode')
   gui.remember(params)
   gui.revert()
   gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
