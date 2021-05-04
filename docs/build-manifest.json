@@ -8,10 +8,6 @@
       "bytes": 86125,
       "imports": []
     },
-    "_snowpack/pkg/four-js.js": {
-      "bytes": 10708,
-      "imports": []
-    },
     "_snowpack/pkg/common/three.module-81952ee4.js": {
       "bytes": 794252,
       "imports": []
@@ -147,7 +143,7 @@
       "imports": []
     },
     "dist/configurations.js": {
-      "bytes": 16616,
+      "bytes": 16662,
       "imports": [
         {
           "path": "_snowpack/pkg/three.js",
@@ -172,7 +168,7 @@
       "imports": []
     },
     "dist/presets.js": {
-      "bytes": 23119,
+      "bytes": 23121,
       "imports": []
     },
     "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
@@ -207,6 +203,10 @@
     },
     "_snowpack/pkg/statsjs.js": {
       "bytes": 2572,
+      "imports": []
+    },
+    "_snowpack/pkg/four-js.js": {
+      "bytes": 10708,
       "imports": []
     },
     "dist/gravity/gravity.js": {
@@ -318,14 +318,10 @@
       ]
     },
     "dist/index.js": {
-      "bytes": 14016,
+      "bytes": 13975,
       "imports": [
         {
           "path": "_snowpack/pkg/dat.gui.js",
-          "kind": "import-statement"
-        },
-        {
-          "path": "_snowpack/pkg/four-js.js",
           "kind": "import-statement"
         },
         {
@@ -438,9 +434,6 @@
         "_snowpack/pkg/dat.gui.js": {
           "bytesInOutput": 49822
         },
-        "_snowpack/pkg/four-js.js": {
-          "bytesInOutput": 3462
-        },
         "_snowpack/pkg/common/three.module-81952ee4.js": {
           "bytesInOutput": 442592
         },
@@ -475,7 +468,7 @@
           "bytesInOutput": 48781
         },
         "dist/configurations.js": {
-          "bytesInOutput": 7906
+          "bytesInOutput": 7945
         },
         "_snowpack/pkg/three/examples/jsm/geometries/TeapotGeometry.js": {
           "bytesInOutput": 8089
@@ -490,7 +483,7 @@
           "bytesInOutput": 1861
         },
         "dist/presets.js": {
-          "bytesInOutput": 12938
+          "bytesInOutput": 12940
         },
         "_snowpack/pkg/three/examples/jsm/postprocessing/ShaderPass.js": {
           "bytesInOutput": 0
@@ -503,6 +496,9 @@
         },
         "_snowpack/pkg/statsjs.js": {
           "bytesInOutput": 2198
+        },
+        "_snowpack/pkg/four-js.js": {
+          "bytesInOutput": 3462
         },
         "dist/gravity/gravity.js": {
           "bytesInOutput": 3588
@@ -532,10 +528,10 @@
           "bytesInOutput": 1615
         },
         "dist/index.js": {
-          "bytesInOutput": 7004
+          "bytesInOutput": 7015
         }
       },
-      "bytes": 639436
+      "bytes": 639488
     }
   }
 }
