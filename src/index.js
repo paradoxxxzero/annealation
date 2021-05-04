@@ -1,5 +1,4 @@
 import { GUI } from 'dat.gui'
-import { HyperRenderer } from 'four-js'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -324,6 +323,7 @@ function restart() {
   cancelAnimationFrame(raf)
   scene.clear()
   gravity.free()
+  controls.reset()
   init()
   raf = requestAnimationFrame(animate)
 }
