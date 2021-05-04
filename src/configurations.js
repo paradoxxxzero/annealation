@@ -390,6 +390,7 @@ export const collidingDisc = ({
   speed,
   blackHoleMass,
   gravitationalConstant,
+  dimensions,
 }) => {
   const halfNumber = ~~(number / 2)
 
@@ -403,6 +404,7 @@ export const collidingDisc = ({
     speed: 1,
     blackHoleMass,
     gravitationalConstant,
+    dimensions,
   })
   firstDisc.forEach(({ position, speed }) => {
     position.applyEuler(firstEuler).add(firstShift)
@@ -419,6 +421,7 @@ export const collidingDisc = ({
     speed: 1,
     blackHoleMass,
     gravitationalConstant,
+    dimensions,
   })
   secondDisc.forEach(({ position, speed }) => {
     position.applyEuler(secondEuler).add(secondShift)
