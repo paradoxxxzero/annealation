@@ -267,13 +267,8 @@ function setRustMemory(geometry, allocLength) {
 }
 
 function init() {
-  const {
-    backend,
-    configuration,
-    scale,
-    blackHoleMassThreshold,
-    colorMode,
-  } = params
+  const { backend, configuration, scale, blackHoleMassThreshold, colorMode } =
+    params
   const orbs = configurations[configuration](params)
   const Backend = backends[backend] || backends[fallbacks[backend]]
   const allocLength = orbs.length + 1000
@@ -333,6 +328,7 @@ function initGUI() {
     load: presets,
     preset,
   })
+  gui.remember(params)
   gui.add(params, 'backend', Object.keys(backends)).onChange(restart)
 
   gui.add(params, 'dimensions', 2, 4, 1).onChange(restart)
@@ -424,7 +420,10 @@ function initGUI() {
     )
   simulation.open()
   // gui.add(params, 'creationMode')
-  gui.remember(params)
+
+  if (window.innerWidth < 600) {
+    gui.close()
+  }
   gui.revert()
   gui.__preset_select.addEventListener('change', ({ target: { value } }) => {
     location.hash = `#${encodeURIComponent(value)}`
