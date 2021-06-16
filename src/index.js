@@ -226,7 +226,7 @@ async function render() {
     params.backend.startsWith('rust') &&
     !particles.geometry.attributes.temperature.array.buffer.byteLength
   ) {
-    console.warn('Bad rust memory')
+    console.log('Memory has grown')
     setRustMemory(
       particles.geometry,
       particles.geometry.attributes.temperature.count

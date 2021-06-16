@@ -209,6 +209,10 @@ impl BarnesHutRustGravity {
 
     fn get_quadrant_index2<'a>(&self, cell: &'a Cell2, index: usize) -> usize {
         let i2 = index * 2;
+        // For some reason it sometimes happen on android (it should not)
+        if cell.quadrants.len() == 0 {
+            return 0;
+        }
         let x = self.positions[i2] > cell.quadrants[2].x;
         let y = self.positions[i2 + 1] > cell.quadrants[2].y;
         if let Some(i) = QUADRANTS
@@ -269,6 +273,10 @@ impl BarnesHutRustGravity {
 
             while !cell.leaf {
                 let cell_index = self.get_quadrant_index2(cell, i);
+                // For some reason it sometimes happen on android (it should not)
+                if cell.quadrants.len() == 0 {
+                    return root_cell;
+                }
                 cell = &mut cell.quadrants[cell_index];
             }
 
@@ -384,6 +392,10 @@ impl BarnesHutRustGravity {
 
     fn get_octant_index3<'a>(&self, cell: &'a Cell3, index: usize) -> usize {
         let i3 = index * 3;
+        // For some reason it sometimes happen on android (it should not)
+        if cell.octants.len() == 0 {
+            return 0;
+        }
         let x = self.positions[i3] > cell.octants[6].x;
         let y = self.positions[i3 + 1] > cell.octants[6].y;
         let z = self.positions[i3 + 2] > cell.octants[6].z;
@@ -448,6 +460,10 @@ impl BarnesHutRustGravity {
 
             while !cell.leaf {
                 let cell_index = self.get_octant_index3(cell, i);
+                // For some reason it sometimes happen on android (it should not)
+                if cell.octants.len() == 0 {
+                    return root_cell;
+                }
                 cell = &mut cell.octants[cell_index];
             }
 
@@ -573,6 +589,10 @@ impl BarnesHutRustGravity {
 
     fn get_hexadecant_index4<'a>(&self, cell: &'a Cell4, index: usize) -> usize {
         let i4 = index * 4;
+        // For some reason it sometimes happen on android (it should not)
+        if cell.hexadecants.len() == 0 {
+            return 0;
+        }
         let x = self.positions[i4] > cell.hexadecants[14].x;
         let y = self.positions[i4 + 1] > cell.hexadecants[14].y;
         let z = self.positions[i4 + 2] > cell.hexadecants[14].z;
@@ -640,6 +660,10 @@ impl BarnesHutRustGravity {
 
             while !cell.leaf {
                 let cell_index = self.get_hexadecant_index4(cell, i);
+                // For some reason it sometimes happen on android (it should not)
+                if cell.hexadecants.len() == 0 {
+                    return root_cell;
+                }
                 cell = &mut cell.hexadecants[cell_index];
             }
 
