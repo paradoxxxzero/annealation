@@ -84,6 +84,7 @@ if (typeof SharedArrayBuffer === 'undefined') {
 }
 
 const stats = new Stats()
+const showStats = { showStats: false }
 
 const getPreset = () =>
   decodeURIComponent(location.hash.replace(/^#/, '')) || presets.preset
@@ -107,6 +108,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.toneMapping = ReinhardToneMapping
 document.body.appendChild(renderer.domElement)
 document.body.appendChild(stats.dom)
+stats.showPanel(null)
 
 // const origin = new Vector3()
 const scene = new Scene()
@@ -176,7 +178,7 @@ function onWindowResize() {
 }
 
 async function animate() {
-  stats.update()
+  showStats.showStats && stats.update()
   await render()
   raf = requestAnimationFrame(animate)
 }
@@ -380,6 +382,7 @@ function initGUI() {
   fx.add(params, 'afterImageDamp', 0, 1).onChange(
     v => (afterImagePass.uniforms.damp.value = v)
   )
+  fx.add(showStats, 'showStats').onChange(v => stats.showPanel(v ? 0 : null))
 
   const config = gui.addFolder('Configuration')
   config.add(params, 'configuration', Object.keys(configurations))
