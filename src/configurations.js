@@ -1,5 +1,5 @@
 import { Spherical, Vector3, Vector4, Euler, Vector2 } from 'three'
-import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry'
+import { TeapotGeometry } from 'three/examples/jsm/geometries/TeapotGeometry.js'
 import { colorEncode, rngTemperatureMass } from './helpers'
 
 const blackHole = blackHoleMass =>

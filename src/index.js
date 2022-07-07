@@ -10,12 +10,12 @@ import {
   ShaderMaterial,
   Vector2,
   WebGLRenderer,
-  DynamicDrawUsage,
+  StreamDrawUsage,
   Raycaster,
   Vector3,
 } from 'three'
-import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
@@ -24,7 +24,7 @@ import * as configurations from './configurations'
 import fragmentShader from './fragmentShader.glsl'
 import vertexShader from './vertexShader.glsl'
 import presets from './presets'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import wasmInit, {
   P2PRustGravity,
   BarnesHutRustGravity,
@@ -256,15 +256,15 @@ function setRustMemory(geometry, allocLength) {
   )
   geometry.setAttribute(
     'position',
-    new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage)
+    new BufferAttribute(positions, 3).setUsage(StreamDrawUsage)
   )
   geometry.setAttribute(
     'mass',
-    new BufferAttribute(masses, 1).setUsage(DynamicDrawUsage)
+    new BufferAttribute(masses, 1).setUsage(StreamDrawUsage)
   )
   geometry.setAttribute(
     'temperature',
-    new BufferAttribute(temperatures, 1).setUsage(DynamicDrawUsage)
+    new BufferAttribute(temperatures, 1).setUsage(StreamDrawUsage)
   )
 }
 
@@ -285,15 +285,15 @@ function init() {
   } else {
     geometry.setAttribute(
       'position',
-      new BufferAttribute(gravity.xyz, 3).setUsage(DynamicDrawUsage)
+      new BufferAttribute(gravity.xyz, 3).setUsage(StreamDrawUsage)
     )
     geometry.setAttribute(
       'mass',
-      new BufferAttribute(gravity.masses, 1).setUsage(DynamicDrawUsage)
+      new BufferAttribute(gravity.masses, 1).setUsage(StreamDrawUsage)
     )
     geometry.setAttribute(
       'temperature',
-      new BufferAttribute(gravity.temperatures, 1).setUsage(DynamicDrawUsage)
+      new BufferAttribute(gravity.temperatures, 1).setUsage(StreamDrawUsage)
     )
   }
 
