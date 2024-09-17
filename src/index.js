@@ -473,7 +473,7 @@ window.addEventListener('pointerup', function () {
   newOrb = null
 })
 
-const wasmPromise = wasmInit()
+const wasmPromise = wasmInit('./assets/wasm_bg.wasm')
 
 wasmPromise.then(() => {
   init()

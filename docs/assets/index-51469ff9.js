@@ -29345,7 +29345,7 @@ window.addEventListener("pointermove", function(event) {
 window.addEventListener("pointerup", function() {
   newOrb = null;
 });
-const wasmPromise = __wbg_init();
+const wasmPromise = __wbg_init("./assets/wasm_bg.wasm");
 wasmPromise.then(() => {
   init();
   initGUI();
