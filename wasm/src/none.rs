@@ -60,7 +60,7 @@ impl Gravity for NoRustGravity {
 #[wasm_bindgen]
 impl NoRustGravity {
     #[wasm_bindgen(constructor)]
-    pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<NoRustGravity, JsValue> {
+    pub fn new(orbs: &Array, params: JsValue, alloc_len: usize) -> Result<NoRustGravity, JsValue> {
         let (
             params,
             xyz,
@@ -144,7 +144,7 @@ impl NoRustGravity {
     pub fn project(&mut self) {
         Gravity::project(self)
     }
-    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+    pub fn params_change(&mut self, params: JsValue) -> Result<(), JsValue> {
         Gravity::params_change(self, params)
     }
 }

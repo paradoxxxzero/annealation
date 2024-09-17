@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 pub trait Gravity {
   fn init(
     orbs: &Array,
-    params: &JsValue,
+    params: JsValue,
     alloc_len: usize,
   ) -> Result<
     (
@@ -24,9 +24,7 @@ pub trait Gravity {
     JsValue,
   > {
     console_error_panic_hook::set_once();
-    let params: Params = params
-      .into_serde()
-      .map_err(|e| JsValue::from(e.to_string()))?;
+    let params: Params = serde_wasm_bindgen::from_value(params).unwrap();
     let len = orbs.length() as usize;
     let dimensions = params.dimensions;
     let mut xyz = vec![0f32; 3 * alloc_len];
@@ -44,7 +42,7 @@ pub trait Gravity {
       std::mem::swap(&mut positions, &mut xyz)
     }
     for (i, orb) in orbs.iter().enumerate() {
-      let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+      let orb: Orb = serde_wasm_bindgen::from_value(orb).unwrap();
       let ii = i * dimensions;
       for s in 0..dimensions {
         positions[ii + s] = orb.position.get(s);
@@ -246,7 +244,7 @@ pub trait Gravity {
   }
 
   fn set_orb(&mut self, i: usize, orb: JsValue) -> Result<(), JsValue> {
-    let orb: Orb = orb.into_serde().map_err(|e| JsValue::from(e.to_string()))?;
+    let orb: Orb = serde_wasm_bindgen::from_value(orb).unwrap();
     let ii = i * self._dimensions();
     for s in 0..self._dimensions() {
       self._positions()[ii + s] = orb.position.get(s);
@@ -306,11 +304,9 @@ pub trait Gravity {
       }
     }
   }
-  fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+  fn params_change(&mut self, params: JsValue) -> Result<(), JsValue> {
     self._params_set(
-      params
-        .into_serde()
-        .map_err(|e| JsValue::from(e.to_string()))?,
+      serde_wasm_bindgen::from_value(params).unwrap()
     );
     let w_fov = self._params().wFov;
     let w = self._params().w;

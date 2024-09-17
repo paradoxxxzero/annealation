@@ -139,7 +139,7 @@ impl BarnesHutRustGravity {
     #[wasm_bindgen(constructor)]
     pub fn new(
         orbs: &Array,
-        params: &JsValue,
+        params: JsValue,
         alloc_len: usize,
     ) -> Result<BarnesHutRustGravity, JsValue> {
         let (
@@ -842,7 +842,7 @@ impl BarnesHutRustGravity {
     pub fn project(&mut self) {
         Gravity::project(self)
     }
-    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+    pub fn params_change(&mut self, params: JsValue) -> Result<(), JsValue> {
         Gravity::params_change(self, params)
     }
 }

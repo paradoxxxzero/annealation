@@ -579,7 +579,7 @@ var Color$1 = function() {
   }
   createClass(Color2, [{
     key: "toString",
-    value: function toString() {
+    value: function toString2() {
       return colorToString(this);
     }
   }, {
@@ -25468,10 +25468,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "cube",
@@ -25510,10 +25510,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "tesseract",
@@ -25552,10 +25552,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "tesseract",
@@ -25594,10 +25594,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "plane2",
@@ -25636,11 +25636,11 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
-        afterImage: false,
+        bloomExposure: 0.15,
+        afterImage: true,
         afterImageDamp: 0.75,
         configuration: "regularCube",
         number: 1250,
@@ -25678,10 +25678,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "disc",
@@ -25720,10 +25720,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "disc",
@@ -25762,10 +25762,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "bulb",
@@ -25804,10 +25804,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "disc",
@@ -25846,10 +25846,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "sphere",
@@ -25888,10 +25888,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "harmonicSphere",
@@ -25930,10 +25930,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: false,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: true,
         afterImageDamp: 0.98,
         configuration: "solarSystem",
@@ -25973,9 +25973,9 @@ const presets = {
         fxaa: true,
         bloom: true,
         bloomStrength: 2,
-        bloomRadius: 0.75,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "collidingDisc",
@@ -26015,9 +26015,9 @@ const presets = {
         fxaa: true,
         bloom: true,
         bloomStrength: 2,
-        bloomRadius: 0.75,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "collidingBulb",
@@ -26056,10 +26056,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "fountain",
@@ -26098,10 +26098,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "eightCubes",
@@ -26141,9 +26141,9 @@ const presets = {
         fxaa: true,
         bloom: true,
         bloomStrength: 2,
-        bloomRadius: 0.75,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "plane",
@@ -26182,10 +26182,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "teapot",
@@ -26224,10 +26224,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "teapot",
@@ -26266,10 +26266,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "expandingSphere",
@@ -26308,10 +26308,10 @@ const presets = {
         autoRotate: true,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "expandingSphere",
@@ -26350,10 +26350,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "expandingSphere",
@@ -26392,10 +26392,10 @@ const presets = {
         autoRotate: false,
         fxaa: true,
         bloom: true,
-        bloomStrength: 1.5,
-        bloomRadius: 0.75,
+        bloomStrength: 2,
+        bloomRadius: 1,
         bloomThreshold: 0,
-        bloomExposure: 0.75,
+        bloomExposure: 0.15,
         afterImage: false,
         afterImageDamp: 0.75,
         configuration: "sphere",
@@ -26437,34 +26437,14 @@ const presets = {
   }
 };
 let wasm;
-const cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
-cachedTextDecoder.decode();
-let cachedUint8Memory0;
-function getUint8Memory0() {
-  if (cachedUint8Memory0.byteLength === 0) {
-    cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
-  }
-  return cachedUint8Memory0;
-}
-function getStringFromWasm0(ptr, len) {
-  return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-const heap = new Array(32).fill(void 0);
+const heap = new Array(128).fill(void 0);
 heap.push(void 0, null, true, false);
-let heap_next = heap.length;
-function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
-}
 function getObject(idx) {
   return heap[idx];
 }
+let heap_next = heap.length;
 function dropObject(idx) {
-  if (idx < 36)
+  if (idx < 132)
     return;
   heap[idx] = heap_next;
   heap_next = idx;
@@ -26474,8 +26454,45 @@ function takeObject(idx) {
   dropObject(idx);
   return ret;
 }
+const cachedTextDecoder = typeof TextDecoder !== "undefined" ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true }) : { decode: () => {
+  throw Error("TextDecoder not available");
+} };
+if (typeof TextDecoder !== "undefined") {
+  cachedTextDecoder.decode();
+}
+let cachedUint8ArrayMemory0 = null;
+function getUint8ArrayMemory0() {
+  if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
+    cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
+  }
+  return cachedUint8ArrayMemory0;
+}
+function getStringFromWasm0(ptr, len) {
+  ptr = ptr >>> 0;
+  return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+}
+function addHeapObject(obj) {
+  if (heap_next === heap.length)
+    heap.push(heap.length + 1);
+  const idx = heap_next;
+  heap_next = heap[idx];
+  heap[idx] = obj;
+  return idx;
+}
+function isLikeNone(x) {
+  return x === void 0 || x === null;
+}
+let cachedDataViewMemory0 = null;
+function getDataViewMemory0() {
+  if (cachedDataViewMemory0 === null || cachedDataViewMemory0.buffer.detached === true || cachedDataViewMemory0.buffer.detached === void 0 && cachedDataViewMemory0.buffer !== wasm.memory.buffer) {
+    cachedDataViewMemory0 = new DataView(wasm.memory.buffer);
+  }
+  return cachedDataViewMemory0;
+}
 let WASM_VECTOR_LEN = 0;
-const cachedTextEncoder = new TextEncoder("utf-8");
+const cachedTextEncoder = typeof TextEncoder !== "undefined" ? new TextEncoder("utf-8") : { encode: () => {
+  throw Error("TextEncoder not available");
+} };
 const encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function(arg, view) {
   return cachedTextEncoder.encodeInto(arg, view);
 } : function(arg, view) {
@@ -26489,14 +26506,14 @@ const encodeString = typeof cachedTextEncoder.encodeInto === "function" ? functi
 function passStringToWasm0(arg, malloc, realloc) {
   if (realloc === void 0) {
     const buf = cachedTextEncoder.encode(arg);
-    const ptr2 = malloc(buf.length);
-    getUint8Memory0().subarray(ptr2, ptr2 + buf.length).set(buf);
+    const ptr2 = malloc(buf.length, 1) >>> 0;
+    getUint8ArrayMemory0().subarray(ptr2, ptr2 + buf.length).set(buf);
     WASM_VECTOR_LEN = buf.length;
     return ptr2;
   }
   let len = arg.length;
-  let ptr = malloc(len);
-  const mem = getUint8Memory0();
+  let ptr = malloc(len, 1) >>> 0;
+  const mem = getUint8ArrayMemory0();
   let offset = 0;
   for (; offset < len; offset++) {
     const code = arg.charCodeAt(offset);
@@ -26508,22 +26525,72 @@ function passStringToWasm0(arg, malloc, realloc) {
     if (offset !== 0) {
       arg = arg.slice(offset);
     }
-    ptr = realloc(ptr, len, len = offset + arg.length * 3);
-    const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
+    ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
+    const view = getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
     const ret = encodeString(arg, view);
     offset += ret.written;
+    ptr = realloc(ptr, len, offset, 1) >>> 0;
   }
   WASM_VECTOR_LEN = offset;
   return ptr;
 }
-let cachedInt32Memory0;
-function getInt32Memory0() {
-  if (cachedInt32Memory0.byteLength === 0) {
-    cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
+function debugString(val) {
+  const type = typeof val;
+  if (type == "number" || type == "boolean" || val == null) {
+    return `${val}`;
   }
-  return cachedInt32Memory0;
+  if (type == "string") {
+    return `"${val}"`;
+  }
+  if (type == "symbol") {
+    const description = val.description;
+    if (description == null) {
+      return "Symbol";
+    } else {
+      return `Symbol(${description})`;
+    }
+  }
+  if (type == "function") {
+    const name = val.name;
+    if (typeof name == "string" && name.length > 0) {
+      return `Function(${name})`;
+    } else {
+      return "Function";
+    }
+  }
+  if (Array.isArray(val)) {
+    const length = val.length;
+    let debug = "[";
+    if (length > 0) {
+      debug += debugString(val[0]);
+    }
+    for (let i = 1; i < length; i++) {
+      debug += ", " + debugString(val[i]);
+    }
+    debug += "]";
+    return debug;
+  }
+  const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
+  let className;
+  if (builtInMatches.length > 1) {
+    className = builtInMatches[1];
+  } else {
+    return toString.call(val);
+  }
+  if (className == "Object") {
+    try {
+      return "Object(" + JSON.stringify(val) + ")";
+    } catch (_) {
+      return "Object";
+    }
+  }
+  if (val instanceof Error) {
+    return `${val.name}: ${val.message}
+${val.stack}`;
+  }
+  return className;
 }
-let stack_pointer = 32;
+let stack_pointer = 128;
 function addBorrowedObject(obj) {
   if (stack_pointer == 1)
     throw new Error("out of js stack");
@@ -26534,20 +26601,19 @@ function wasm_memory() {
   const ret = wasm.wasm_memory();
   return takeObject(ret);
 }
+const BarnesHutRustGravityFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
+}, unregister: () => {
+} } : new FinalizationRegistry((ptr) => wasm.__wbg_barneshutrustgravity_free(ptr >>> 0, 1));
 class BarnesHutRustGravity {
-  static __wrap(ptr) {
-    const obj = Object.create(BarnesHutRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
   __destroy_into_raw() {
-    const ptr = this.ptr;
-    this.ptr = 0;
+    const ptr = this.__wbg_ptr;
+    this.__wbg_ptr = 0;
+    BarnesHutRustGravityFinalization.unregister(this);
     return ptr;
   }
   free() {
     const ptr = this.__destroy_into_raw();
-    wasm.__wbg_barneshutrustgravity_free(ptr);
+    wasm.__wbg_barneshutrustgravity_free(ptr, 0);
   }
   /**
   * @param {Array<any>} orbs
@@ -26557,17 +26623,18 @@ class BarnesHutRustGravity {
   constructor(orbs, params2, alloc_len) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_new(retptr, addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      var r2 = getInt32Memory0()[retptr / 4 + 2];
+      wasm.barneshutrustgravity_new(retptr, addBorrowedObject(orbs), addHeapObject(params2), alloc_len);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+      var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
       if (r2) {
         throw takeObject(r1);
       }
-      return BarnesHutRustGravity.__wrap(r0);
+      this.__wbg_ptr = r0 >>> 0;
+      BarnesHutRustGravityFinalization.register(this, this.__wbg_ptr, this);
+      return this;
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
       heap[stack_pointer++] = void 0;
     }
   }
@@ -26575,46 +26642,46 @@ class BarnesHutRustGravity {
   * @returns {number}
   */
   xyz_ptr() {
-    const ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_xyz_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   speeds_ptr() {
-    const ret = wasm.barneshutrustgravity_speeds_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_speeds_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   masses_ptr() {
-    const ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_masses_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   temperatures_ptr() {
-    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   */
   frog_leap() {
-    wasm.barneshutrustgravity_frog_leap(this.ptr);
+    wasm.barneshutrustgravity_frog_leap(this.__wbg_ptr);
   }
   /**
   * @returns {number}
   */
   simulate() {
-    const ret = wasm.barneshutrustgravity_simulate(this.ptr);
+    const ret = wasm.barneshutrustgravity_simulate(this.__wbg_ptr);
     return ret >>> 0;
   }
   /**
   */
   frog_drop() {
-    wasm.barneshutrustgravity_frog_drop(this.ptr);
+    wasm.barneshutrustgravity_frog_drop(this.__wbg_ptr);
   }
   /**
   * @param {Array<any>} orbs
@@ -26622,9 +26689,9 @@ class BarnesHutRustGravity {
   grow(orbs) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_grow(retptr, this.ptr, addBorrowedObject(orbs));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_grow(retptr, this.__wbg_ptr, addBorrowedObject(orbs));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26639,9 +26706,9 @@ class BarnesHutRustGravity {
   shrink(n) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_shrink(retptr, this.ptr, n);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_shrink(retptr, this.__wbg_ptr, n);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26656,9 +26723,9 @@ class BarnesHutRustGravity {
   set_orb(i, orb) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_set_orb(retptr, this.ptr, i, addHeapObject(orb));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_set_orb(retptr, this.__wbg_ptr, i, addHeapObject(orb));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26669,7 +26736,7 @@ class BarnesHutRustGravity {
   /**
   */
   project() {
-    wasm.barneshutrustgravity_project(this.ptr);
+    wasm.barneshutrustgravity_project(this.__wbg_ptr);
   }
   /**
   * @param {any} params
@@ -26677,32 +26744,30 @@ class BarnesHutRustGravity {
   params_change(params2) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_params_change(retptr, this.ptr, addBorrowedObject(params2));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_params_change(retptr, this.__wbg_ptr, addHeapObject(params2));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
     }
   }
 }
+const NoRustGravityFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
+}, unregister: () => {
+} } : new FinalizationRegistry((ptr) => wasm.__wbg_norustgravity_free(ptr >>> 0, 1));
 class NoRustGravity {
-  static __wrap(ptr) {
-    const obj = Object.create(NoRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
   __destroy_into_raw() {
-    const ptr = this.ptr;
-    this.ptr = 0;
+    const ptr = this.__wbg_ptr;
+    this.__wbg_ptr = 0;
+    NoRustGravityFinalization.unregister(this);
     return ptr;
   }
   free() {
     const ptr = this.__destroy_into_raw();
-    wasm.__wbg_norustgravity_free(ptr);
+    wasm.__wbg_norustgravity_free(ptr, 0);
   }
   /**
   * @param {Array<any>} orbs
@@ -26712,17 +26777,18 @@ class NoRustGravity {
   constructor(orbs, params2, alloc_len) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.norustgravity_new(retptr, addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      var r2 = getInt32Memory0()[retptr / 4 + 2];
+      wasm.norustgravity_new(retptr, addBorrowedObject(orbs), addHeapObject(params2), alloc_len);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+      var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
       if (r2) {
         throw takeObject(r1);
       }
-      return NoRustGravity.__wrap(r0);
+      this.__wbg_ptr = r0 >>> 0;
+      NoRustGravityFinalization.register(this, this.__wbg_ptr, this);
+      return this;
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
       heap[stack_pointer++] = void 0;
     }
   }
@@ -26730,39 +26796,39 @@ class NoRustGravity {
   * @returns {number}
   */
   xyz_ptr() {
-    const ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_xyz_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   masses_ptr() {
-    const ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_masses_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   temperatures_ptr() {
-    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   */
   frog_leap() {
-    wasm.norustgravity_frog_leap(this.ptr);
+    wasm.norustgravity_frog_leap(this.__wbg_ptr);
   }
   /**
   * @returns {number}
   */
   simulate() {
-    const ret = wasm.norustgravity_simulate(this.ptr);
+    const ret = wasm.norustgravity_simulate(this.__wbg_ptr);
     return ret >>> 0;
   }
   /**
   */
   frog_drop() {
-    wasm.norustgravity_frog_drop(this.ptr);
+    wasm.norustgravity_frog_drop(this.__wbg_ptr);
   }
   /**
   * @param {Array<any>} orbs
@@ -26770,9 +26836,9 @@ class NoRustGravity {
   grow(orbs) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.norustgravity_grow(retptr, this.ptr, addBorrowedObject(orbs));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.norustgravity_grow(retptr, this.__wbg_ptr, addBorrowedObject(orbs));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26787,9 +26853,9 @@ class NoRustGravity {
   shrink(n) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_shrink(retptr, this.ptr, n);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_shrink(retptr, this.__wbg_ptr, n);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26804,9 +26870,9 @@ class NoRustGravity {
   set_orb(i, orb) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.norustgravity_set_orb(retptr, this.ptr, i, addHeapObject(orb));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.norustgravity_set_orb(retptr, this.__wbg_ptr, i, addHeapObject(orb));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26817,7 +26883,7 @@ class NoRustGravity {
   /**
   */
   project() {
-    wasm.barneshutrustgravity_project(this.ptr);
+    wasm.barneshutrustgravity_project(this.__wbg_ptr);
   }
   /**
   * @param {any} params
@@ -26825,32 +26891,30 @@ class NoRustGravity {
   params_change(params2) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.norustgravity_params_change(retptr, this.ptr, addBorrowedObject(params2));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.norustgravity_params_change(retptr, this.__wbg_ptr, addHeapObject(params2));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
     }
   }
 }
+const P2PRustGravityFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
+}, unregister: () => {
+} } : new FinalizationRegistry((ptr) => wasm.__wbg_p2prustgravity_free(ptr >>> 0, 1));
 class P2PRustGravity {
-  static __wrap(ptr) {
-    const obj = Object.create(P2PRustGravity.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
   __destroy_into_raw() {
-    const ptr = this.ptr;
-    this.ptr = 0;
+    const ptr = this.__wbg_ptr;
+    this.__wbg_ptr = 0;
+    P2PRustGravityFinalization.unregister(this);
     return ptr;
   }
   free() {
     const ptr = this.__destroy_into_raw();
-    wasm.__wbg_p2prustgravity_free(ptr);
+    wasm.__wbg_p2prustgravity_free(ptr, 0);
   }
   /**
   * @param {Array<any>} orbs
@@ -26860,17 +26924,18 @@ class P2PRustGravity {
   constructor(orbs, params2, alloc_len) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.p2prustgravity_new(retptr, addBorrowedObject(orbs), addBorrowedObject(params2), alloc_len);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      var r2 = getInt32Memory0()[retptr / 4 + 2];
+      wasm.p2prustgravity_new(retptr, addBorrowedObject(orbs), addHeapObject(params2), alloc_len);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+      var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
       if (r2) {
         throw takeObject(r1);
       }
-      return P2PRustGravity.__wrap(r0);
+      this.__wbg_ptr = r0 >>> 0;
+      P2PRustGravityFinalization.register(this, this.__wbg_ptr, this);
+      return this;
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
       heap[stack_pointer++] = void 0;
     }
   }
@@ -26878,39 +26943,39 @@ class P2PRustGravity {
   * @returns {number}
   */
   xyz_ptr() {
-    const ret = wasm.barneshutrustgravity_xyz_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_xyz_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   masses_ptr() {
-    const ret = wasm.barneshutrustgravity_masses_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_masses_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   * @returns {number}
   */
   temperatures_ptr() {
-    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.ptr);
-    return ret;
+    const ret = wasm.barneshutrustgravity_temperatures_ptr(this.__wbg_ptr);
+    return ret >>> 0;
   }
   /**
   */
   frog_leap() {
-    wasm.barneshutrustgravity_frog_leap(this.ptr);
+    wasm.barneshutrustgravity_frog_leap(this.__wbg_ptr);
   }
   /**
   * @returns {number}
   */
   simulate() {
-    const ret = wasm.p2prustgravity_simulate(this.ptr);
+    const ret = wasm.p2prustgravity_simulate(this.__wbg_ptr);
     return ret >>> 0;
   }
   /**
   */
   frog_drop() {
-    wasm.barneshutrustgravity_frog_drop(this.ptr);
+    wasm.barneshutrustgravity_frog_drop(this.__wbg_ptr);
   }
   /**
   * @param {Array<any>} orbs
@@ -26918,9 +26983,9 @@ class P2PRustGravity {
   grow(orbs) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.p2prustgravity_grow(retptr, this.ptr, addBorrowedObject(orbs));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.p2prustgravity_grow(retptr, this.__wbg_ptr, addBorrowedObject(orbs));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26935,9 +27000,9 @@ class P2PRustGravity {
   shrink(n) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.barneshutrustgravity_shrink(retptr, this.ptr, n);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.barneshutrustgravity_shrink(retptr, this.__wbg_ptr, n);
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26952,9 +27017,9 @@ class P2PRustGravity {
   set_orb(i, orb) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.p2prustgravity_set_orb(retptr, this.ptr, i, addHeapObject(orb));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.p2prustgravity_set_orb(retptr, this.__wbg_ptr, i, addHeapObject(orb));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
@@ -26965,7 +27030,7 @@ class P2PRustGravity {
   /**
   */
   project() {
-    wasm.barneshutrustgravity_project(this.ptr);
+    wasm.barneshutrustgravity_project(this.__wbg_ptr);
   }
   /**
   * @param {any} params
@@ -26973,19 +27038,18 @@ class P2PRustGravity {
   params_change(params2) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.p2prustgravity_params_change(retptr, this.ptr, addBorrowedObject(params2));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      wasm.p2prustgravity_params_change(retptr, this.__wbg_ptr, addHeapObject(params2));
+      var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+      var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
       if (r1) {
         throw takeObject(r0);
       }
     } finally {
       wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
     }
   }
 }
-async function load2(module, imports) {
+async function __wbg_load(module, imports) {
   if (typeof Response === "function" && module instanceof Response) {
     if (typeof WebAssembly.instantiateStreaming === "function") {
       try {
@@ -27009,76 +27073,190 @@ async function load2(module, imports) {
     }
   }
 }
-function getImports() {
+function __wbg_get_imports() {
   const imports = {};
   imports.wbg = {};
+  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+    takeObject(arg0);
+  };
+  imports.wbg.__wbg_length_ae22078168b726f5 = function(arg0) {
+    const ret = getObject(arg0).length;
+    return ret;
+  };
+  imports.wbg.__wbg_get_3baa728f9d58d3f6 = function(arg0, arg1) {
+    const ret = getObject(arg0)[arg1 >>> 0];
+    return addHeapObject(ret);
+  };
   imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
     const ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
   };
-  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-    takeObject(arg0);
-  };
-  imports.wbg.__wbg_length_93debb0e2e184ab6 = function(arg0) {
-    const ret = getObject(arg0).length;
-    return ret;
-  };
-  imports.wbg.__wbg_get_f0f4f1608ebf633e = function(arg0, arg1) {
-    const ret = getObject(arg0)[arg1 >>> 0];
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbg_new_693216e109162396 = function() {
+  imports.wbg.__wbg_new_abda76e883ba8a5f = function() {
     const ret = new Error();
     return addHeapObject(ret);
   };
-  imports.wbg.__wbg_stack_0ddaca5d1abfb52f = function(arg0, arg1) {
+  imports.wbg.__wbg_stack_658279fe44541cf6 = function(arg0, arg1) {
     const ret = getObject(arg1).stack;
-    const ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+    const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+    getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
   };
-  imports.wbg.__wbg_error_09919627ac0992f5 = function(arg0, arg1) {
+  imports.wbg.__wbg_error_f851667af71bcfc6 = function(arg0, arg1) {
+    let deferred0_0;
+    let deferred0_1;
     try {
+      deferred0_0 = arg0;
+      deferred0_1 = arg1;
       console.error(getStringFromWasm0(arg0, arg1));
     } finally {
-      wasm.__wbindgen_free(arg0, arg1);
+      wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
     }
   };
-  imports.wbg.__wbindgen_json_serialize = function(arg0, arg1) {
-    const obj = getObject(arg1);
-    const ret = JSON.stringify(obj === void 0 ? null : obj);
-    const ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+  imports.wbg.__wbg_length_8339fcf5d8ecd12e = function(arg0) {
+    const ret = getObject(arg0).length;
+    return ret;
   };
   imports.wbg.__wbindgen_memory = function() {
     const ret = wasm.memory;
     return addHeapObject(ret);
+  };
+  imports.wbg.__wbg_buffer_b7b08af79b0b0974 = function(arg0) {
+    const ret = getObject(arg0).buffer;
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbg_new_ea1883e1e5e86686 = function(arg0) {
+    const ret = new Uint8Array(getObject(arg0));
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbg_set_d1e79e2388520f18 = function(arg0, arg1, arg2) {
+    getObject(arg0).set(getObject(arg1), arg2 >>> 0);
+  };
+  imports.wbg.__wbindgen_jsval_loose_eq = function(arg0, arg1) {
+    const ret = getObject(arg0) == getObject(arg1);
+    return ret;
+  };
+  imports.wbg.__wbindgen_boolean_get = function(arg0) {
+    const v = getObject(arg0);
+    const ret = typeof v === "boolean" ? v ? 1 : 0 : 2;
+    return ret;
+  };
+  imports.wbg.__wbindgen_number_get = function(arg0, arg1) {
+    const obj = getObject(arg1);
+    const ret = typeof obj === "number" ? obj : void 0;
+    getDataViewMemory0().setFloat64(arg0 + 8 * 1, isLikeNone(ret) ? 0 : ret, true);
+    getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+  };
+  imports.wbg.__wbindgen_string_get = function(arg0, arg1) {
+    const obj = getObject(arg1);
+    const ret = typeof obj === "string" ? obj : void 0;
+    var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len1 = WASM_VECTOR_LEN;
+    getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+    getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+  };
+  imports.wbg.__wbg_instanceof_Uint8Array_247a91427532499e = function(arg0) {
+    let result2;
+    try {
+      result2 = getObject(arg0) instanceof Uint8Array;
+    } catch (_) {
+      result2 = false;
+    }
+    const ret = result2;
+    return ret;
+  };
+  imports.wbg.__wbg_instanceof_ArrayBuffer_61dfc3198373c902 = function(arg0) {
+    let result2;
+    try {
+      result2 = getObject(arg0) instanceof ArrayBuffer;
+    } catch (_) {
+      result2 = false;
+    }
+    const ret = result2;
+    return ret;
+  };
+  imports.wbg.__wbindgen_error_new = function(arg0, arg1) {
+    const ret = new Error(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_object_clone_ref = function(arg0) {
+    const ret = getObject(arg0);
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_is_object = function(arg0) {
+    const val = getObject(arg0);
+    const ret = typeof val === "object" && val !== null;
+    return ret;
+  };
+  imports.wbg.__wbg_getwithrefkey_15c62c2b8546208d = function(arg0, arg1) {
+    const ret = getObject(arg0)[getObject(arg1)];
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_is_undefined = function(arg0) {
+    const ret = getObject(arg0) === void 0;
+    return ret;
+  };
+  imports.wbg.__wbindgen_in = function(arg0, arg1) {
+    const ret = getObject(arg0) in getObject(arg1);
+    return ret;
+  };
+  imports.wbg.__wbindgen_is_bigint = function(arg0) {
+    const ret = typeof getObject(arg0) === "bigint";
+    return ret;
+  };
+  imports.wbg.__wbindgen_bigint_get_as_i64 = function(arg0, arg1) {
+    const v = getObject(arg1);
+    const ret = typeof v === "bigint" ? v : void 0;
+    getDataViewMemory0().setBigInt64(arg0 + 8 * 1, isLikeNone(ret) ? BigInt(0) : ret, true);
+    getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+  };
+  imports.wbg.__wbindgen_bigint_from_u64 = function(arg0) {
+    const ret = BigInt.asUintN(64, arg0);
+    return addHeapObject(ret);
+  };
+  imports.wbg.__wbindgen_jsval_eq = function(arg0, arg1) {
+    const ret = getObject(arg0) === getObject(arg1);
+    return ret;
+  };
+  imports.wbg.__wbg_isSafeInteger_7f1ed56200d90674 = function(arg0) {
+    const ret = Number.isSafeInteger(getObject(arg0));
+    return ret;
+  };
+  imports.wbg.__wbindgen_debug_string = function(arg0, arg1) {
+    const ret = debugString(getObject(arg1));
+    const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+    getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
   };
   imports.wbg.__wbindgen_throw = function(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
   };
   return imports;
 }
-function finalizeInit(instance, module) {
+function __wbg_finalize_init(instance, module) {
   wasm = instance.exports;
-  init$1.__wbindgen_wasm_module = module;
-  cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
-  cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
+  __wbg_init.__wbindgen_wasm_module = module;
+  cachedDataViewMemory0 = null;
+  cachedUint8ArrayMemory0 = null;
   return wasm;
 }
-async function init$1(input) {
-  if (typeof input === "undefined") {
-    input = "assets/wasm_bg.wasm";
+async function __wbg_init(module_or_path) {
+  if (wasm !== void 0)
+    return wasm;
+  if (typeof module_or_path !== "undefined" && Object.getPrototypeOf(module_or_path) === Object.prototype)
+    ({ module_or_path } = module_or_path);
+  else
+    console.warn("using deprecated parameters for the initialization function; pass a single object instead");
+  if (typeof module_or_path === "undefined") {
+    module_or_path = new URL("wasm_bg.wasm", self.location);
   }
-  const imports = getImports();
-  if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
-    input = fetch(input);
+  const imports = __wbg_get_imports();
+  if (typeof module_or_path === "string" || typeof Request === "function" && module_or_path instanceof Request || typeof URL === "function" && module_or_path instanceof URL) {
+    module_or_path = fetch(module_or_path);
   }
-  const { instance, module } = await load2(await input, imports);
-  return finalizeInit(instance, module);
+  const { instance, module } = await __wbg_load(await module_or_path, imports);
+  return __wbg_finalize_init(instance, module);
 }
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
@@ -29084,13 +29262,13 @@ function initGUI() {
   fx.add(params, "bloomStrength", 0, 10, 0.01).onChange(
     (v) => bloomPass.strength = v
   );
-  fx.add(params, "bloomRadius", 0, 1, 0.01).onChange(
+  fx.add(params, "bloomRadius", 0, 3, 0.01).onChange(
     (v) => bloomPass.radius = v
   );
   fx.add(params, "bloomThreshold", 0, 1, 0.01).onChange(
     (v) => bloomPass.threshold = v
   );
-  fx.add(params, "bloomExposure", 1e-3, 128).onChange(
+  fx.add(params, "bloomExposure", 0, 2).onChange(
     (v) => renderer.toneMappingExposure = v
   );
   fx.add(params, "afterImage").onChange((on) => afterImagePass.enabled = on);
@@ -29167,7 +29345,7 @@ window.addEventListener("pointermove", function(event) {
 window.addEventListener("pointerup", function() {
   newOrb = null;
 });
-const wasmPromise = init$1();
+const wasmPromise = __wbg_init();
 wasmPromise.then(() => {
   init();
   initGUI();

@@ -1553,7 +1553,7 @@ pub struct FMMRustGravity {
 #[wasm_bindgen]
 impl FMMRustGravity {
   #[wasm_bindgen(constructor)]
-  pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<FMMRustGravity, JsValue> {
+  pub fn new(orbs: &Array, params: JsValue, alloc_len: usize) -> Result<FMMRustGravity, JsValue> {
     let (
       params,
       xyz,
@@ -1891,7 +1891,7 @@ pub struct TreeRustGravity {
 #[wasm_bindgen]
 impl TreeRustGravity {
   #[wasm_bindgen(constructor)]
-  pub fn new(orbs: &Array, params: &JsValue, alloc_len: usize) -> Result<TreeRustGravity, JsValue> {
+  pub fn new(orbs: &Array, params: JsValue, alloc_len: usize) -> Result<TreeRustGravity, JsValue> {
     let (
       params,
       xyz,

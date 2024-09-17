@@ -75,7 +75,7 @@ impl P2PRustGravity {
     #[wasm_bindgen(constructor)]
     pub fn new(
         orbs: &Array,
-        params: &JsValue,
+        params: JsValue,
         alloc_len: usize,
     ) -> Result<P2PRustGravity, JsValue> {
         let (
@@ -298,7 +298,7 @@ impl P2PRustGravity {
     pub fn project(&mut self) {
         Gravity::project(self)
     }
-    pub fn params_change(&mut self, params: &JsValue) -> Result<(), JsValue> {
+    pub fn params_change(&mut self, params: JsValue) -> Result<(), JsValue> {
         Gravity::params_change(self, params)
     }
 }
