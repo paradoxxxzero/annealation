@@ -1,5 +1,16 @@
 import Gravity from './gravity'
 import { workerPromise } from '../utils'
+import BhThread from './worker/bh-thread.js?worker'
+import BhThreadSab from './worker/bh-thread-sab.js?worker'
+import P2PThread from './worker/p2p-thread.js?worker'
+import P2PThreadSab from './worker/p2p-thread-sab.js?worker'
+
+const WORKERS = {
+  'bh-thread': BhThread,
+  'bh-thread-sab': BhThreadSab,
+  'p2p-thread': P2PThread,
+  'p2p-thread-sab': P2PThreadSab,
+}
 
 export default class P2PThreadedGravity extends Gravity {
   constructor(orbs, params, allocLen, workerName = 'p2p-thread') {
@@ -10,20 +21,14 @@ export default class P2PThreadedGravity extends Gravity {
 
   initThreadPool(workerName) {
     this.pool = new Array(~~this.params.threads).fill().map(() => {
-      const url = import.meta.url
-      return new Worker(new URL(`./worker/${workerName}.js`, url), {
-        type: 'module',
-      })
+      const Worker = WORKERS[workerName]
+      return new Worker()
     })
   }
 
   async simulate() {
-    const {
-      gravitationalConstant,
-      softening,
-      collisions,
-      collisionThreshold,
-    } = this.params
+    const { gravitationalConstant, softening, collisions, collisionThreshold } =
+      this.params
     let collided = []
 
     const softening2 = softening * softening

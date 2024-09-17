@@ -1,23 +1,22 @@
 {
   "scripts": {
-    "start": "snowpack dev",
-    "build": "snowpack build && esbuild --bundle --minify src/gravity/worker/*-thread*.js --outdir=docs/dist/worker/ && rm -r docs/dist/gravity && touch docs/.nojekyll",
-    "test": "echo \"This template does not include a test runner by default.\" && exit 1"
+    "dev": "vite",
+    "build": "vite build && touch docs/.nojekyll",
+    "wasm": "wasm-pack build ./wasm --target web"
   },
   "devDependencies": {
-    "eslint": "^8.19.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.7.1",
-    "snowpack": "^3.8.8",
-    "snowpack-plugin-raw-file-loader": "^1.0.9",
-    "snowpack-plugin-wasm-pack": "^1.1.0"
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.30.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3",
+    "vite": "^4.5.0",
+    "vite-plugin-wasm-pack": "^0.1.12"
   },
   "dependencies": {
     "dat.gui": "^0.7.9",
-    "four-js": "^2.1.0",
+    "four-js": "^2.2.1",
     "stats.js": "^0.17.0",
-    "three": "^0.142.0"
+    "three": "^0.168.0"
   }
 }

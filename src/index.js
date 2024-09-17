@@ -21,8 +21,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
 import * as configurations from './configurations'
-import fragmentShader from './fragmentShader.glsl'
-import vertexShader from './vertexShader.glsl'
+import fragmentShader from './fragmentShader.glsl?raw'
+import vertexShader from './vertexShader.glsl?raw'
 import presets from './presets'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import wasmInit, {
@@ -369,13 +369,13 @@ function initGUI() {
   fx.add(params, 'bloomStrength', 0, 10, 0.01).onChange(
     v => (bloomPass.strength = v)
   )
-  fx.add(params, 'bloomRadius', 0, 1, 0.01).onChange(
+  fx.add(params, 'bloomRadius', 0, 3, 0.01).onChange(
     v => (bloomPass.radius = v)
   )
   fx.add(params, 'bloomThreshold', 0, 1, 0.01).onChange(
     v => (bloomPass.threshold = v)
   )
-  fx.add(params, 'bloomExposure', 0.001, 128).onChange(
+  fx.add(params, 'bloomExposure', 0, 2).onChange(
     v => (renderer.toneMappingExposure = v)
   )
   fx.add(params, 'afterImage').onChange(on => (afterImagePass.enabled = on))
@@ -473,7 +473,7 @@ window.addEventListener('pointerup', function () {
   newOrb = null
 })
 
-const wasmPromise = wasmInit('./dist/wasm/index_bg.wasm')
+const wasmPromise = wasmInit()
 
 wasmPromise.then(() => {
   init()
